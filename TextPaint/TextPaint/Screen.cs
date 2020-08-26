@@ -20,14 +20,14 @@ namespace TextPaint
 		public int WinW;
 		public int WinH;
 
-		public bool UseMemo;
+		public int UseMemo;
 		char[,] ScrChrC;
 		int[,] ScrChrB;
 		int[,] ScrChrF;
 		
 		public void MemoPrepare()
 		{
-			if (UseMemo)
+			if (UseMemo != 0)
 			{
 				ScrChrB = new int[WinW, WinH];
 				ScrChrF = new int[WinW, WinH];
@@ -44,7 +44,7 @@ namespace TextPaint
 		
 		public void MemoRepaint(int SrcX, int SrcY, int DstX, int DstY, int W, int H)
 		{
-			if (UseMemo)
+			if (UseMemo != 0)
 			{
 				int X_;
 				int Y_;
@@ -137,7 +137,7 @@ namespace TextPaint
         	if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH))
         	{
         		PutChar_(X, Y, C, ColorBack, ColorFore);
-	        	if (UseMemo)
+	        	if (UseMemo == 1)
 	        	{
 	        		if (C == '\0')
 	        		{
@@ -153,8 +153,20 @@ namespace TextPaint
 	        		{
 	        			ScrChrC[X, Y] = '\0';
 	        		}
+                    return;
 	        	}
-        	}
+                if (UseMemo == 2)
+                {
+                    if (C == '\0')
+                    {
+                        C = ' ';
+                    }
+                    ScrChrC[X, Y] = C;
+                    ScrChrB[X, Y] = ColorBack;
+                    ScrChrF[X, Y] = ColorFore;
+                    return;
+                }
+            }
         }
         
         public virtual void Move(int SrcX, int SrcY, int DstX, int DstY, int W, int H)

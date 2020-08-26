@@ -27,7 +27,7 @@ TextPaint can work in one of the 5 states\. The default state is state 0\. In al
 * **F4** \- Switch to state 4 \(draw diamond\) or change diamond variant\.
 * **F7** \- Save file\.
 * **F8** \- Reload file\.
-* **F11** \- Open character selection to draw\.
+* **F9** \- Open character selection to draw\.
 * **F12** \- Quit TextPaint\.
 
 The other available keys depends on the current working state\. The unnecessary spaces and lines are automatically trimmed during editing\. The text is presented as white characters on the black background, the space beyond end of line is dark grey, the space beyond the last line is bright grey\. You can write on the grey aread, then necessary lines or spaces will be added automatically\.
@@ -50,7 +50,7 @@ In every state, you can change the draw character\. To do this, press the **F11*
 
 Between the FF and 00 page, there is the FAV page, which contains the characters defined in the configuration file\.
 
-## State 0 \- edit text
+## State 0 \- Edit text
 
 In the state 0, you can input alphanumeric characters like in every ordinary text editor, but the functional keys has another meaning\. You can use the following functional keys:
 
@@ -116,15 +116,46 @@ In the 3 and 4 states, there are available the following keys:
 In the TextPaint directory there is the **Config\.txt** file, which allows to configure the application\. If you run TextPaint without parameters, this file will be open\. The configuration is read during the application running\. This file is organized as the **parameter=value** convention\. The blank lines, lines without **=** character and parameters other than listed below are ignored:
 
 
-* **WinUse** \- Use window instead of console\. In certain systems and console configurations, some of unicode characters are not correctly rendered in the console\. If **WinUse** is set to **1**, the TextPain will work in the graphical window and all unicode characters should be rendered correctly\. The application usage is the same as in the console\.
+* **WinUse** \- Use window instead of console\. In certain systems and console configurations, some of unicode characters are not correctly rendered in the console\. If **WinUse** is set to **1** or **2**, the TextPain will work in the graphical window and all unicode characters should be rendered correctly\. The application usage is the same as in the console\. There are allowed the following values:
+  * **0** \- Use console\.
+  * **1** \- Use window with standard image rendering control\.
+  * **2** \- Use window with non\-standard image rendering control\. Use this setting only if interface picture is not displayed or crashed when you use **WinUse=1**\.
+* **FavChar** \- Favorite characters hexadecimal codes separated by commas, maximum 256 items\. You can define the favorite characters, which will be shown on the FAV page on the character table\. The first FAV character is the default draw character\.
+* **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\. The first item is the set name, the other items are the hexadecimal character codes, which are the frame elements\.
+* **Frame2\_x** \- Character set for diamond frame\. It works like **Frame1\_x**\.
+
+Settings related to console, affects when **WinUse=0** only\.
+
+
+* **ConInputEncoding** \- Set encoding name or codepage for writing characters\. Use it to solve problems in entering characters, especially diacritic characters using keyboard\. Affects only when you use **WinUse=0**\.
+* **ConOutputEncoding** \- Set encoding name or codepage for printing characters\. Use it to solve problems in displaying characters\. Affects only when you use **WinUse=0**\.
+* **ConUseMemo** \- Use additional text memory in console \(not affects when **WinUse** is set to **1** or **2**\)\. The application uses the console buffer move from the system API while scrolling the text\. You can set one of the following values:
+  * **0** \- Use console buffer moving\. This setting is recommended, while all characters are displayed correctly while text scrolling\.
+  * **1** \- Use console buffer moving with rewriting non\-ASCII characters\. Use this setting if some characters are displayed incorrectly during text scrolling although the same characters are displayed correctly during writing/painting using Textpaint functions\. This may slightly slow down the text rendering during scrolling\. 
+  * **2** \- Do not use console buffer moving\. Use this setting only if the text rendering crashes during trying to scroll\. This setting causes, that every character on screen is rewritten during text scrolling\.
+
+Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
+
+
 * **WinCellW** \- Character cell width in window\.
 * **WinCellH** \- Character cell height in window\.
 * **WinFontName** \- Font name in window\.
 * **WinFontSize** \- Font size in window\.
-* **ConUseMemo** \- Use additional text memory in console\. The application uses the console buffer move from the system API while scrolling the text\. In certain systems, despite the console correctly shows all unicode characters, when buffered is moves, some characters can be replaced to incorrect characters\. If **ConUseMemo** is set to **1**, after every scroll, the unicode characters will be rewritten to show the characters correctly\. This may slightly slow down the text rendering during scrolling\. The parameter not affects the working, when **WinUse** is set to **1**\.
-* **FavChar** \- Favorite characters hexadecimal codes separated by commas, maximum 256 items\. You can define the favorite characters, which will be shown on the FAV page on the character table\. The first FAV character is the default draw character\.
-* **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\. The first item is the set name, the other items are the hexadecimal character codes, which are the frame elements\.
-* **Frame2\_x** \- Character set for diamond frame\. It works like **Frame1\_x**\.
+
+## Console encoding
+
+Console uses some endoding for input and output charaters\. You can input codepage or encoding name\. If value consists of digits only, it will be treated as codepage number, otherwise, it will be threated as encoding name\. If you not set or set incorrect name, the system default encoding will be used\.
+
+The most common encodings:
+
+| Name | Codepage | Description |
+| --- | --- | --- |
+| us\-ascii | 20127 | 7\-bit ASCII |
+| utf\-8 | 65001 | Unicode \- UTF\-8 |
+| utf\-16 | 1200 | Unicode \- little endian |
+| utf\-16BE | 1201 | Unicode \- big endian |
+
+You can set any encoding supported by \.NET API function `System.Text.Encoding.GetEncoding(Int32)` and `System.Text.Encoding.GetEncoding(String)`, details can be found on the web\. This settings affects only console input/output\. Regardless of this setting, the text files edited using Textpaint must use UTF\-8 encoding\.
 
 ## Frame elements
 
@@ -146,5 +177,7 @@ The **Frame1\_x** and **Frame2\_x** parameters defines the frame character set a
 ```
 
 As you can see, the diamond is treated as rectangle rorate by 45 degrees clockwise\. Every **Frame1\_x** and **Frame2\_x** must consist of 12 item including character set name\. Application reads the correctly defined numbers to the first incorrectly defined or missing number\.
+
+
 
 

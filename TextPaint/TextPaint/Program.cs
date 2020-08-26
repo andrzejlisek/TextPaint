@@ -13,11 +13,11 @@ using System.Text;
 
 namespace TextPaint
 {
-	class Program
+    class Program
 	{
 		public static void Main(string[] args)
 		{
-			Core Core_ = new Core();
+            Core Core_ = new Core();
 			if (args.Length > 0)
 			{
 				Core_.Init(args[0]);
@@ -26,6 +26,6 @@ namespace TextPaint
 			{
 				Core_.Init("Config.txt");
 			}
-		}
+        }
 	}
 }

@@ -15,14 +15,23 @@ namespace TextPaint
 	/// </summary>
 	public class ScreenConsole : Screen
 	{
-		public ScreenConsole(Core Core__)
+        string ConIEnc = "";
+        string ConOEnc = "";
+
+        public ScreenConsole(Core Core__, ConfigFile CF)
 		{
 			Core_ = Core__;
-		}
+            ConIEnc = CF.ParamGetS("ConInputEncoding");
+            ConOEnc = CF.ParamGetS("ConOutputEncoding");
+        }
 
         public override void PutChar_(int X, int Y, char C, int ColorBack, int ColorFore)
         {
-        	Console.SetCursorPosition(X, Y);
+            if (C < ' ')
+            {
+                return;
+            }
+            Console.SetCursorPosition(X, Y);
         	switch (ColorBack)
         	{
         		case 0: Console.BackgroundColor = ConsoleColor.Black; break;
@@ -39,10 +48,19 @@ namespace TextPaint
         	}
         	Console.Write(C);
         }
-        
+
         public override void Move(int SrcX, int SrcY, int DstX, int DstY, int W, int H)
         {
-			Console.MoveBufferArea(SrcX, SrcY, W, H, DstX, DstY);
+            if (UseMemo != 2)
+            {
+                try
+                {
+                    Console.MoveBufferArea(SrcX, SrcY, W, H, DstX, DstY);
+                }
+                catch
+                {
+                }
+            }
 			MemoRepaint(SrcX, SrcY, DstX, DstY, W, H);
         }
 
@@ -92,22 +110,60 @@ namespace TextPaint
 				return false;
 			}
         }
-        
+
+        private System.Text.Encoding StrToEnc(string Val)
+        {
+            if (Val == "")
+            {
+                return System.Text.Encoding.Default;
+            }
+            bool DigitOnly = true;
+            for (int i = 0; i < Val.Length; i++)
+            {
+                if ((Val[i] < '0') || (Val[i] > '9'))
+                {
+                    DigitOnly = false;
+                }
+            }
+            try
+            {
+                if (DigitOnly)
+                {
+                    return System.Text.Encoding.GetEncoding(int.Parse(Val));
+                }
+                else
+                {
+                    return System.Text.Encoding.GetEncoding(Val);
+                }
+            }
+            catch
+            {
+                return System.Text.Encoding.Default;
+            }
+        }
+
         public override void StartApp()
         {
-        	Console.OutputEncoding = System.Text.Encoding.Unicode;
-        	Console.InputEncoding = System.Text.Encoding.Unicode;
-        	
-        	WinW = -1;
+            if (ConIEnc != "")
+            {
+                Console.InputEncoding = StrToEnc(ConIEnc);
+            }
+            if (ConOEnc != "")
+            {
+                Console.OutputEncoding = StrToEnc(ConOEnc);
+            }
+
+            WinW = -1;
         	WinH = -1;
         	AppWorking = true;
 			Core_.WindowResize();
 			Core_.ScreenRefresh(true);
-        	while (AppWorking)
+            while (AppWorking)
         	{
-				ConsoleKeyInfo CKI = Console.ReadKey(true);
-				Core_.CoreEvent(CKI.Key.ToString(), CKI.KeyChar);
-        	}
+                ConsoleKeyInfo CKI = Console.ReadKey(true);
+                Core_.CoreEvent(CKI.Key.ToString(), CKI.KeyChar);
+            }
+            Console.Clear();
         }
 
         public override void SetCursorPosition(int X, int Y)

@@ -1,10 +1,13 @@
 WinUse=0
+
+ConUseMemo=0
+ConInputEncoding=utf-8
+ConOutputEncoding=utf-8
+
 WinCellW=10
 WinCellH=20
 WinFontName=Consolas
 WinFontSize=12
-
-ConUseMemo=0
 
 FavChar=0020,2591,2592,2593,2588,2580,2584,258C,2590
 

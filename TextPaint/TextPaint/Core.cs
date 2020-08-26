@@ -600,7 +600,7 @@ namespace TextPaint
 		
 		public void Init(string CurrentFileName_)
 		{
-			Semigraphics_ = new Semigraphics(this);
+            Semigraphics_ = new Semigraphics(this);
 			Clipboard_ = new Clipboard(this);
 			
 			ConfigFile CF = new ConfigFile();
@@ -618,23 +618,23 @@ namespace TextPaint
 			ScrCharStrDisp = new List<List<char>>();
 			TextBuffer.Clear();
 			FileLoad(CurrentFileName);
-			UseWindow = CF.ParamGetB("WinUse");
+			UseWindow = (CF.ParamGetI("WinUse") > 0);
 			
 			if (UseWindow)
 			{
 				Screen_ = new ScreenWindow(this, CF, Console.WindowWidth, Console.WindowHeight);
-				Screen_.UseMemo = false;
+				Screen_.UseMemo = 0;
 			}
 			else
 			{
-				Screen_ = new ScreenConsole(this);
-				Screen_.UseMemo = CF.ParamGetB("ConUseMemo");
+				Screen_ = new ScreenConsole(this, CF);
+				Screen_.UseMemo = CF.ParamGetI("ConUseMemo");
 			}
-			Screen_.StartApp();
-		}
+            Screen_.StartApp();
+        }
 
-		
-		public void TextRepaint(bool Force)
+
+        public void TextRepaint(bool Force)
 		{
 			for (int Y = 0; Y < WinTxtH; Y++)
 			{
@@ -762,7 +762,7 @@ namespace TextPaint
 			CursorLine(false);
 			switch (KeyName)
 			{
-				case "F11":
+				case "F9":
 					Semigraphics_.SelectCharInit();
 					return;
 				case "Tab":
@@ -849,8 +849,9 @@ namespace TextPaint
 							case "Right":
 								MoveCursor(3);
 								break;
-							case "PageUp":
-								MoveCursor(4);
+                            case "PageUp":
+                            case "Prior":
+                                MoveCursor(4);
 								break;
 							case "End":
 								MoveCursor(5);
@@ -1003,8 +1004,9 @@ namespace TextPaint
 								MoveCursor(3);
 								FrameLastCross = 0;
 								break;
-							case "PageUp":
-								Semigraphics_.FrameCharPut(4);
+                            case "PageUp":
+                            case "Prior":
+                                Semigraphics_.FrameCharPut(4);
 								MoveCursor(4);
 								FrameLastCross = 1;
 								break;
@@ -1057,8 +1059,9 @@ namespace TextPaint
 								Semigraphics_.FrameCharErase();
 								MoveCursor(3);
 								break;
-							case "PageUp":
-								Semigraphics_.FrameCharErase();
+                            case "PageUp":
+                            case "Prior":
+                                Semigraphics_.FrameCharErase();
 								MoveCursor(4);
 								break;
 							case "End":
@@ -1099,7 +1102,8 @@ namespace TextPaint
 								MoveCursor(3);
 								break;
 							case "PageUp":
-								MoveCursor(4);
+                            case "Prior":
+                                MoveCursor(4);
 								break;
 							case "End":
 								MoveCursor(5);

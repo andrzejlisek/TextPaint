@@ -409,7 +409,8 @@ namespace TextPaint
 					SelectCharCode();
 					break;
 				case "PageUp":
-					SelectCharChange(-3);
+                case "Prior":
+                    SelectCharChange(-3);
 					SelectCharCode();
 					break;
 				case "PageDown":
