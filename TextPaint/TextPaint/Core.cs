@@ -49,6 +49,7 @@ namespace TextPaint
 		int WorkMode = 0;
 
 		int CursorType = 0;
+        int CursorDisplay = 1;
 		
 		int FrameLastCross = 0;
 		int TextMoveDir = 0;
@@ -301,122 +302,141 @@ namespace TextPaint
 			}
 			ScrCharType[Y] = Sb.ToString();
 		}
-		
-		public void CursorLine(bool Show)
-		{
-			int XX = CursorX - DisplayX;
-			int YY = CursorY - DisplayY;
-			if (WorkMode == 3)
-			{
-				int X1 = Math.Min(XX, XX + CursorXSize);
-				int X2 = Math.Max(XX, XX + CursorXSize);
-				int Y1 = Math.Min(YY, YY + CursorYSize);
-				int Y2 = Math.Max(YY, YY + CursorYSize);
-				
-				X1 = Math.Max(Math.Min(X1, WinTxtW - 1), 0);
-				X2 = Math.Max(Math.Min(X2, WinTxtW - 1), 0);
-				Y1 = Math.Max(Math.Min(Y1, WinTxtH - 1), 0);
-				Y2 = Math.Max(Math.Min(Y2, WinTxtH - 1), 0);
-				
-				for (int Y = Y1; Y <= Y2; Y++)
-				{
-					for (int X = X1; X <= X2; X++)
-					{
-						CursorChar(X, Y, Show);
-					}
-				}
-			}
-			if (WorkMode == 4)
-			{
-				int X1 = Math.Min(XX, XX + CursorXSize);
-				int X2 = Math.Max(XX, XX + CursorXSize);
-				int Y1 = Math.Min(YY, YY + CursorYSize);
-				int Y2 = Math.Max(YY, YY + CursorYSize);
-				
-				
-				for (int X_ = X1; X_ <= X2; X_++)
-				{
-					for (int Y_ = Y1; Y_ <= Y2; Y_++)
-					{
-						int X__ = X_ - Y_ + YY;
-						int Y__ = Y_ + X_ - XX;
-						CursorChar_(X__, Y__, Show);
-						
-						switch (Semigraphics_.DiamondType)
-						{
-							case 0:
-								if ((X_ < X2) && (Y_ > Y1))
-								{
-									CursorChar_(X__ + 1, Y__, Show);
-								}
-								break;
-							case 1:
-								CursorChar_(X__ + 1, Y__, Show);
-								break;
-							case 2:
-								CursorChar_(X__, Y__ + 1, Show);
-								break;
-							case 3:
-								CursorChar_(X__ - 1, Y__, Show);
-								break;
-							case 4:
-								CursorChar_(X__, Y__ - 1, Show);
-								break;
-							case 5:
-								CursorChar_(X__ + 1, Y__, Show);
-								CursorChar_(X__, Y__ - 1, Show);
-								CursorChar_(X__ + 1, Y__ - 1, Show);
-								break;
-							case 6:
-								CursorChar_(X__ + 1, Y__, Show);
-								CursorChar_(X__, Y__ + 1, Show);
-								CursorChar_(X__ + 1, Y__ + 1, Show);
-								break;
-							case 7:
-								CursorChar_(X__ - 1, Y__, Show);
-								CursorChar_(X__, Y__ + 1, Show);
-								CursorChar_(X__ - 1, Y__ + 1, Show);
-								break;
-							case 8:
-								CursorChar_(X__ - 1, Y__, Show);
-								CursorChar_(X__, Y__ - 1, Show);
-								CursorChar_(X__ - 1, Y__ - 1, Show);
-								break;
-						}
-					}
-				}
-				
 
-			}
+        public void CursorLine(bool Show)
+        {
+            int XX = CursorX - DisplayX;
+            int YY = CursorY - DisplayY;
+            if (WorkMode == 3)
+            {
+                int X1 = Math.Min(XX, XX + CursorXSize);
+                int X2 = Math.Max(XX, XX + CursorXSize);
+                int Y1 = Math.Min(YY, YY + CursorYSize);
+                int Y2 = Math.Max(YY, YY + CursorYSize);
 
-			CursorChar(XX, YY, Show);
+                X1 = Math.Max(Math.Min(X1, WinTxtW - 1), 0);
+                X2 = Math.Max(Math.Min(X2, WinTxtW - 1), 0);
+                Y1 = Math.Max(Math.Min(Y1, WinTxtH - 1), 0);
+                Y2 = Math.Max(Math.Min(Y2, WinTxtH - 1), 0);
+
+                for (int Y = Y1; Y <= Y2; Y++)
+                {
+                    for (int X = X1; X <= X2; X++)
+                    {
+                        CursorChar(X, Y, Show);
+                    }
+                }
+            }
+            if (WorkMode == 4)
+            {
+                int X1 = Math.Min(XX, XX + CursorXSize);
+                int X2 = Math.Max(XX, XX + CursorXSize);
+                int Y1 = Math.Min(YY, YY + CursorYSize);
+                int Y2 = Math.Max(YY, YY + CursorYSize);
+
+
+                for (int X_ = X1; X_ <= X2; X_++)
+                {
+                    for (int Y_ = Y1; Y_ <= Y2; Y_++)
+                    {
+                        int X__ = X_ - Y_ + YY;
+                        int Y__ = Y_ + X_ - XX;
+                        CursorChar_(X__, Y__, Show);
+
+                        switch (Semigraphics_.DiamondType)
+                        {
+                            case 0:
+                                if ((X_ < X2) && (Y_ > Y1))
+                                {
+                                    CursorChar_(X__ + 1, Y__, Show);
+                                }
+                                break;
+                            case 1:
+                                CursorChar_(X__ + 1, Y__, Show);
+                                break;
+                            case 2:
+                                CursorChar_(X__, Y__ + 1, Show);
+                                break;
+                            case 3:
+                                CursorChar_(X__ - 1, Y__, Show);
+                                break;
+                            case 4:
+                                CursorChar_(X__, Y__ - 1, Show);
+                                break;
+                            case 5:
+                                CursorChar_(X__ + 1, Y__, Show);
+                                CursorChar_(X__, Y__ - 1, Show);
+                                CursorChar_(X__ + 1, Y__ - 1, Show);
+                                break;
+                            case 6:
+                                CursorChar_(X__ + 1, Y__, Show);
+                                CursorChar_(X__, Y__ + 1, Show);
+                                CursorChar_(X__ + 1, Y__ + 1, Show);
+                                break;
+                            case 7:
+                                CursorChar_(X__ - 1, Y__, Show);
+                                CursorChar_(X__, Y__ + 1, Show);
+                                CursorChar_(X__ - 1, Y__ + 1, Show);
+                                break;
+                            case 8:
+                                CursorChar_(X__ - 1, Y__, Show);
+                                CursorChar_(X__, Y__ - 1, Show);
+                                CursorChar_(X__ - 1, Y__ - 1, Show);
+                                break;
+                        }
+                    }
+                }
+
+
+            }
+
+            if (CursorDisplay == 1)
+            {
+                CursorChar(XX, YY, Show);
+            }
 			if ((CursorType == 1) || (CursorType == 3))
 			{
-				for (int X = 0; X < WinTxtW; X++)
+                for (int X = 0; X < XX; X++)
+                {
+                    CursorChar(X, YY, Show);
+                }
+                for (int X = XX + 1; X < WinTxtW; X++)
 				{
 					CursorChar(X, YY, Show);
 				}
-				for (int Y = 0; Y < WinTxtH; Y++)
-				{
-					CursorChar(XX, Y, Show);
-				}
-			}
-			if ((CursorType == 2) || (CursorType == 3))
+                for (int Y = 0; Y < YY; Y++)
+                {
+                    CursorChar(XX, Y, Show);
+                }
+                for (int Y = YY + 1; Y < WinTxtH; Y++)
+                {
+                    CursorChar(XX, Y, Show);
+                }
+            }
+            if ((CursorType == 2) || (CursorType == 3))
 			{
 				int I1 = 0 - Math.Min(XX, YY);
 				int I2 = 0 + Math.Min(WinTxtW - XX - 1, WinTxtH - YY - 1);
-				for (int i = I1; i <= I2; i++)
+				for (int i = I1; i < 0; i++)
 				{
 					CursorChar(XX + i, YY + i, Show);
 				}
-				I1 = 0 - Math.Min(WinTxtW - XX - 1, YY);
+                for (int i = 1; i <= I2; i++)
+                {
+                    CursorChar(XX + i, YY + i, Show);
+                }
+                I1 = 0 - Math.Min(WinTxtW - XX - 1, YY);
 				I2 = 0 + Math.Min(XX, WinTxtH - YY - 1);
-				for (int i = I1; i <= I2; i++)
+				for (int i = I1; i < 0; i++)
 				{
 					CursorChar(XX - i, YY + i, Show);
 				}
-			}
-		}
+                for (int i = 1; i <= I2; i++)
+                {
+                    CursorChar(XX - i, YY + i, Show);
+                }
+            }
+        }
 
 		
 		public void CursorEquivPos(int Dir)
@@ -619,8 +639,9 @@ namespace TextPaint
 			TextBuffer.Clear();
 			FileLoad(CurrentFileName);
 			UseWindow = (CF.ParamGetI("WinUse") > 0);
-			
-			if (UseWindow)
+            CursorDisplay = CF.ParamGetI("CursorDisplay");
+
+            if (UseWindow)
 			{
 				Screen_ = new ScreenWindow(this, CF, Console.WindowWidth, Console.WindowHeight);
 				Screen_.UseMemo = 0;
@@ -652,11 +673,11 @@ namespace TextPaint
 								break;
 							case '1':
 								ColorB = 1;
-								ColorF = 1;
+								ColorF = 3;
 								break;
 							case '2':
 								ColorB = 2;
-								ColorF = 2;
+								ColorF = 3;
 								break;
 							case '3':
 							case '4':

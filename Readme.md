@@ -18,7 +18,7 @@ TextPaint can work in one of the 5 states\. The default state is state 0\. In al
 
 
 * **Arrows** \- Move cursor horizontally or vertically\.
-* **PageUp**, **PageDown**, **Home**, **End** \- Move cursor diagonally\.
+* **Home, End, PageUp**, **PageDown** \- Move cursor diagonally\.
 * **Tab** \- Change cursor visualization type, one of four states\.
 * **Esc** \- Switch to state 0 \(edit text\) or change writing direction\.
 * **F1** \- Switch to state 1 \(draw frame\)\.
@@ -67,7 +67,7 @@ In the state 1, you can draw frames or line using semigraphical characters by mo
 
 The line corner and junction characters will be automatically placed if appropiate characters in neighbor cells are from the same character set\.
 
-If you to move cursor to other place without drawing, switch to state 0 or 3 or 4, move the cursor, return to the state 1\. The last selected character sets will be remembered\.
+If you want to move cursor to other place without drawing, switch to state 0 or 3 or 4, move the cursor and switch again to the state 1\. The last selected character sets will be remembered\.
 
 ## State 2 \- Draw character
 
@@ -92,7 +92,7 @@ Move the cursor and set the cursor size, after this press **1** or **2** or **3*
 In the 3 and 4 states, there are available the following keys:
 
 
-* **W**, **S**, **A**, **D** \- Change rectangle size, which will be displayed as cursor\.
+* **W**, **S**, **A**, **D** \- Change rectangle/diamond size, which will be displayed as cursor\.
 * **Q**, **E** \- Change cursor position without shape movement and size changing\.
 * **1** \- Change frame character set\.
 * **2** \- Draw frame using character set\.
@@ -120,6 +120,7 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
   * **0** \- Use console\.
   * **1** \- Use window with standard image rendering control\.
   * **2** \- Use window with non\-standard image rendering control\. Use this setting only if interface picture is not displayed or crashed when you use **WinUse=1**\.
+* **CursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **0** to not draw cursor character and may help in cursor visibility\.
 * **FavChar** \- Favorite characters hexadecimal codes separated by commas, maximum 256 items\. You can define the favorite characters, which will be shown on the FAV page on the character table\. The first FAV character is the default draw character\.
 * **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\. The first item is the set name, the other items are the hexadecimal character codes, which are the frame elements\.
 * **Frame2\_x** \- Character set for diamond frame\. It works like **Frame1\_x**\.

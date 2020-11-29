@@ -186,5 +186,5 @@ namespace TextPaint
         	}
 			Console.SetCursorPosition(X, Y);
         }
-	}
+    }
 }
