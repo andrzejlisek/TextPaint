@@ -8,24 +8,25 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.IO;
 using System.Text;
 
 namespace TextPaint
 {
     class Program
-	{
-		public static void Main(string[] args)
-		{
+    {
+        public static void Main(string[] args)
+        {
             Core Core_ = new Core();
-			if (args.Length > 0)
-			{
-				Core_.Init(args[0]);
-			}
-			else
-			{
-				Core_.Init("Config.txt");
-			}
+            if (args.Length > 0)
+            {
+                Core_.Init(args[0], args);
+            }
+            else
+            {
+                Core_.Init(Core.AppDir() + "Config.txt", args);
+            }
         }
-	}
+    }
 }

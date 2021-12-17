@@ -1,0 +1,18 @@
+﻿Alphabet: ABC...XYZabc...xyz0123456789
+Mode: 1
+
+
+Original:
+ the quick brown fox jumps over the lazy dog
+ 1234567890 1234567890 1234567890 1234567890
+ the quick brown fox jumps over the lazy dog
+
+Password: QwE34RtY
+[9Ti jozL8 rdsph wXL zgqim 5e27 flX friM tak]
+[uwKnTMtC2u IlRKrA02Qj PIp8y0OrXG n6wyMpVOv4]
+[mbv ZIyOo Ul5fB va1 co3YG 4hik nyN 9ql2 Wix]
+
+Password: z1X23C4v
+[nST hHaVm VcdnA Xhz dfbgF gogl eWV 8Ss0 XZV]
+[sPvx70sx0N tv5yqvyV1t 3wotwTz1Bu mruRxz92up]
+[k4W jwcNZ SEgpp ZZm aHeiu igTi GZX nUkn UBY]

@@ -62,6 +62,10 @@
     <Compile Include="ScreenConsole.cs" />
     <Compile Include="ScreenWindow.cs" />
     <Compile Include="Semigraphics.cs" />
+    <Compile Include="TextCipher.cs" />
+    <Compile Include="InfoScreen.cs" />
+    <Compile Include="PixelPaint.cs" />
+    <Compile Include="TextWork.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
