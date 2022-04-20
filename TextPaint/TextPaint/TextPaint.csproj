@@ -33,9 +33,11 @@
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>anycpu</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>anycpu</PlatformTarget>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.CSharp">
@@ -66,6 +68,11 @@
     <Compile Include="InfoScreen.cs" />
     <Compile Include="PixelPaint.cs" />
     <Compile Include="TextWork.cs" />
+    <Compile Include="Core_File.cs" />
+    <Compile Include="Core_ANSI.cs" />
+    <Compile Include="Telnet.cs" />
+    <Compile Include="Telnet_Server.cs" />
+    <Compile Include="Telnet_Client.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -8,6 +8,7 @@
  */
 using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace TextPaint
 {
@@ -19,25 +20,43 @@ namespace TextPaint
         string ConIEnc = "";
         string ConOEnc = "";
 
-        ConsoleColor[] ConsoleColor_ = new ConsoleColor[4];
-        ConsoleColor LastColorBack = ConsoleColor.Green;
-        ConsoleColor LastColorFore = ConsoleColor.Green;
+        ConsoleColor[] ConsoleColor_ = new ConsoleColor[16];
+        ConsoleColor LastColorBack = ConsoleColor.Black;
+        ConsoleColor LastColorFore = ConsoleColor.Gray;
+        ConsoleColor DefaultBack = ConsoleColor.Black;
+        ConsoleColor DefaultFore = ConsoleColor.Gray;
 
-        public ScreenConsole(Core Core__, ConfigFile CF)
+        public ScreenConsole(Core Core__, ConfigFile CF, int DefBack, int DefFore)
         {
             Core_ = Core__;
             ConIEnc = CF.ParamGetS("ConInputEncoding");
             ConOEnc = CF.ParamGetS("ConOutputEncoding");
             ConsoleColor_[0] = ConsoleColor.Black;
-            ConsoleColor_[1] = ConsoleColor.DarkGray;
-            ConsoleColor_[2] = ConsoleColor.Gray;
-            ConsoleColor_[3] = ConsoleColor.White;
+            ConsoleColor_[1] = ConsoleColor.DarkRed;
+            ConsoleColor_[2] = ConsoleColor.DarkGreen;
+            ConsoleColor_[3] = ConsoleColor.DarkYellow;
+            ConsoleColor_[4] = ConsoleColor.DarkBlue;
+            ConsoleColor_[5] = ConsoleColor.DarkMagenta;
+            ConsoleColor_[6] = ConsoleColor.DarkCyan;
+            ConsoleColor_[7] = ConsoleColor.Gray;
+            ConsoleColor_[8] = ConsoleColor.DarkGray;
+            ConsoleColor_[9] = ConsoleColor.Red;
+            ConsoleColor_[10] = ConsoleColor.Green;
+            ConsoleColor_[11] = ConsoleColor.Yellow;
+            ConsoleColor_[12] = ConsoleColor.Blue;
+            ConsoleColor_[13] = ConsoleColor.Magenta;
+            ConsoleColor_[14] = ConsoleColor.Cyan;
+            ConsoleColor_[15] = ConsoleColor.White;
+            DefaultBack = ConsoleColor_[DefBack];
+            DefaultFore = ConsoleColor_[DefFore];
         }
 
         protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore)
         {
+            Monitor.Enter(GraphMutex);
             if ((Y == (WinH - 1)) && (X == (WinW - 1)))
             {
+                Monitor.Exit(GraphMutex);
                 return;
             }
             try
@@ -46,6 +65,7 @@ namespace TextPaint
             }
             catch
             {
+                Monitor.Exit(GraphMutex);
                 return;
             }
             if (LastColorBack != ConsoleColor_[ColorBack])
@@ -58,7 +78,12 @@ namespace TextPaint
                 LastColorFore = ConsoleColor_[ColorFore];
                 Console.ForegroundColor = ConsoleColor_[ColorFore];
             }
-
+            if (UseMemo != 0)
+            {
+                ScrChrC[X, Y] = C;
+                ScrChrB[X, Y] = ColorBack;
+                ScrChrF[X, Y] = ColorFore;
+            }
             if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
             {
                 Console.Write(char.ConvertFromUtf32(C));
@@ -67,6 +92,7 @@ namespace TextPaint
             {
                 Console.Write(" ");
             }
+            Monitor.Exit(GraphMutex);
         }
 
 
@@ -88,6 +114,29 @@ namespace TextPaint
 
         public override void Move(int SrcX, int SrcY, int DstX, int DstY, int W, int H)
         {
+            while ((SrcX < 0) || (DstX < 0))
+            {
+                SrcX++;
+                DstX++;
+                W--;
+            }
+            while ((SrcY < 0) || (DstY < 0))
+            {
+                SrcY++;
+                DstY++;
+                H--;
+            }
+            while (((SrcX + W) > WinW) || ((DstX + W) > WinW))
+            {
+                W--;
+            }
+            while (((SrcY + H) > WinH) || ((DstY + H) > WinH))
+            {
+                H--;
+            }
+
+
+            Monitor.Enter(GraphMutex);
             if (UseMemo != 2)
             {
                 try
@@ -163,13 +212,15 @@ namespace TextPaint
                     }
                 }
             }
+            Monitor.Exit(GraphMutex);
         }
 
-        ConsoleColor ToolBack = ConsoleColor.White;
-        ConsoleColor ToolFore = ConsoleColor.Black;
-        
+        //ConsoleColor ToolBack = ConsoleColor.White;
+        //ConsoleColor ToolFore = ConsoleColor.Black;
+
         public override bool WindowResize()
         {
+            Monitor.Enter(GraphMutex);
             if ((WinW != Console.WindowWidth) || (WinH != Console.WindowHeight))
             {
                 WinW = Console.WindowWidth;
@@ -177,7 +228,7 @@ namespace TextPaint
                 
                 MemoPrepare();
 
-                if ((Console.BufferHeight > WinW) || (Console.BufferHeight > WinH))
+                /*if ((Console.BufferHeight > WinW) || (Console.BufferHeight > WinH))
                 {
                     Console.BackgroundColor = ConsoleColor.Black;
                     Console.ForegroundColor = ConsoleColor.Black;
@@ -192,12 +243,19 @@ namespace TextPaint
                     Console.BackgroundColor = ToolBack;
                     Console.ForegroundColor = ToolFore;
                     Console.Clear();
-                }
+                }*/
+                Console.BackgroundColor = DefaultBack;
+                Console.ForegroundColor = DefaultFore;
+                LastColorBack = DefaultBack;
+                LastColorFore = DefaultFore;
+                Console.Clear();
 
+                Monitor.Exit(GraphMutex);
                 return true;
             }
             else
             {
+                Monitor.Exit(GraphMutex);
                 return false;
             }
         }
@@ -206,11 +264,11 @@ namespace TextPaint
         {
             if (ConIEnc != "")
             {
-                Console.InputEncoding = Core_.StrToEnc(ConIEnc);
+                Console.InputEncoding = TextWork.EncodingFromName(ConIEnc);
             }
             if (ConOEnc != "")
             {
-                Console.OutputEncoding = Core_.StrToEnc(ConOEnc);
+                Console.OutputEncoding = TextWork.EncodingFromName(ConOEnc);
             }
 
             WinW = -1;
@@ -222,21 +280,24 @@ namespace TextPaint
             while (AppWorking)
             {
                 ConsoleKeyInfo CKI = Console.ReadKey(true);
-                Core_.CoreEvent(CKI.Key.ToString(), CKI.KeyChar);
+                Core_.CoreEvent(UniKeyName(CKI.Key.ToString()), CKI.KeyChar, CKI.Modifiers.HasFlag(ConsoleModifiers.Shift), CKI.Modifiers.HasFlag(ConsoleModifiers.Control), CKI.Modifiers.HasFlag(ConsoleModifiers.Alt));
             }
+            Console.BackgroundColor = DefaultBack;
+            Console.ForegroundColor = DefaultFore;
+            LastColorBack = DefaultBack;
+            LastColorFore = DefaultFore;
             Console.Clear();
+        }
+
+        public override void SetCursorPositionNoRefresh(int X, int Y)
+        {
+            SetCursorPosition(X, Y);
         }
 
         public override void SetCursorPosition(int X, int Y)
         {
-            if (X < 0)
-            {
-                X = 0;
-            }
-            if (Y < 0)
-            {
-                Y = 0;
-            }
+            Monitor.Enter(GraphMutex);
+
             if (X >= WinW)
             {
                 X = WinW - 1;
@@ -245,7 +306,18 @@ namespace TextPaint
             {
                 Y = WinH - 1;
             }
+            if (X < 0)
+            {
+                X = 0;
+            }
+            if (Y < 0)
+            {
+                Y = 0;
+            }
+            CursorX = X;
+            CursorY = Y;
             Console.SetCursorPosition(X, Y);
+            Monitor.Exit(GraphMutex);
         }
     }
 }

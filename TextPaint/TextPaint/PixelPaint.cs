@@ -6,6 +6,9 @@ namespace TextPaint
 {
     public class PixelPaint
     {
+        public int AnsiColor = 0;
+
+
         public int CharX = 0;
         public int CharY = 0;
         public int CharW = 1;
@@ -328,7 +331,7 @@ namespace TextPaint
             string ModeName = PaintMode_[PaintModeN].Name;
             if (IsCharPaint())
             {
-                ModeName = TextWork.CharCode(PaintMode_[0].IntToChar[0], false) + "/" + TextWork.CharCode(PaintMode_[0].IntToChar[1], false);
+                ModeName = TextWork.CharCode(PaintMode_[0].IntToChar[0], 1) + "/" + TextWork.CharCode(PaintMode_[0].IntToChar[1], 1);
             }
             Sb.Append(DefaultColor ? "Pxl-F" : "Pxl-B");
             if (PaintPencil)
@@ -385,6 +388,16 @@ namespace TextPaint
         public int PxlNum = 0;
         public int PxlBit = 0;
 
+        public int GetPxlCo0(int X, int Y)
+        {
+            int PxlC = GetPxlCo(X, Y);
+            if (PxlC < 0)
+            {
+                return 0;
+            }
+            return PxlC;
+        }
+
         public int GetPixel0(int X, int Y)
         {
             int PxlC = GetPixel(X, Y);
@@ -393,6 +406,11 @@ namespace TextPaint
                 return 0;
             }
             return PxlC;
+        }
+
+        public int GetPxlCo(int X, int Y)
+        {
+            return C.ColoGet(X / CharW, Y / CharH, true);
         }
 
         public int GetPixel(int X, int Y)
@@ -437,10 +455,20 @@ namespace TextPaint
             {
                 PxlNum = PxlNum | PxlBit;
             }
-            C.CharPut(X / CharW, Y / CharH, PaintMode_[PaintModeN].IntToChar[PxlNum]);
+            int NewChar = PaintMode_[PaintModeN].IntToChar[PxlNum];
+            int NewColo = AnsiColor;
+            if (!C.ToggleDrawText)
+            {
+                NewChar = C.CharGet(X / CharW, Y / CharH, true);
+            }
+            if (!C.ToggleDrawColo)
+            {
+                NewColo = C.ColoGet(X / CharW, Y / CharH, true);
+            }
+            C.CharPut(X / CharW, Y / CharH, NewChar, NewColo);
         }
 
-        public void SetPixel(int X, int Y, int PxlColor)
+        public void SetPixel(int X, int Y, int PxlColor, int AnsiC)
         {
             if ((X < 0) || (Y < 0))
             {
@@ -459,7 +487,17 @@ namespace TextPaint
             {
                 PxlNum = PxlNum & (0xFFFFFF - PxlBit);
             }
-            C.CharPut(X / CharW, Y / CharH, PaintMode_[PaintModeN].IntToChar[PxlNum]);
+            int NewChar = PaintMode_[PaintModeN].IntToChar[PxlNum];
+            int NewColo = AnsiC;
+            if (!C.ToggleDrawText)
+            {
+                NewChar = C.CharGet(X / CharW, Y / CharH, true);
+            }
+            if (!C.ToggleDrawColo)
+            {
+                NewColo = C.ColoGet(X / CharW, Y / CharH, true);
+            }
+            C.CharPut(X / CharW, Y / CharH, NewChar, NewColo);
         }
 
 
@@ -767,6 +805,10 @@ namespace TextPaint
             int Temp2;
             int Temp3;
             int Temp4;
+            int Temp1C;
+            int Temp2C;
+            int Temp3C;
+            int Temp4C;
             int W = (X1 - X0 + 1);
             if ((W & 1) != 0)
             {
@@ -798,8 +840,10 @@ namespace TextPaint
                             {
                                 Temp1 = C.CharGet(i_X, Y0 + i_Y, true);
                                 Temp2 = C.CharGet(i_X, Y1 - i_Y, true);
-                                C.CharPut(i_X, Y0 + i_Y, Temp2);
-                                C.CharPut(i_X, Y1 - i_Y, Temp1);
+                                Temp1C = C.ColoGet(i_X, Y0 + i_Y, true);
+                                Temp2C = C.ColoGet(i_X, Y1 - i_Y, true);
+                                C.CharPut(i_X, Y0 + i_Y, Temp2, Temp2C);
+                                C.CharPut(i_X, Y1 - i_Y, Temp1, Temp1C);
                             }
                         }
                     }
@@ -811,8 +855,10 @@ namespace TextPaint
                             {
                                 Temp1 = GetPixel0(i_X, Y0 + i_Y);
                                 Temp2 = GetPixel0(i_X, Y1 - i_Y);
-                                SetPixel(i_X, Y0 + i_Y, Temp2);
-                                SetPixel(i_X, Y1 - i_Y, Temp1);
+                                Temp1C = GetPxlCo0(i_X, Y0 + i_Y);
+                                Temp2C = GetPxlCo0(i_X, Y1 - i_Y);
+                                SetPixel(i_X, Y0 + i_Y, Temp2, Temp2C);
+                                SetPixel(i_X, Y1 - i_Y, Temp1, Temp1C);
                             }
                         }
                     }
@@ -826,8 +872,10 @@ namespace TextPaint
                             {
                                 Temp1 = C.CharGet(X0 + i_X, i_Y, true);
                                 Temp2 = C.CharGet(X1 - i_X, i_Y, true);
-                                C.CharPut(X0 + i_X, i_Y, Temp2);
-                                C.CharPut(X1 - i_X, i_Y, Temp1);
+                                Temp1C = C.ColoGet(X0 + i_X, i_Y, true);
+                                Temp2C = C.ColoGet(X1 - i_X, i_Y, true);
+                                C.CharPut(X0 + i_X, i_Y, Temp2, Temp2C);
+                                C.CharPut(X1 - i_X, i_Y, Temp1, Temp1C);
                             }
                         }
                     }
@@ -839,8 +887,10 @@ namespace TextPaint
                             {
                                 Temp1 = GetPixel0(X0 + i_X, i_Y);
                                 Temp2 = GetPixel0(X1 - i_X, i_Y);
-                                SetPixel(X0 + i_X, i_Y, Temp2);
-                                SetPixel(X1 - i_X, i_Y, Temp1);
+                                Temp1C = GetPxlCo0(X0 + i_X, i_Y);
+                                Temp2C = GetPxlCo0(X1 - i_X, i_Y);
+                                SetPixel(X0 + i_X, i_Y, Temp2, Temp2C);
+                                SetPixel(X1 - i_X, i_Y, Temp1, Temp1C);
                             }
                         }
                     }
@@ -858,10 +908,14 @@ namespace TextPaint
                                     Temp2 = C.CharGet(X1 - i_Y, Y0 + i_X, true);
                                     Temp3 = C.CharGet(X1 - i_X, Y1 - i_Y, true);
                                     Temp4 = C.CharGet(X0 + i_Y, Y1 - i_X, true);
-                                    C.CharPut(X0 + i_X, Y0 + i_Y, Temp2);
-                                    C.CharPut(X1 - i_Y, Y0 + i_X, Temp3);
-                                    C.CharPut(X1 - i_X, Y1 - i_Y, Temp4);
-                                    C.CharPut(X0 + i_Y, Y1 - i_X, Temp1);
+                                    Temp1C = C.ColoGet(X0 + i_X, Y0 + i_Y, true);
+                                    Temp2C = C.ColoGet(X1 - i_Y, Y0 + i_X, true);
+                                    Temp3C = C.ColoGet(X1 - i_X, Y1 - i_Y, true);
+                                    Temp4C = C.ColoGet(X0 + i_Y, Y1 - i_X, true);
+                                    C.CharPut(X0 + i_X, Y0 + i_Y, Temp2, Temp2C);
+                                    C.CharPut(X1 - i_Y, Y0 + i_X, Temp3, Temp3C);
+                                    C.CharPut(X1 - i_X, Y1 - i_Y, Temp4, Temp4C);
+                                    C.CharPut(X0 + i_Y, Y1 - i_X, Temp1, Temp1C);
                                 }
                             }
                         }
@@ -875,10 +929,14 @@ namespace TextPaint
                                     Temp2 = GetPixel0(X1 - i_Y, Y0 + i_X);
                                     Temp3 = GetPixel0(X1 - i_X, Y1 - i_Y);
                                     Temp4 = GetPixel0(X0 + i_Y, Y1 - i_X);
-                                    SetPixel(X0 + i_X, Y0 + i_Y, Temp2);
-                                    SetPixel(X1 - i_Y, Y0 + i_X, Temp3);
-                                    SetPixel(X1 - i_X, Y1 - i_Y, Temp4);
-                                    SetPixel(X0 + i_Y, Y1 - i_X, Temp1);
+                                    Temp1C = GetPxlCo0(X0 + i_X, Y0 + i_Y);
+                                    Temp2C = GetPxlCo0(X1 - i_Y, Y0 + i_X);
+                                    Temp3C = GetPxlCo0(X1 - i_X, Y1 - i_Y);
+                                    Temp4C = GetPxlCo0(X0 + i_Y, Y1 - i_X);
+                                    SetPixel(X0 + i_X, Y0 + i_Y, Temp2, Temp2C);
+                                    SetPixel(X1 - i_Y, Y0 + i_X, Temp3, Temp3C);
+                                    SetPixel(X1 - i_X, Y1 - i_Y, Temp4, Temp4C);
+                                    SetPixel(X0 + i_Y, Y1 - i_X, Temp1, Temp1C);
                                 }
                             }
                         }
@@ -897,10 +955,14 @@ namespace TextPaint
                                     Temp2 = C.CharGet(X1 - i_Y, Y0 + i_X, true);
                                     Temp3 = C.CharGet(X1 - i_X, Y1 - i_Y, true);
                                     Temp4 = C.CharGet(X0 + i_Y, Y1 - i_X, true);
-                                    C.CharPut(X0 + i_X, Y0 + i_Y, Temp4);
-                                    C.CharPut(X1 - i_Y, Y0 + i_X, Temp1);
-                                    C.CharPut(X1 - i_X, Y1 - i_Y, Temp2);
-                                    C.CharPut(X0 + i_Y, Y1 - i_X, Temp3);
+                                    Temp1C = C.ColoGet(X0 + i_X, Y0 + i_Y, true);
+                                    Temp2C = C.ColoGet(X1 - i_Y, Y0 + i_X, true);
+                                    Temp3C = C.ColoGet(X1 - i_X, Y1 - i_Y, true);
+                                    Temp4C = C.ColoGet(X0 + i_Y, Y1 - i_X, true);
+                                    C.CharPut(X0 + i_X, Y0 + i_Y, Temp4, Temp4C);
+                                    C.CharPut(X1 - i_Y, Y0 + i_X, Temp1, Temp1C);
+                                    C.CharPut(X1 - i_X, Y1 - i_Y, Temp2, Temp2C);
+                                    C.CharPut(X0 + i_Y, Y1 - i_X, Temp3, Temp3C);
                                 }
                             }
                         }
@@ -914,10 +976,14 @@ namespace TextPaint
                                     Temp2 = GetPixel0(X1 - i_Y, Y0 + i_X);
                                     Temp3 = GetPixel0(X1 - i_X, Y1 - i_Y);
                                     Temp4 = GetPixel0(X0 + i_Y, Y1 - i_X);
-                                    SetPixel(X0 + i_X, Y0 + i_Y, Temp4);
-                                    SetPixel(X1 - i_Y, Y0 + i_X, Temp1);
-                                    SetPixel(X1 - i_X, Y1 - i_Y, Temp2);
-                                    SetPixel(X0 + i_Y, Y1 - i_X, Temp3);
+                                    Temp1C = GetPxlCo0(X0 + i_X, Y0 + i_Y);
+                                    Temp2C = GetPxlCo0(X1 - i_Y, Y0 + i_X);
+                                    Temp3C = GetPxlCo0(X1 - i_X, Y1 - i_Y);
+                                    Temp4C = GetPxlCo0(X0 + i_Y, Y1 - i_X);
+                                    SetPixel(X0 + i_X, Y0 + i_Y, Temp4, Temp4C);
+                                    SetPixel(X1 - i_Y, Y0 + i_X, Temp1, Temp1C);
+                                    SetPixel(X1 - i_X, Y1 - i_Y, Temp2, Temp2C);
+                                    SetPixel(X0 + i_Y, Y1 - i_X, Temp3, Temp3C);
                                 }
                             }
                         }
@@ -940,28 +1006,31 @@ namespace TextPaint
                 return;
             }
             int[] PixelEdge = null;
+            int[] PixelEdg_ = null;
             switch (Direction)
             {
                 case 0: // Up
                     PixelEdge = new int[X1 - X0 + 1];
+                    PixelEdg_ = new int[X1 - X0 + 1];
                     if (IsCharPaint())
                     {
                         for (int i = X0; i <= X1; i++)
                         {
                             PixelEdge[i - X0] = C.CharGet(i, Y0, true);
+                            PixelEdg_[i - X0] = C.ColoGet(i, Y0, true);
                         }
                         for (int ii = Y0; ii < Y1; ii++)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                C.CharPut(i, ii, C.CharGet(i, ii + 1, true));
+                                C.CharPut(i, ii, C.CharGet(i, ii + 1, true), C.ColoGet(i, ii + 1, true));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                C.CharPut(i, Y1, PixelEdge[i - X0]);
+                                C.CharPut(i, Y1, PixelEdge[i - X0], PixelEdg_[i - X0]);
                             }
                         }
                     }
@@ -970,19 +1039,20 @@ namespace TextPaint
                         for (int i = X0; i <= X1; i++)
                         {
                             PixelEdge[i - X0] = GetPixel0(i, Y0);
+                            PixelEdg_[i - X0] = GetPxlCo0(i, Y0);
                         }
                         for (int ii = Y0; ii < Y1; ii++)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                SetPixel(i, ii, GetPixel0(i, ii + 1));
+                                SetPixel(i, ii, GetPixel0(i, ii + 1), GetPxlCo0(i, ii + 1));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                SetPixel(i, Y1, PixelEdge[i - X0]);
+                                SetPixel(i, Y1, PixelEdge[i - X0], PixelEdg_[i - X0]);
                             }
                         }
                     }
@@ -990,37 +1060,39 @@ namespace TextPaint
                     {
                         for (int i = X0; i <= X1; i++)
                         {
-                            SetPixel(i, Y1, 0);
+                            SetPixel(i, Y1, 0, AnsiColor);
                         }
                     }
                     if (PaintMoveRoll == 3)
                     {
                         for (int i = X0; i <= X1; i++)
                         {
-                            SetPixel(i, Y1, 1);
+                            SetPixel(i, Y1, 1, AnsiColor);
                         }
                     }
                     break;
                 case 1: // Down
                     PixelEdge = new int[X1 - X0 + 1];
+                    PixelEdg_ = new int[X1 - X0 + 1];
                     if (IsCharPaint())
                     {
                         for (int i = X0; i <= X1; i++)
                         {
                             PixelEdge[i - X0] = C.CharGet(i, Y1, true);
+                            PixelEdg_[i - X0] = C.ColoGet(i, Y1, true);
                         }
                         for (int ii = Y1; ii > Y0; ii--)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                C.CharPut(i, ii, C.CharGet(i, ii - 1, true));
+                                C.CharPut(i, ii, C.CharGet(i, ii - 1, true), C.ColoGet(i, ii - 1, true));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                C.CharPut(i, Y0, PixelEdge[i - X0]);
+                                C.CharPut(i, Y0, PixelEdge[i - X0], PixelEdg_[i - X0]);
                             }
                         }
                     }
@@ -1029,19 +1101,20 @@ namespace TextPaint
                         for (int i = X0; i <= X1; i++)
                         {
                             PixelEdge[i - X0] = GetPixel0(i, Y1);
+                            PixelEdg_[i - X0] = GetPxlCo0(i, Y1);
                         }
                         for (int ii = Y1; ii > Y0; ii--)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                SetPixel(i, ii, GetPixel0(i, ii - 1));
+                                SetPixel(i, ii, GetPixel0(i, ii - 1), GetPxlCo0(i, ii - 1));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = X0; i <= X1; i++)
                             {
-                                SetPixel(i, Y0, PixelEdge[i - X0]);
+                                SetPixel(i, Y0, PixelEdge[i - X0], PixelEdg_[i - X0]);
                             }
                         }
                     }
@@ -1049,37 +1122,39 @@ namespace TextPaint
                     {
                         for (int i = X0; i <= X1; i++)
                         {
-                            SetPixel(i, Y0, 0);
+                            SetPixel(i, Y0, 0, AnsiColor);
                         }
                     }
                     if (PaintMoveRoll == 3)
                     {
                         for (int i = X0; i <= X1; i++)
                         {
-                            SetPixel(i, Y0, 1);
+                            SetPixel(i, Y0, 1, AnsiColor);
                         }
                     }
                     break;
                 case 2: // Left
                     PixelEdge = new int[Y1 - Y0 + 1];
+                    PixelEdg_ = new int[Y1 - Y0 + 1];
                     if (IsCharPaint())
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
                             PixelEdge[i - Y0] = C.CharGet(X0, i, true);
+                            PixelEdg_[i - Y0] = C.ColoGet(X0, i, true);
                         }
                         for (int ii = X0; ii < X1; ii++)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                C.CharPut(ii, i, C.CharGet(ii + 1, i, true));
+                                C.CharPut(ii, i, C.CharGet(ii + 1, i, true), C.ColoGet(ii + 1, i, true));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                C.CharPut(X1, i, PixelEdge[i - Y0]);
+                                C.CharPut(X1, i, PixelEdge[i - Y0], PixelEdg_[i - Y0]);
                             }
                         }
                     }
@@ -1088,19 +1163,20 @@ namespace TextPaint
                         for (int i = Y0; i <= Y1; i++)
                         {
                             PixelEdge[i - Y0] = GetPixel0(X0, i);
+                            PixelEdg_[i - Y0] = GetPxlCo0(X0, i);
                         }
                         for (int ii = X0; ii < X1; ii++)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                SetPixel(ii, i, GetPixel0(ii + 1, i));
+                                SetPixel(ii, i, GetPixel0(ii + 1, i), GetPxlCo0(ii + 1, i));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                SetPixel(X1, i, PixelEdge[i - Y0]);
+                                SetPixel(X1, i, PixelEdge[i - Y0], PixelEdg_[i - Y0]);
                             }
                         }
                     }
@@ -1108,37 +1184,39 @@ namespace TextPaint
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
-                            SetPixel(X1, i, 0);
+                            SetPixel(X1, i, 0, AnsiColor);
                         }
                     }
                     if (PaintMoveRoll == 3)
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
-                            SetPixel(X1, i, 1);
+                            SetPixel(X1, i, 1, AnsiColor);
                         }
                     }
                     break;
                 case 3: // Right
                     PixelEdge = new int[Y1 - Y0 + 1];
+                    PixelEdg_ = new int[Y1 - Y0 + 1];
                     if (IsCharPaint())
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
                             PixelEdge[i - Y0] = C.CharGet(X1, i, true);
+                            PixelEdg_[i - Y0] = C.ColoGet(X1, i, true);
                         }
                         for (int ii = X1; ii > X0; ii--)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                C.CharPut(ii, i, C.CharGet(ii - 1, i, true));
+                                C.CharPut(ii, i, C.CharGet(ii - 1, i, true), C.ColoGet(ii - 1, i, true));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                C.CharPut(X0, i, PixelEdge[i - Y0]);
+                                C.CharPut(X0, i, PixelEdge[i - Y0], PixelEdg_[i - Y0]);
                             }
                         }
                     }
@@ -1147,19 +1225,20 @@ namespace TextPaint
                         for (int i = Y0; i <= Y1; i++)
                         {
                             PixelEdge[i - Y0] = GetPixel0(X1, i);
+                            PixelEdg_[i - Y0] = GetPxlCo0(X1, i);
                         }
                         for (int ii = X1; ii > X0; ii--)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                SetPixel(ii, i, GetPixel0(ii - 1, i));
+                                SetPixel(ii, i, GetPixel0(ii - 1, i), GetPxlCo0(ii - 1, i));
                             }
                         }
                         if (PaintMoveRoll == 1)
                         {
                             for (int i = Y0; i <= Y1; i++)
                             {
-                                SetPixel(X0, i, PixelEdge[i - Y0]);
+                                SetPixel(X0, i, PixelEdge[i - Y0], PixelEdg_[i - Y0]);
                             }
                         }
                     }
@@ -1167,14 +1246,14 @@ namespace TextPaint
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
-                            SetPixel(X0, i, 0);
+                            SetPixel(X0, i, 0, AnsiColor);
                         }
                     }
                     if (PaintMoveRoll == 3)
                     {
                         for (int i = Y0; i <= Y1; i++)
                         {
-                            SetPixel(X0, i, 1);
+                            SetPixel(X0, i, 1, AnsiColor);
                         }
                     }
                     break;
@@ -1196,11 +1275,11 @@ namespace TextPaint
                 {
                     if (GetPixel(i_X, i_Y) == 1)
                     {
-                        SetPixel(i_X, i_Y, 0);
+                        SetPixel(i_X, i_Y, 0, AnsiColor);
                     }
                     else
                     {
-                        SetPixel(i_X, i_Y, 1);
+                        SetPixel(i_X, i_Y, 1, AnsiColor);
                     }
                 }
             }
@@ -1222,11 +1301,11 @@ namespace TextPaint
                 {
                     if (GetPixel(i_X, i_Y) == 1)
                     {
-                        Clipboard.TextClipboardSet(i_X - X0, i_Y - Y0, PaintMode_[0].IntToChar[1]);
+                        Clipboard.TextClipboardSet(i_X - X0, i_Y - Y0, PaintMode_[0].IntToChar[1], GetPxlCo(i_X, i_Y));
                     }
                     else
                     {
-                        Clipboard.TextClipboardSet(i_X - X0, i_Y - Y0, PaintMode_[0].IntToChar[0]);
+                        Clipboard.TextClipboardSet(i_X - X0, i_Y - Y0, PaintMode_[0].IntToChar[0], GetPxlCo(i_X, i_Y));
                     }
                 }
             }
@@ -1248,13 +1327,13 @@ namespace TextPaint
                 {
                     for (int i_X = X0; i_X <= X1; i_X++)
                     {
-                        if (Clipboard.TextClipboardGet(i_X - X0, i_Y - Y0) == PaintMode_[0].IntToChar[1])
+                        if (Clipboard.TextClipboardGetT(i_X - X0, i_Y - Y0) == PaintMode_[0].IntToChar[1])
                         {
-                            SetPixel(i_X, i_Y, 1);
+                            SetPixel(i_X, i_Y, 1, Clipboard.TextClipboardGetC(i_X - X0, i_Y - Y0));
                         }
                         else
                         {
-                            SetPixel(i_X, i_Y, 0);
+                            SetPixel(i_X, i_Y, 0, Clipboard.TextClipboardGetC(i_X - X0, i_Y - Y0));
                         }
                     }
                 }

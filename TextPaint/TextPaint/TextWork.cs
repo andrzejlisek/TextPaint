@@ -11,6 +11,57 @@ namespace TextPaint
         {
         }
 
+        public static bool EncodingCheckName(Encoding E0, string Name)
+        {
+            try
+            {
+                Encoding E = Encoding.GetEncoding(Name);
+                if (E0.Equals(E))
+                {
+                    return true;
+                }
+                else
+                {
+                    return false;
+                }
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public static Encoding EncodingFromName(string Name)
+        {
+            if (Name == "")
+            {
+                return Encoding.Default;
+            }
+            bool DigitOnly = true;
+            for (int i = 0; i < Name.Length; i++)
+            {
+                if ((Name[i] < '0') || (Name[i] > '9'))
+                {
+                    DigitOnly = false;
+                }
+            }
+            try
+            {
+                if (DigitOnly)
+                {
+                    return Encoding.GetEncoding(int.Parse(Name));
+                }
+                else
+                {
+                    return Encoding.GetEncoding(Name);
+                }
+            }
+            catch
+            {
+                return Encoding.Default;
+            }
+        }
+
         public static List<int> SpaceChars = null;
 
         public static int SpaceChar0 = 32;
@@ -25,31 +76,46 @@ namespace TextPaint
             return int.Parse(C, NumberStyles.HexNumber);
         }
 
-        public static string CharCode(int C, bool Force5)
+        public static string CharCode(int C, int Mode)
         {
             if ((C < 0) || (C > 0x10FFFF))
             {
-                if (Force5)
+                switch (Mode)
                 {
-                    return " ????";
-                }
-                else
-                {
-                    return "????";
+                    case 0:
+                        return "??";
+                    case 1:
+                        return "????";
+                    case 2:
+                        return " ????";
                 }
             }
-            string CharCodeX = C.ToString("X").PadLeft(4, '0');
+            string CharCodeX = C.ToString("X");
             if (C >= 0x100000)
             {
-                CharCodeX = "G" + CharCodeX.Substring(2);
+                CharCodeX = "G" + CharCodeX.PadLeft(4, '0').Substring(2);
             }
-            if (Force5)
+            if (Mode == 2)
             {
                 return CharCodeX.PadLeft(5, ' ');
             }
             else
             {
-                return CharCodeX;
+                if (Mode == 1)
+                {
+                    return CharCodeX.PadLeft(4, '0');
+                }
+                else
+                {
+                    if (CharCodeX.Length <= 2)
+                    {
+                        return CharCodeX.PadLeft(2, '0');
+                    }
+                    else
+                    {
+                        return CharCodeX.PadLeft(4, '0');
+                    }
+                }
             }
         }
 
@@ -92,6 +158,13 @@ namespace TextPaint
                 }
             }
             return L;
+        }
+
+        public static string IntToStr(int I)
+        {
+            List<int> L = new List<int>();
+            L.Add(I);
+            return IntToStr(L);
         }
 
         public static string IntToStr(List<int> L)
@@ -142,6 +215,26 @@ namespace TextPaint
             return L;
         }
 
+        public static int TrimEndLenCol(List<int> Text)
+        {
+            int I = Text.Count;
+            bool Work = (I > 0);
+            if (Work)
+            {
+                Work = (Text[I - 1] == 0);
+            }
+            while (Work)
+            {
+                I--;
+                Work = (I > 0);
+                if (Work)
+                {
+                    Work = (Text[I - 1] == 0);
+                }
+            }
+            return I;
+        }
+
         public static int TrimEndLength(List<int> Text)
         {
             int I = Text.Count;
@@ -178,6 +271,26 @@ namespace TextPaint
             return true;
         }
 
+        public static List<int> TrimEnC(List<int> Text)
+        {
+            List<int> L = Copy(Text);
+            bool Work = (L.Count > 0);
+            if (Work)
+            {
+                Work = (L[L.Count - 1] == 0);
+            }
+            while (Work)
+            {
+                L.RemoveAt(L.Count - 1);
+                Work = (L.Count > 0);
+                if (Work)
+                {
+                    Work = (L[L.Count - 1] == 0);
+                }
+            }
+            return L;
+        }
+
         public static List<int> TrimEnd(List<int> Text)
         {
             List<int> L = Copy(Text);
@@ -194,6 +307,17 @@ namespace TextPaint
                 {
                     Work = SpaceChars.Contains(L[L.Count - 1]);
                 }
+            }
+            return L;
+        }
+
+        public static List<int> BlkCol(int I)
+        {
+            List<int> L = new List<int>();
+            while (I > 0)
+            {
+                L.Add(0);
+                I--;
             }
             return L;
         }

@@ -16,6 +16,7 @@ namespace TextPaint
 {
     class Program
     {
+        [STAThread]
         public static void Main(string[] args)
         {
             Core Core_ = new Core();
@@ -25,7 +26,7 @@ namespace TextPaint
             }
             else
             {
-                Core_.Init(Core.AppDir() + "Config.txt", args);
+                Core_.Init("", args);
             }
         }
     }

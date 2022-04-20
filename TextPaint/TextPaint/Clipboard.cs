@@ -16,56 +16,79 @@ namespace TextPaint
     /// </summary>
     public class Clipboard
     {
-        static List<List<int>> TextClipboard = new List<List<int>>();
+        static List<List<int>> TextClipboardT = new List<List<int>>();
+        static List<List<int>> TextClipboardC = new List<List<int>>();
 
         public static void TextClipboardClear()
         {
-            TextClipboard.Clear();
+            TextClipboardT.Clear();
+            TextClipboardC.Clear();
         }
 
-        public static int TextClipboardGet(int X, int Y)
+        public static int TextClipboardGetT(int X, int Y)
         {
-            if (TextClipboard.Count > Y)
+            if (TextClipboardT.Count > Y)
             {
-                if (TextClipboard[Y].Count > X)
+                if (TextClipboardT[Y].Count > X)
                 {
-                    return TextClipboard[Y][X];
+                    return TextClipboardT[Y][X];
                 }
             }
             return TextWork.SpaceChar0;
         }
 
-        public static void TextClipboardSet(int X, int Y, int C)
+        public static int TextClipboardGetC(int X, int Y)
         {
-            while (TextClipboard.Count <= Y)
+            if (TextClipboardC.Count > Y)
             {
-                TextClipboard.Add(new List<int>());
+                if (TextClipboardC[Y].Count > X)
+                {
+                    return TextClipboardC[Y][X];
+                }
             }
-            while (TextClipboard[Y].Count <= X)
-            {
-                TextClipboard[Y].Add(TextWork.SpaceChar0);
-            }
-            TextClipboard[Y][X] = C;
+            return 0;
         }
+
+
+        public static void TextClipboardSet(int X, int Y, int T, int C)
+        {
+            while (TextClipboardT.Count <= Y)
+            {
+                TextClipboardT.Add(new List<int>());
+                TextClipboardC.Add(new List<int>());
+            }
+            while (TextClipboardT[Y].Count <= X)
+            {
+                TextClipboardT[Y].Add(TextWork.SpaceChar0);
+                TextClipboardC[Y].Add(0);
+            }
+            TextClipboardT[Y][X] = T;
+            TextClipboardC[Y][X] = C;
+        }
+
+        private static string LastSysText = "";
 
         public static bool SysClipboardGet()
         {
             if (System.Windows.Forms.Clipboard.ContainsText())
             {
-                TextClipboard.Clear();
-                if (System.Windows.Forms.Clipboard.ContainsText())
+                string Txt_ = System.Windows.Forms.Clipboard.GetText();
+                if (Txt_ != LastSysText)
                 {
-                    string Txt_ = System.Windows.Forms.Clipboard.GetText();
                     string[] Txt = Txt_.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                    TextClipboardT.Clear();
+                    TextClipboardC.Clear();
                     for (int i = 0; i < Txt.Length; i++)
                     {
-                        TextClipboard.Add(TextWork.StrToInt(Txt[i]));
+                        TextClipboardT.Add(TextWork.StrToInt(Txt[i]));
+                        TextClipboardC.Add(TextWork.BlkCol(TextClipboardT[i].Count));
                     }
                 }
                 return true;
             }
             else
             {
+                LastSysText = "";
                 return false;
             }
         }
@@ -73,11 +96,12 @@ namespace TextPaint
         public static void SysClipboardSet()
         {
             System.Text.StringBuilder Txt = new System.Text.StringBuilder();
-            for (int i = 0; i < TextClipboard.Count; i++)
+            for (int i = 0; i < TextClipboardT.Count; i++)
             {
-                Txt.AppendLine(TextWork.IntToStr(TextClipboard[i]));
+                Txt.AppendLine(TextWork.IntToStr(TextClipboardT[i]));
             }
             System.Windows.Forms.Clipboard.SetText(Txt.ToString());
+            LastSysText = System.Windows.Forms.Clipboard.GetText();
         }
 
 
@@ -88,14 +112,19 @@ namespace TextPaint
             Core_ = Core__;
         }
 
-        public void CharPut(int X, int Y, int C)
+        public void CharPut(int X, int Y, int Ch, int Col)
         {
-            Core_.CharPut(Core_.CursorX + X, Core_.CursorY + Y, C);
+            Core_.CharPut(Core_.CursorX + X, Core_.CursorY + Y, Ch, Col);
         }
 
         public int CharGet(int X, int Y)
         {
             return Core_.CharGet(Core_.CursorX + X, Core_.CursorY + Y, true);
+        }
+
+        public int ColoGet(int X, int Y)
+        {
+            return Core_.ColoGet(Core_.CursorX + X, Core_.CursorY + Y, true);
         }
 
 
@@ -104,7 +133,7 @@ namespace TextPaint
         public int DiamondType = 0;
 
 
-        public void TextClipboardPutChar(int X, int Y, int W, int H, int XX, int YY, int C)
+        public void TextClipboardPutChar(int X, int Y, int W, int H, int XX, int YY, int Ch, int Col)
         {
             if (DiamondType > 0)
             {
@@ -168,7 +197,7 @@ namespace TextPaint
                     return;
                 }
             }
-            CharPut(XX, YY, C);
+            CharPut(XX, YY, Ch, Col);
         }
         
         public void TextClipboardWork(int X, int Y, int W, int H, bool Paste)
@@ -236,7 +265,7 @@ namespace TextPaint
                     {
                         for (int XX = X1; XX <= X2; XX++)
                         {
-                            TextClipboardPutChar(X, Y, W, H, XX, YY, TextClipboardGet(XX - X1, YY - Y1));
+                            TextClipboardPutChar(X, Y, W, H, XX, YY, TextClipboardGetT(XX - X1, YY - Y1), TextClipboardGetC(XX - X1, YY - Y1));
                         }
                     }
                 }
@@ -248,7 +277,7 @@ namespace TextPaint
                 {
                     for (int XX = X1; XX <= X2; XX++)
                     {
-                        TextClipboardSet(XX - X1, YY - Y1, CharGet(XX, YY));
+                        TextClipboardSet(XX - X1, YY - Y1, CharGet(XX, YY), ColoGet(XX, YY));
                     }
                 }
                 SysClipboardSet();

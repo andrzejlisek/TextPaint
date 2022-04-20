@@ -1,14 +1,28 @@
-# Overwiev
+# Overview
 
 **TextPaint** is not designed to use as plain text editor, there is designed to create or modify text as a simple graphic or scheme using ANSI or Unicode characters\. You can create texts such as organizational charts, simple circuit schemes, algorithm flow, tables, to use it where destination medium supports text printed using fixed\-width font\.
+
+The text can be both monochrome saved as plain text or color saved as text with ANSI escape commands\. You can view or edit many existing ASCII\-art or ANSI\-art files\.
 
 This application works in system console, but it can also work as graphical window, which simulates the console\. You can resize the console or window, but application will be repainted after pressing any key\. Application will not be repainted after resizing while the character selector is shown, but the application will be repainted after closing the character table and pressing any key\.
 
 **TextPaint** also provides simple cipher, which user Vigenere algorithm\. You can encipher some text fragments using password\.
 
+## Other functions
+
+**TextPaint** has other function than text editor, called as work modes\. Other work modes uses the same ANSI interpreter and was implemented to test various cases\.
+
+There are available following work modes, choosen by **WorkMode** parameter:
+
+
+* **WorkMode=0** \- Text editor, the main purpose of **TestPaint**, which is described in **Readme\.md** file\.
+* **WorkMode=1** \- ANSI viewer with progressive printing and server\. This mode can be used to view animation created by progressive placing characters and is described in **Readme\_ANSI\.md** file\.
+* **WorkMode=2** \- Telnet client, which is parially compatible with VT100, ANSI and derivative terminal emulators\. Details about this mode are described in **Readme\_ANSI\.md** file\.
+* **WorkMode=3** \- Encoding display and keycode test\. The only purpose is displaying supported encoding list and code/name of every pressed key, which is needed to implement additional functions and test the **TextPaint** in various platforms\. This mode is described in **Readme\_keys\.md** file\.
+
 # Application running
 
-Input file name as command line parameter\. If you not give parameter, the **Config\.txt** file will be opened to allow editing the configuration file\.
+Input file name as command line parameter\. If you not give parameter or give blank file name, the **Config\.txt** file will be opened to allow editing the configuration file\.
 
 ```
 TextPaint.exe FileNameWithPath.txt
@@ -20,10 +34,16 @@ If you use **Mono** project \(required in Linux\), you can run application with 
 mono TextPaint.exe FileNameWithPath.txt
 ```
 
-You can also override configuration options, which can be used in **Config\.txt** file\. From second parameter, application accepts configuration parameters profided with **=** character\.\. For example, to force running in 40x15 window, run this command:
+You can also override configuration options, which can be used in **Config\.txt** file\. From second parameter, application accepts configuration parameters profided with **=** character\. For example, to force running in 40x15 window, run this command:
 
 ```
 TextPaint.exe FileNameWithPath.txt WinUse=2 WinW=40 WinH=15
+```
+
+In work mode 3, in place of file name, you have to provide server address with port\. if the port equals to 23, it can be ommited\.
+
+```
+TextPaint.exe 192.168.1.100:23 WorkMode=3
 ```
 
 All options are described in **Configuration file** chapter\.
@@ -40,7 +60,7 @@ All options are described in **Configuration file** chapter\.
 * **Info\.txt** \- Context information\.
 * **TextPaint\.exe** \- Application binary executable\.
 
-# Functionality and states
+# Functionality and interface
 
 TextPaint can work in one of the 4 states\. The default state is **state 1**\. In all states, you can use these keys:
 
@@ -87,9 +107,13 @@ To close information, press **Esc** or any **F** key \(**F1**\-**F12**\)\. The i
 At the bottom of console window, there is the status bar, with black text on white background\. The status bar in **state 1**, **state 2** and **state 3** has the following informations from left to right:
 
 
-1. Cursor position \(row and column\)\.
-2. Character code and glyph under the cursor\.
-3. State indicator:
+1. Cursor position \(row and column\)\. The character between numbers indicated current text area:
+   * **Colon** \- Cursor inside text line\.
+   * **Semicolon** \- Cursor beyond end of text line, but not below the last line\.
+   * **Comma** \- Cursor below the last line of text\.
+2. Character number and glyph under the cursor\.
+3. Number of background and foreground color under the cursor, the hyphen indicates, that color is not defined \(used default\)\.
+4. State indicator:
    * **Text** \- Write text \(**state 1**\), followed by direction indicator:
      * **R** \- **Right** \- From left to right\.
      * **RD** \- **Right/Down** \- From up\-left to down\-right\.
@@ -102,18 +126,22 @@ At the bottom of console window, there is the status bar, with black text on whi
    * **Char** \- Write character \(**state 2**\), followed by direction indicator the same as in the **state 1**\.
    * **Rect** \- Character drawing \(**state 3**\), rectangle shape\.
    * **Dia** \- Character drawing \(**state 3**\), diamond shape\.
-4. Elements in **state 3** only:
+5. Elements in **state 3** only:
    1. Shape size\.
    2. Character set used to draw figure in **state 3**:
       * Single character: Character code and glyph\.
       * Character set: Name defined in **Config\.txt** file\.
-5. Insert/delete mode:
+6. Insert/delete mode:
    1. **H\-block** \- Insert or delete text inside one line, at right from the cursor \- moves text horizontally\.
    2. **V\-block** \- Insert or delete text inside one column, below the cursor \- moves text vertically\.
    3. **H\-line** \- Insert or delete columns \- moves text horizontally\.
    4. **V\-line** \- Insert or delete rows \- moves text vertically\.
 
 The status bar in **state 4** has different layout, which is described in subchapter about **state 4**\.
+
+# Character and color selector
+
+**TextPaint** has two similar selectors\. In order to enter into selector, press **F9** key and switch between selectors by pressing **F3** key\.
 
 ## Character selector
 
@@ -134,18 +162,53 @@ You can use the following keys while the character table is shown:
 * **Page up**, **Page down** \- Flip one page up or down \(go ahead 256 characters\)\.
 * **Home**, **End** \- Flip 16 pages up or down \(go ahead 4096 characters\)\.
 * **F1**, **F2** \- Switch the plane \(go ahead 65536 characters\)\.
+* **F3** \- Switch to **color selector**\.
 * **Insert** \- Switch between ordinary and favorite state:
   * **Ordinary**: If the pinted character exists in favorite set, there will be pointed\.
   * **Favorite**: There will be pointed the same character, which is pointed in favorite state\.
+* **Delete** \- Go to character being under the cursor\.
 * **Backspace**:
   * **Ordinary**: Select character for save as favorite\.
   * **Favorite**: Select character or put character on pointed place\.
-* **Tab** \- Move character selector window from corner to corner\. You can use this if the window covers some text or window is bigger than console capacity\.
+* **Tab** \- Move character selector window from corner to corner\. You can use this if the window covers some text or window is bigger than screen\.
 * **Esc** \- Close without changing selected character\.
 * **Enter** \- Change selected character and close\.
 * **Any alphanumeric key**:
   * **Ordinary**: Save pointed character as favorite under pressed key\.
   * **Favorite**: Go to place assigned with pressed key\.
+
+## Color selector
+
+You can turn character selector into color selector or turn color selector into character chelector by pressing **F3**\. In color selector, you can select the color and input text mode\. The text and colors are treated as two independed layers, which can be modifed simultaneously or separately\.
+
+While the color selector is showm, you can use the following keys:
+
+
+* **Up arrow**, **Down arrow** \- Select background color\.
+* **Left arrow**, **Right arrow** \- Select foreground color\.
+* **Page up**, **Page down** \- Number of columns for ANSI file load\. Use if file is loaded incorrectly, applicable when **ANSIRead=1**\. Value 0 means unlimited\.
+* **Home**, **End** \- Number of rows for ANSI file load\. Use if file is loaded incorrectly, applicable when **ANSIRead=1**\. Value 0 means unlimited\.
+* **F3** \- Switch to **character selector**\.
+* **Insert** \- Switch between edit mode within three states:
+  * **Text and color** \- Edit text and color simultaneously\.
+  * **Text without color** \- Edit text only without color changing\.
+  * **Color without text** \- Edit color only without text changing\.
+* **Delete** \- Go to color being under the cursor\.
+* **Tab** \- Move color selector window from corner to corner\. You can use this if the window covers some text or window is bigger than screen\.
+* **Esc** \- Close without changing selected color\.
+* **Enter** \- Change selected color and close\.
+
+You can change text without changing colors or colors without changing the text\. In order to do, switch to appropriate mode using **Insert** key\. The text and colors are independed layes\.
+
+## ANSI file loading
+
+Many ANSI files are prepared for specified number of columns, in most cases for 80 columns and unlimited number of rows\. If you set other number of columns or use unlimited number of columns \(**ANSIWidth=0**\), the file may be loaded incorrectly\. To correct this, enter into color selector, change number of columns or rows using **Page up**, **Page down**, **Home** or **End** keys and press **Enter** key\. Then, you have to reload file using **F8** keys\.
+
+Sometimes, the number of rows can also be specified for particular file and the file can be loaded incorrectly, when number of rows are unlimited\. The most popular numbers of rows in such case are **24** and **25**\.
+
+# Work states
+
+**TextPaint** in work mode 0 works in one of 4 states, which you can swich by pressing **F1**, **F2**, **F3**, or **F4** key\. In order to display help text about keys available in the current state, press the same function key again\. For example, in order to get help about state 2, press **F2** while applicationworks in state 2\.
 
 ## State 1 \- Write text
 
@@ -333,9 +396,14 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
   * **0** \- Use console\.
   * **1** \- Use window with standard image rendering control\.
   * **2** \- Use window with non\-standard image rendering control\. Use this setting only if interface picture is not displayed or crashed when you use **WinUse=1**\.
+* **WorkMode** \- Work mode of TextPaint:
+  * **0** \- Text editor \- the fundamental mode and purpose of **TextPaint**\.
+  * **1** \- ANSI viewer and file server \- described in **Readme\_ANSI\.md** file\.
+  * **2** \- Telnet client \- described in **Readme\_ANSI\.md** file\.
+  * **3** \- Encoding list and keycode test \- described in **Readme\_keys\.md** file\.
 * **Space** \- Characters \(hexadecimal numbers\), which will be treated as space\. The first character in the list is used as character being outside actual text\.
-* **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **utf\-8**\.
-* **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **utf\-8**\.
+* **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
+* **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
 * **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\.
   * The first item is the set name\.
   * The other items are the hexadecimal character codes, which are the frame elements\.
@@ -348,12 +416,25 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
   * 2 x 2 pixels per character \- 16 characters\.
   * 2 x 3 pixels per character \- 64 characters\.
 
+## Appearance settings
+
+The settings affect the appearance of interface:
+
+
+* **CursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **0** to not draw cursor character and may help in cursor visibility\.
+* **ColorNormal** \- Color of default background and foreground in all work modes\.
+* **ColorBeyondLine** \- Color of background indicating area beyond end of line, but not below the last line\.
+* **ColorBeyondEnd** \- Color of background indicatin area below the last line\.
+* **ColorCursor** \- Color of text cursor with guide lines in **WorkMode=0**\.
+* **ColorStatus** \- Color of status bar in **WorkMode=0** and **WorkMode=1**\.
+* **ColorPopup** \- Color of character selector and color selector in **WorkMode=0**, color of information window in **WorkMode=2**\.
+* **BeyondLineColumn** \- Number of columns, which will be displayed using **ColorNormal** instead of **ColorBeyondLine** regardless being beyond of the text line\. This setting may improve readibility of some ANSI files\. If you use negative value, there will be used the same value as **ANSIWidth**\.
+
 ## Console settings
 
 Settings related to console, affects when **WinUse=0** only\.
 
 
-* **ConCursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **0** to not draw cursor character and may help in cursor visibility\.
 * **ConInputEncoding** \- Set encoding name or codepage for writing characters\. Use it to solve problems in entering characters, especially diacritic characters using keyboard\. Affects only when you use **WinUse=0**\.
 * **ConOutputEncoding** \- Set encoding name or codepage for printing characters\. Use it to solve problems in displaying characters\. Affects only when you use **WinUse=0**\.
 * **ConUseMemo** \- Use additional text memory in console \(not affects when **WinUse** is set to **1** or **2**\)\. The application uses the console buffer move from the system API while scrolling the text\. You can set one of the following values:
@@ -374,6 +455,31 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 * **WinFontSize** \- Font size in window\. This setting not affects the cell size\.
 * **WinW** \- Number of columns\. To display whole status bar, it should be at least 40\.
 * **WinH** \- Number of rows\.
+* **WinColorBlending** \- Enables color blending for some block characters\. This parameter affects to this characters:
+  * **2591h**, **2592h**, **2593h**\.
+  * From **1FB8Ch** to **1FB94h**\.
+  * From **1FB9Ch** to **1FB9Fh**\.
+
+The **WinColorBlending** uses other character and mixed foreground color with background color as in bale below:
+
+| Original character | Replacement character | Remarks |
+| --- | --- | --- |
+| 2591h | 2588h | Changed foreground color, mixed 1:3 |
+| 2592h | 2588h | Changed foreground color |
+| 2593h | 2588h | Changed foreground color, mixed 3:1 |
+| 1FB8Ch | 258Ch | Changed foreground color |
+| 1FB8Dh | 2590h | Changed foreground color |
+| 1FB8Eh | 2580h | Changed foreground color |
+| 1FB8Fh | 2584h | Changed foreground color |
+| 1FB9Ch | 25E4h | Changed foreground color |
+| 1FB9Dh | 25E5h | Changed foreground color |
+| 1FB9Eh | 25E2h | Changed foreground color |
+| 1FB9Fh | 25E3h | Changed foreground color |
+| 1FB90h | 20h | Changed background color |
+| 1FB91h | 2580h | Changed background color |
+| 1FB92h | 2584h | Changed background color |
+| 1FB93h | 258Ch | Changed background color |
+| 1FB94h | 2590h | Changed background color |
 
 ## Cipher settings
 
@@ -390,9 +496,13 @@ Settings related to cipher are:
 * **CipherAlphabet** \- Full cipher alphabet provided as text\. It should be consists of standard characters\. Only characters existing in the alphabet can be ciphered and used i password\. The character order is important\.
 * **CipherPassword** \- Password used instead of manually input at every save or every load file\.
 
-## Console encoding
+## Other settings
 
-Console uses some endoding for input and output charaters\. You can input codepage or encoding name\. If value consists of digits only, it will be treated as codepage number, otherwise, it will be threated as encoding name\. If you not set or set incorrect name, the system default encoding will be used\.
+The parameters described above are not the all available parameters\. The other parameters are related to ANSI interpreter and work modes other than 0\. These parameters are described in **Readme\_ANSI\.md** file\.
+
+## Character encodings
+
+Console and files uses some encoding for input and output charaters\. You can input codepage or encoding name\. If value consists of digits only, it will be treated as codepage number, otherwise, it will be threated as encoding name\. If you not set or set incorrect name, the system default encoding will be used\.
 
 The most common encodings:
 
@@ -548,11 +658,13 @@ The example fonts are generated based on three sources, disinguished by font fil
 
 
 * **Dos** \- [https://int10h\.org/oldschool\-pc\-fonts/fontlist/](https://int10h.org/oldschool-pc-fonts/fontlist/ "https://int10h.org/oldschool-pc-fonts/fontlist/") \- Standard EGA and VGA fonts, which looks like a standard DOS font\. There are added some additional glyphs:
-  * **Page 25** \- Border heavy variant, quadrant boxes, four triangle glyphs from 25E2 to 25E5\. The glyphs 2580, 2581 and 2584 are slightly corrected in some variants\.
+  * **Page 25** \- Border heavy variant, quadrant boxes, four triangle glyphs from **25E2h** to **25E5h**\. The glyphs **2580h**, **2581h** and **2584h** are slightly corrected in some variants\.
   * **Page 28** \- Braille dots\.
-  * **Page 1FB** \- Semigraphical shapes from 1FB00 to 1FBAF, including 1FB93\.
-* **Unscii** \- [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/") \- All fonts from Unscii project, without any modyfication and additional glyphs but correction of 2509 glyph in all 8x8 versions\. This fonts contains non\-standard characters, some glyph placement \(page 25 and 1FB\) are manually corrected, because some glyph positions was swapped related to unicode standard\.
-* **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added 1FB93 glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
+  * **Page 1FB** \- Semigraphical shapes from **1FB00h** to **1FBAFh**, including **1FB93h**\.
+* **Unscii** \- [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/") \- All fonts from Unscii project, without any modyfication and additional glyphs but correction of **2509h** glyph in all 8x8 versions\. This fonts contains non\-standard characters, some glyph placement \(page **25h** and **1FBh**\) are manually corrected, because some glyph positions was swapped related to unicode standard\.
+* **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added **1FB93h** glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
+* **Small** \- [https://opengameart\.org/content/4x4\-px\-bitmap\-font](https://opengameart.org/content/4x4-px-bitmap-font "https://opengameart.org/content/4x4-px-bitmap-font") \- Small font, which is manually extended with many semigraphical glyphs and can be used to view large ASCII/ANSI arts\. The readibility of letters and digits is poor due to small character size\.
+* **Amiga** \- [https://github\.com/rewtnull/amigafonts](https://github.com/rewtnull/amigafonts "https://github.com/rewtnull/amigafonts") \- Fonts suitable for some ASCII\-art or ANSI\-art files, which was created on Amiga computers\.
 
 
 
