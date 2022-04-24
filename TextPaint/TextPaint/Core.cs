@@ -883,7 +883,7 @@ namespace TextPaint
                 }
             }
             WorkMode = CF.ParamGetI("WorkMode");
-            if ((WorkMode < 0) || (WorkMode > 3))
+            if ((WorkMode < 0) || (WorkMode > 4))
             {
                 WorkMode = 0;
             }
@@ -928,8 +928,10 @@ namespace TextPaint
             UseAnsiSave = CF.ParamGetB("ANSIWrite");
             AnsiMaxX = CF.ParamGetI("ANSIWidth");
             AnsiMaxY = CF.ParamGetI("ANSIHeight");
-            ANSI_CR = CF.ParamGetI("ANSICR");
-            ANSI_LF = CF.ParamGetI("ANSILF");
+            ANSI_CR = CF.ParamGetI("ANSIReadCR");
+            ANSI_LF = CF.ParamGetI("ANSIReadLF");
+            AnsiColorBackBlink = CF.ParamGetB("ANSIWriteBlink");
+            AnsiColorForeBold = CF.ParamGetB("ANSIWriteBold");
             TextBeyondLineMargin = CF.ParamGetI("BeyondLineMargin");
 
             if (CF.ParamGetB("ANSIDOS"))
@@ -959,31 +961,35 @@ namespace TextPaint
             ReadColor(CF.ParamGetS("ColorPopup"), ref PopupBack, ref PopupFore);
 
             ANSIIgnoreBlink = CF.ParamGetB("ANSIIgnoreBlink");
+            ANSIIgnoreBold = CF.ParamGetB("ANSIIgnoreBold");
             UseWindow = (CF.ParamGetI("WinUse") > 0);
             CursorDisplay = CF.ParamGetB("CursorDisplay");
             bool ColorBlending = CF.ParamGetB("WinColorBlending");
-            if (UseWindow)
+            if (WorkMode != 4)
             {
-                int WinW__ = 80;
-                int WinH__ = 25;
-                CF.ParamGet("WinW", ref WinW__);
-                CF.ParamGet("WinH", ref WinH__);
-                if (WinW__ < 1)
+                if (UseWindow)
                 {
-                    WinW__ = Console.WindowWidth;
-                    if (WinW__ < 1) { WinW__ = 80; }
+                    int WinW__ = 80;
+                    int WinH__ = 25;
+                    CF.ParamGet("WinW", ref WinW__);
+                    CF.ParamGet("WinH", ref WinH__);
+                    if (WinW__ < 1)
+                    {
+                        WinW__ = Console.WindowWidth;
+                        if (WinW__ < 1) { WinW__ = 80; }
+                    }
+                    if (WinH__ < 1)
+                    {
+                        WinH__ = Console.WindowHeight;
+                        if (WinH__ < 1) { WinH__ = 25; }
+                    }
+                    Screen_ = new ScreenWindow(this, CF, WinW__, WinH__, ColorBlending, false);
                 }
-                if (WinH__ < 1)
+                else
                 {
-                    WinH__ = Console.WindowHeight;
-                    if (WinH__ < 1) { WinH__ = 25; }
+                    Screen_ = new ScreenConsole(this, CF, TextNormalBack, TextNormalFore);
+                    Screen_.UseMemo = CF.ParamGetI("ConUseMemo");
                 }
-                Screen_ = new ScreenWindow(this, CF, WinW__, WinH__, ColorBlending);
-            }
-            else
-            {
-                Screen_ = new ScreenConsole(this, CF, TextNormalBack, TextNormalFore);
-                Screen_.UseMemo = CF.ParamGetI("ConUseMemo");
             }
             if (AnsiMaxX <= 0)
             {
@@ -1046,7 +1052,15 @@ namespace TextPaint
             }
             KeyCounter = 0;
             KeyCounterLast = "";
-            Screen_.StartApp();
+            if (WorkMode != 4)
+            {
+                Screen_.StartApp();
+            }
+            else
+            {
+                Screen_ = new ScreenWindow(this, CF, 1, 1, ColorBlending, true);
+                RenderStart(CF.ParamGetS("RenderFile"), CF.ParamGetI("RenderStep"), CF.ParamGetI("RenderOffset"), CF.ParamGetB("RenderCursor"));
+            }
         }
 
         public void StartUp()
@@ -1088,7 +1102,7 @@ namespace TextPaint
                                 if (ColorF < 0) { ColorF = TextNormalFore; }
                                 break;
                             case 1:
-                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && ((X + DisplayX) < AnsiMaxX)))
+                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && (AnsiMaxX < AnsiMaxVal) && ((X + DisplayX) < AnsiMaxX)))
                                 {
                                     ColorB = TextNormalBack;
                                     ColorF = TextNormalFore;
@@ -1526,6 +1540,7 @@ namespace TextPaint
             {
                 case "FileDrop1":
                     CursorX = 0;
+                    TempMemo.Push(ToggleDrawText ? 1 : 0);
                     TempMemo.Push(TextMoveDir);
                     TextMoveDir = 0;
                     MoveCursor(2);
@@ -1533,11 +1548,14 @@ namespace TextPaint
                 case "FileDrop2":
                     FileLoad0();
                     TextMoveDir = TempMemo.Pop();
+                    ToggleDrawText = (TempMemo.Pop() != 0);
                     break;
                 case "F9":
                     PixelCharSet();
                     Semigraphics_.AnsiMaxX_ = AnsiMaxX;
                     Semigraphics_.AnsiMaxY_ = AnsiMaxY;
+                    Semigraphics_.ANSI_CR_ = ANSI_CR;
+                    Semigraphics_.ANSI_LF_ = ANSI_LF;
                     if (Semigraphics_.AnsiMaxX_ == AnsiMaxVal)
                     {
                         Semigraphics_.AnsiMaxX_ = 0;
@@ -2435,8 +2453,6 @@ namespace TextPaint
 
         void FileLoad0()
         {
-            ToggleDrawText = true;
-            ToggleDrawColo = true;
             List<int> NewFile_ = new List<int>();
             int TempX = CursorX;
             int TempY = CursorY;
@@ -2519,9 +2535,15 @@ namespace TextPaint
 
         public void FileLoad0_()
         {
+            TempMemo.Push(ToggleDrawText ? 1 : 0);
+            TempMemo.Push(ToggleDrawColo ? 1 : 0);
+            ToggleDrawText = true;
+            ToggleDrawColo = true;
             FileLoad(CurrentFileName);
             TextDisplay(0);
             ScreenRefresh(true);
+            ToggleDrawColo = (TempMemo.Pop() != 0);
+            ToggleDrawText = (TempMemo.Pop() != 0);
         }
 
         void TextInsert(int X, int Y, int W, int H, int InsDelMode)

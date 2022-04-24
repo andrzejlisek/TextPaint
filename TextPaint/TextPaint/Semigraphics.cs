@@ -20,6 +20,9 @@ namespace TextPaint
         public int AnsiMaxX_ = 0;
         public int AnsiMaxY_ = 0;
 
+        public int ANSI_CR_ = 0;
+        public int ANSI_LF_ = 0;
+
         int MaxCharCode = 0x110000;
         int SelectorState = 1;
 
@@ -370,17 +373,20 @@ namespace TextPaint
                     Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, TempF.ToString("X")[0], Core_.PopupBack, Core_.PopupFore);
                 }
 
-                string StateMsg = "Text and color";
+                string StateMsg = "Text+color   ";
                 if (!Core_.ToggleDrawText)
                 {
-                    StateMsg = "Color only    ";
+                    StateMsg = "Color        ";
                 }
                 if (!Core_.ToggleDrawColo)
                 {
-                    StateMsg = "Text only     ";
+                    StateMsg = "Text         ";
                 }
 
-                StateMsg = StateMsg + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(13);
+                string EOL1 = ANSI_CR_.ToString();
+                string EOL2 = ANSI_LF_.ToString();
+
+                StateMsg = StateMsg + EOL1 + EOL2 + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(12);
 
                 for (int i = 0; i < StateMsg.Length; i++)
                 {
@@ -662,6 +668,20 @@ namespace TextPaint
                     case -4:
                         if (AnsiMaxY_ > 0) { AnsiMaxY_--; }
                         break;
+                    case 5:
+                        ANSI_LF_++;
+                        if (ANSI_LF_ == 3)
+                        {
+                            ANSI_LF_ = 0;
+                        }
+                        break;
+                    case -5:
+                        ANSI_CR_++;
+                        if (ANSI_CR_ == 3)
+                        {
+                            ANSI_CR_ = 0;
+                        }
+                        break;
                 }
 
                 SelectColo___ = Core_.ColorToInt(TempB, TempF);
@@ -848,6 +868,8 @@ namespace TextPaint
                 if (Core_.AnsiMaxX == 0) { Core_.AnsiMaxX = Core_.AnsiMaxVal; }
                 Core_.AnsiMaxY = AnsiMaxY_;
                 if (Core_.AnsiMaxY == 0) { Core_.AnsiMaxY = Core_.AnsiMaxVal; }
+                Core_.ANSI_CR = ANSI_CR_;
+                Core_.ANSI_LF = ANSI_LF_;
             }
             if (Set == 2)
             {

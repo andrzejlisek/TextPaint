@@ -15,8 +15,7 @@ namespace TextPaint
         bool __AnsiFontBold_ = false;
         bool __AnsiFontUnderline_ = false;
         bool __AnsiFontInverse_ = false;
-        bool __AnsiFontBlink1_ = false;
-        bool __AnsiFontBlink2_ = false;
+        bool __AnsiFontBlink_ = false;
 
 
         List<int> __AnsiCmd = new List<int>();
@@ -31,6 +30,7 @@ namespace TextPaint
         bool ANSIDOSNewLine = false;
         bool ANSIMusic = false;
         bool ANSIIgnoreBlink = false;
+        bool ANSIIgnoreBold = false;
         bool ANSIMoveRightWrapLine = false;
         bool ANSIIgnoreVerticalTab = false;
         bool ANSIIgnoreHorizontalTab = false;
@@ -38,8 +38,8 @@ namespace TextPaint
         // 0 - Do not change
         // 1 - Use as CRLF
         // 2 - Ommit
-        int ANSI_CR = 0;
-        int ANSI_LF = 0;
+        public int ANSI_CR = 0;
+        public int ANSI_LF = 0;
 
         int __AnsiBack = -1;
         int __AnsiFore = -1;
@@ -48,8 +48,7 @@ namespace TextPaint
         bool __AnsiFontBold = false;
         bool __AnsiFontUnderline = false;
         bool __AnsiFontInverse = false;
-        bool __AnsiFontBlink1 = false;
-        bool __AnsiFontBlink2 = false;
+        bool __AnsiFontBlink = false;
 
         public bool __AnsiTestCmd = false;
         int __AnsiTest = 0;
@@ -91,8 +90,7 @@ namespace TextPaint
             __AnsiFontBold_ = false;
             __AnsiFontUnderline_ = false;
             __AnsiFontInverse_ = false;
-            __AnsiFontBlink1_ = false;
-            __AnsiFontBlink2_ = false;
+            __AnsiFontBlink_ = false;
 
             __AnsiCmd = new List<int>();
 
@@ -101,8 +99,7 @@ namespace TextPaint
             __AnsiFontBold = false;
             __AnsiFontUnderline = false;
             __AnsiFontInverse = false;
-            __AnsiFontBlink1 = false;
-            __AnsiFontBlink2 = false;
+            __AnsiFontBlink = false;
 
             __AnsiTest = 0;
             __AnsiCommand = false;
@@ -183,8 +180,7 @@ namespace TextPaint
                             __AnsiFontBold_ = __AnsiFontBold;
                             __AnsiFontUnderline_ = __AnsiFontUnderline;
                             __AnsiFontInverse_ = __AnsiFontInverse;
-                            __AnsiFontBlink1_ = __AnsiFontBlink1;
-                            __AnsiFontBlink2_ = __AnsiFontBlink2;
+                            __AnsiFontBlink_ = __AnsiFontBlink;
                             __AnsiCommand = false;
                             break;
                         case '8':
@@ -195,8 +191,7 @@ namespace TextPaint
                             __AnsiFontBold = __AnsiFontBold_;
                             __AnsiFontUnderline = __AnsiFontUnderline_;
                             __AnsiFontInverse = __AnsiFontInverse_;
-                            __AnsiFontBlink1 = __AnsiFontBlink1_;
-                            __AnsiFontBlink2 = __AnsiFontBlink2_;
+                            __AnsiFontBlink = __AnsiFontBlink_;
                             __AnsiCommand = false;
                             break;
                         case 'D':
@@ -330,8 +325,7 @@ namespace TextPaint
                                     __AnsiFontBold_ = __AnsiFontBold;
                                     __AnsiFontUnderline_ = __AnsiFontUnderline;
                                     __AnsiFontInverse_ = __AnsiFontInverse;
-                                    __AnsiFontBlink1_ = __AnsiFontBlink1;
-                                    __AnsiFontBlink2_ = __AnsiFontBlink2;
+                                    __AnsiFontBlink_ = __AnsiFontBlink;
                                     break;
                                 case "[u":
                                     __AnsiX = __AnsiX_;
@@ -341,8 +335,7 @@ namespace TextPaint
                                     __AnsiFontBold = __AnsiFontBold_;
                                     __AnsiFontUnderline = __AnsiFontUnderline_;
                                     __AnsiFontInverse = __AnsiFontInverse_;
-                                    __AnsiFontBlink1 = __AnsiFontBlink1_;
-                                    __AnsiFontBlink2 = __AnsiFontBlink2_;
+                                    __AnsiFontBlink = __AnsiFontBlink_;
                                     break;
                                 case "[H":
                                     __AnsiX = 0;
@@ -588,8 +581,7 @@ namespace TextPaint
                                                                 __AnsiFontBold = false;
                                                                 __AnsiFontUnderline = false;
                                                                 __AnsiFontInverse = false;
-                                                                __AnsiFontBlink1 = false;
-                                                                __AnsiFontBlink2 = false;
+                                                                __AnsiFontBlink = false;
                                                                 break;
 
                                                             case "39": __AnsiFore = -1; break;
@@ -635,10 +627,8 @@ namespace TextPaint
                                                             case "22": __AnsiFontBold = false; break;
                                                             case "4": __AnsiFontUnderline = true; break;
                                                             case "24": __AnsiFontUnderline = false; break;
-                                                            case "5": __AnsiFontBlink1 = true; break;
-                                                            case "25": __AnsiFontBlink1 = true; break;
-                                                            case "6": __AnsiFontBlink2 = true; break;
-                                                            case "26": __AnsiFontBlink2 = true; break;
+                                                            case "5": __AnsiFontBlink = true; break;
+                                                            case "25": __AnsiFontBlink = false; break;
                                                             case "7": __AnsiFontInverse = true; break;
                                                             case "27": __AnsiFontInverse = false; break;
 
@@ -1191,7 +1181,7 @@ namespace TextPaint
             }
 
 
-            if (__AnsiFontBold)
+            if (__AnsiFontBold && (!ANSIIgnoreBold))
             {
                 if (__AnsiForeWork < 8)
                 {
@@ -1209,7 +1199,7 @@ namespace TextPaint
                 }
             }
 
-            if ((__AnsiFontBlink1 || __AnsiFontBlink2) && (!ANSIIgnoreBlink))
+            if (__AnsiFontBlink && (!ANSIIgnoreBlink))
             {
                 if (__AnsiBackWork < 8)
                 {

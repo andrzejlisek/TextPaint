@@ -4,12 +4,12 @@ The **WorkMode=3** has two pusposes:
 
 
 * Get list of all supported encodings, which can by set as following parameters:
-  * ConInputEncoding
-  * ConOutputEncoding
-  * FileReadEncoding
-  * FileWriteEncoding
-  * ServerEncoding
-  * TerminalEncoding
+  * **ConInputEncoding** \- Set encoding name or codepage for writing characters if **WinUse=0**\.
+  * **ConOutputEncoding** \- Set encoding name or codepage for printing characters if **WinUse=0**\.
+  * **FileReadEncoding** \- Encoding used in file reading\.
+  * **FileWriteEncoding** \- Encoding used in file writing\.
+  * **ServerEncoding** \- Character encoding used to send data via network if **ServerPort>0**\.
+  * **TerminalEncoding** \- Character encoding used to aquire characters from Telnet service\.
 * Keyboard input test through displaying key name and character\.
 
 Afer running **TextPaint**, you have press various keys\. After every pressing key, there will be displayed one item of encoding list and name/character of pressed key\. If you press the same key 5 times, application will be quit\.

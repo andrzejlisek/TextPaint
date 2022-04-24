@@ -22,27 +22,30 @@ The parameters, which is not described below, are described in **Readme\.md** fi
 
 ## ANSI\-related settings
 
-The following parameters are especially related to creating or interpreting ANSI data and affects in work mode 0, 1 and 2:
+The following parameters are especially related to creating or interpreting ANSI data and affects in **WorkMode=0**, **WorkMode=1** and **WorkMode=2**:
 
 
-* **ANSIRead** \- Use ANSI interpreter instead of plain text text file on file reading in **WorkMode=0**, this parameter affects both reading file in application running or pressing **F8** key:
+* **ANSIRead** \- Use ANSI interpreter instead of plain text file on file reading in **WorkMode=0**, this parameter affects both reading file in application running or pressing **F8** key:
   * **0** \- Read file as plain text file without ANSI interpreter\.
   * **1** \- Read file as ANSI file using ANSI interpreter\. In file contains animation, there will be read final display\.
-* **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
-  * **0** \- Write file as plain text, ommiting colors\.
-  * **1**\- Write file as ANSI text including color definition\.
-* **ANSIWidth** \- Define width of ANSI virtual screen \(not to be confused with **WinW** parameter\)\. If 0, the screen width is unlimited in interpreting ANSI data, but some files uses screen wrapping and can be displayed incorrectly while **ANSIWidth** has another value\.
-* **ANSIHeight** \- Define height of ANSI virtual screen \(not to be confused with **WinH** parameter\)\. If 0, the screen height is unlimited in interpreting ANSI data, but some files uses screen scrolling and can be displayed incorrectly while **ANSIHeight** has another value\.
-* **ANSICR** \- Reaction by the CR character while reading ANSI file in **WorkMode=0** or **WorkMode=1**\. This parameter can fix incorrectly written text or ANSI files:
+* **ANSIReadCR** \- Reaction by the CR character while reading ANSI file in **WorkMode=0** or **WorkMode=1**\. This parameter can fix incorrectly written text or ANSI files:
   * **0** \- Process as CR character only \(recommended\)\.
-  * **1** \- Process as CRLF character sequence \(recommended with **ANSILF=2**\)\.
+  * **1** \- Process as CRLF character sequence \(recommended with **ANSIReadLF=2**\)\.
   * **2** \- Ommic CR character\.
-* **ANSILF** \- Reaction by the LF character while reading ANSI file in **WorkMode=0** or **WorkMode=1**\. This parameter can fix incorrectly written text or ANSI files:
+* **ANSIReadLF** \- Reaction by the LF character while reading ANSI file in **WorkMode=0** or **WorkMode=1**\. This parameter can fix incorrectly written text or ANSI files:
   * **0** \- Process as LF character only \(recommended\)\.
-  * **1** \- Process as CRLF character sequence \(recommended with **ANSICR=2**\)\.
+  * **1** \- Process as CRLF character sequence \(recommended with **ANSIReadCR=2**\)\.
   * **2** \- Ommic LF character\.
+* **ANSIWidth** \- Define width of ANSI virtual screen \(not to be confused with **WinW** parameter\)\. If **ANSIWidth=0**, the screen width is unlimited in interpreting ANSI data, but some files uses screen wrapping and can be displayed incorrectly while **ANSIWidth** has another value\.
+* **ANSIHeight** \- Define height of ANSI virtual screen \(not to be confused with **WinH** parameter\)\. If **ANSIHeight=0**, the screen height is unlimited in interpreting ANSI data, but some files uses screen scrolling and can be displayed incorrectly while **ANSIHeight** has another value\.
 * **ANSIDOS** \- Use DOS behavior instead of standard VT100/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
 * **ANSIIgnoreBlink** \- Ignore blink attribute while interpreting ANSI data\. Some ANSI files was created assuming that terminal displays blinking text as steady text on bright background\. Some other ANSI files was created assuming terminal displays text as blinking and this attribute should be ignored while TextPaint does not support other attributes than colors of background and text\.
+* **ANSIIgnoreBold** \- Ignore bold attribute while interpreting ANSI data\.
+* **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
+  * **0** \- Write file as plain text, ommiting colors\.
+  * **1** \- Write file as ANSI text including color definition\.
+* **ANSIWriteBold** \- Use bold attribute instead of color attribute for save high intensity foreground color, work only if **ANSIWrite=1**\.
+* **ANSIWriteBlink** \- Use blink attribute instead of color attribute for save high intensity background color, work only if **ANSIWrite=1**\.
 
 ## File and server settings
 
@@ -51,8 +54,8 @@ The parameters affects only in **WorkMode=1**, which purpose is displaying anima
 
 * **FileDelayChars** \- Number of characters displayed once between two delayes\.
 * **FileDelayTime** \- Time in milliseconds between displaying two portions of characters\.
-* **ServerPort** \- Number od network port, on which the serwer will wait for connection\. In order to not use connection, set value as **0**\.
-* **ServerEncoding** \- Character encoding used to send data via network if **ServerPort** parameter has value other than **0**\.
+* **ServerPort** \- Number od network port, on which the serwer will wait for connection\. In order to not use connection, set **ServerPort=0**\.
+* **ServerEncoding** \- Character encoding used to send data via network if **ServerPort>0**\.
 
 ## Terminal settings
 
@@ -296,8 +299,7 @@ During processing ANSI data, there will be used internal text attributes with fo
 * Bold = false
 * Underline = false
 * Inverse = false
-* Blink1 = false
-* Blink2 = false
+* Blink = false
 
 The attributes can be changed with the **1Bh \[ \.\.\. m** escape sequence\. The number of parameters can vary and has following meaning:
 
@@ -342,10 +344,8 @@ The attributes can be changed with the **1Bh \[ \.\.\. m** escape sequence\. The
 | 22 | Bold = false |
 | 4 | Underline = true |
 | 24 | Underline = false |
-| 5 | Blink1 = true |
-| 25 | Blink1 = false |
-| 6 | Blink2 = true |
-| 26 | Blink2 = false |
+| 5 | Blink = true |
+| 25 | Blink = false |
 | 7 | Inverse = true |
 | 27 | Inverse = false |
 

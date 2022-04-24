@@ -321,13 +321,16 @@ namespace TextPaint
         Brush[] DrawColorB;
         Color[] DrawColor;
 
-        public ScreenWindow(Core Core__, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_)
+        public ScreenWindow(Core Core__, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, bool DummyScreen)
         {
             UseMemo = 0;
             ColorBlending = ColorBlending_;
-            CursorTimer = new System.Windows.Forms.Timer();
-            CursorTimer.Interval = 100;
-            CursorTimer.Tick += CursorTimer_Tick;
+            if (!DummyScreen)
+            {
+                CursorTimer = new System.Windows.Forms.Timer();
+                CursorTimer.Interval = 100;
+                CursorTimer.Tick += CursorTimer_Tick;
+            }
 
             DrawColor = new Color[16];
             DrawColor[0] = Color.FromArgb(0, 0, 0);
@@ -346,6 +349,20 @@ namespace TextPaint
             DrawColor[13] = Color.FromArgb(255, 85, 255);
             DrawColor[14] = Color.FromArgb(85, 255, 255);
             DrawColor[15] = Color.FromArgb(255, 255, 255);
+
+            string PalR = CF.ParamGetS("WinPaletteR");
+            string PalG = CF.ParamGetS("WinPaletteG");
+            string PalB = CF.ParamGetS("WinPaletteB");
+            if ((PalR.Length == 32) && (PalG.Length == 32) && (PalB.Length == 32))
+            {
+                for (int i = 0; i < 15; i++)
+                {
+                    int ValR = int.Parse(PalR.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                    int ValG = int.Parse(PalG.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                    int ValB = int.Parse(PalB.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                    DrawColor[i] = Color.FromArgb(ValR, ValG, ValB);
+                }
+            }
 
             DrawColorB = new Brush[16];
             for (int i = 0; i < 16; i++)
@@ -439,23 +456,31 @@ namespace TextPaint
 
             Core_ = Core__;
             Core_.Screen_ = this;
-            Form_ = new Form();
-            Form_.Shown += Form__Shown;
-            Form_.Text = "TextPaint";
-            Form_.BackColor = Color.Black;
-            Form_.Width = ConsoleW * CellW;
-            Form_.Height = ConsoleH * CellH;
-            Form_.ClientSize.ToString();
-            int DW = Form_.ClientSize.Width - Form_.Width;
-            int DH = Form_.ClientSize.Height - Form_.Height;
-            Form_.Width -= DW;
-            Form_.Height -= DH;
-            Form_.FormClosing += Form__FormClosing;
-            FormAllowClose = false;
-            Form_.KeyDown += WinKey1;
-            Form_.KeyPress += WinKey2;
-            Core_.WindowResize();
-            Core_.ScreenRefresh(true);
+
+            if (!DummyScreen)
+            {
+                Form_ = new Form();
+                Form_.Shown += Form__Shown;
+                Form_.Text = "TextPaint";
+                Form_.BackColor = Color.Black;
+                Form_.Width = ConsoleW * CellW;
+                Form_.Height = ConsoleH * CellH;
+                Form_.ClientSize.ToString();
+                int DW = Form_.ClientSize.Width - Form_.Width;
+                int DH = Form_.ClientSize.Height - Form_.Height;
+                Form_.Width -= DW;
+                Form_.Height -= DH;
+                Form_.FormClosing += Form__FormClosing;
+                FormAllowClose = false;
+                Form_.KeyDown += WinKey1;
+                Form_.KeyPress += WinKey2;
+                Core_.WindowResize();
+                Core_.ScreenRefresh(true);
+            }
+            else
+            {
+                AppWorking = true;
+            }
         }
 
 
@@ -507,6 +532,54 @@ namespace TextPaint
         Graphics CursorBmp_G;
         System.Windows.Forms.Timer CursorTimer;
 
+        /// <summary>
+        /// Function used in rendering
+        /// </summary>
+        /// <param name="W">W.</param>
+        /// <param name="H">H.</param>
+        public void DummyResize(int W, int H)
+        {
+            WinW = W;
+            WinH = H;
+
+            Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Bitmap_G = Graphics.FromImage(Bitmap_);
+
+            FormCtrlB = new int[WinW, WinH];
+            FormCtrlF = new int[WinW, WinH];
+            FormCtrlC = new int[WinW, WinH];
+            FormCtrlR = new Rectangle[WinW, WinH];
+
+            CursorBmp = new Bitmap(CellW, CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            CursorBmp_G = Graphics.FromImage(CursorBmp);
+
+            for (int Y = 0; Y < WinH; Y++)
+            {
+                for (int X = 0; X < WinW; X++)
+                {
+                    FormCtrlB[X, Y] = -1;
+                    FormCtrlF[X, Y] = -1;
+                    FormCtrlC[X, Y] = ' ';
+                    FormCtrlR[X, Y] = new Rectangle(X * CellW, Y * CellH, CellW, CellH);
+                }
+            }
+            CursorB = -1;
+            CursorF = -1;
+            CursorC = -1;
+        }
+
+        public Bitmap DummyGetScreenBitmap(bool DrawCursor)
+        {
+            Bitmap BmpExp = new Bitmap(Bitmap_.Width, Bitmap_.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Graphics BmpExpG = Graphics.FromImage(BmpExp);
+            BmpExpG.DrawImageUnscaled(Bitmap_, 0, 0);
+            if (DrawCursor)
+            {
+                RepaintCursor();
+                BmpExpG.DrawImageUnscaled(CursorBmp, CursorX * CellW, CursorY * CellH);
+            }
+            return BmpExp;
+        }
 
         public override bool WindowResize()
         {
@@ -1095,6 +1168,33 @@ namespace TextPaint
             Monitor.Exit(Bitmap_);
         }
 
+        void RepaintCursor()
+        {
+            CursorBmp_G.DrawImage(Bitmap_, 0 - (CursorX * CellW), 0 - (CursorY * CellH));
+
+            int CursorThick = (((CellH + 7) / 8));
+            if (WinIsBitmapFont)
+            {
+                CursorThick = CellH_F * ((((CellH / CellH_F) + 7) / 8));
+            }
+
+            try
+            {
+                Color CurC = DrawColor[FormCtrlF[CursorX, CursorY]];
+                for (int Y0 = CellH - CursorThick; Y0 < CellH; Y0++)
+                {
+                    for (int X0 = 0; X0 < CellW; X0++)
+                    {
+                        CursorBmp.SetPixel(X0, Y0, CurC);
+                    }
+                }
+            }
+            catch
+            {
+
+            }
+        }
+
         void CursorTimer_Tick(object sender, EventArgs e)
         {
             if (Monitor.TryEnter(GraphMutex))
@@ -1103,27 +1203,11 @@ namespace TextPaint
                 {
                     if (CursorNeedRepaint)
                     {
-                        CursorBmp_G.DrawImage(Bitmap_, 0 - (CursorX * CellW), 0 - (CursorY * CellH));
-
-                        int CursorThick = (((CellH + 7) / 8));
-                        if (WinIsBitmapFont)
-                        {
-                            CursorThick = CellH_F * ((((CellH / CellH_F) + 7) / 8));
-                        }
+                        RepaintCursor();
 
                         try
                         {
-                            Color CurC = DrawColor[FormCtrlF[CursorX, CursorY]];
-                            for (int Y0 = CellH - CursorThick; Y0 < CellH; Y0++)
-                            {
-                                for (int X0 = 0; X0 < CellW; X0++)
-                                {
-                                    CursorBmp.SetPixel(X0, Y0, CurC);
-                                }
-                            }
-
                             CursorBox.Ctrl.Refresh();
-
                             CursorNeedRepaint = false;
                             CursorBox.Ctrl.Left = PictureBox_.Ctrl.Left + (CursorX * CellW);
                             CursorBox.Ctrl.Top = PictureBox_.Ctrl.Top + (CursorY * CellH);

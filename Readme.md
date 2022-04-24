@@ -18,7 +18,8 @@ There are available following work modes, choosen by **WorkMode** parameter:
 * **WorkMode=0** \- Text editor, the main purpose of **TestPaint**, which is described in **Readme\.md** file\.
 * **WorkMode=1** \- ANSI viewer with progressive printing and server\. This mode can be used to view animation created by progressive placing characters and is described in **Readme\_ANSI\.md** file\.
 * **WorkMode=2** \- Telnet client, which is parially compatible with VT100, ANSI and derivative terminal emulators\. Details about this mode are described in **Readme\_ANSI\.md** file\.
-* **WorkMode=3** \- Encoding display and keycode test\. The only purpose is displaying supported encoding list and code/name of every pressed key, which is needed to implement additional functions and test the **TextPaint** in various platforms\. This mode is described in **Readme\_keys\.md** file\.
+* **WorkMode=3** \- Encoding list display and keycode test\. The only purpose is displaying supported encoding list and code/name of every pressed key, which is needed to implement additional functions and test the **TextPaint** in various platforms\. This mode is described in **Readme\_keys\.md** file\.
+* **WorkMode=4** \- Render text into bitmap image detailed in **Readme\_render\.md** file\. In this mode, **TextPaint** does not run any interface, it behavies as simple command line application\.
 
 # Application running
 
@@ -188,11 +189,19 @@ While the color selector is showm, you can use the following keys:
 * **Left arrow**, **Right arrow** \- Select foreground color\.
 * **Page up**, **Page down** \- Number of columns for ANSI file load\. Use if file is loaded incorrectly, applicable when **ANSIRead=1**\. Value 0 means unlimited\.
 * **Home**, **End** \- Number of rows for ANSI file load\. Use if file is loaded incorrectly, applicable when **ANSIRead=1**\. Value 0 means unlimited\.
+* **F1** \- Switch between CR character processing while loading file, when when **ANSIRead=1**:
+  * **0** \- Treat as CR character \(default\)\.
+  * **1** \- Treat as CR\+LF sequence\.
+  * **2** \- Ignore CR character\.
+* **F2** \- Switch between LF character processing while loading file, when when **ANSIRead=1**:
+  * **0** \- Treat as LF character \(default\)\.
+  * **1** \- Treat as CR\+LF sequence\.
+  * **2** \- Ignore LF character\.
 * **F3** \- Switch to **character selector**\.
 * **Insert** \- Switch between edit mode within three states:
-  * **Text and color** \- Edit text and color simultaneously\.
-  * **Text without color** \- Edit text only without color changing\.
-  * **Color without text** \- Edit color only without text changing\.
+  * **Text \+ color** \- Edit text and color simultaneously\.
+  * **Text** \- Edit text only without color changing\.
+  * **Color** \- Edit color only without text changing\.
 * **Delete** \- Go to color being under the cursor\.
 * **Tab** \- Move color selector window from corner to corner\. You can use this if the window covers some text or window is bigger than screen\.
 * **Esc** \- Close without changing selected color\.
@@ -205,6 +214,14 @@ You can change text without changing colors or colors without changing the text\
 Many ANSI files are prepared for specified number of columns, in most cases for 80 columns and unlimited number of rows\. If you set other number of columns or use unlimited number of columns \(**ANSIWidth=0**\), the file may be loaded incorrectly\. To correct this, enter into color selector, change number of columns or rows using **Page up**, **Page down**, **Home** or **End** keys and press **Enter** key\. Then, you have to reload file using **F8** keys\.
 
 Sometimes, the number of rows can also be specified for particular file and the file can be loaded incorrectly, when number of rows are unlimited\. The most popular numbers of rows in such case are **24** and **25**\.
+
+If there file loaded with **ANSIRead=1** is actually plain text file, the file can contain different end\-of\-line character\. If the file is loaded incorrectly, you can change parsing of CR \(**0Dh**\) and LF \(**0Ah**\) character in color selector\. You can press **F1** or **F2** during color selector to change way of the character processing, the current state is diaplayed as two digits on the top of character selector\. Example settings:
+
+
+* 00 \- Standard process of CR and LF characters, suitable for all ANSI files and text files using CR\+LF like files created in DOS and Windows\.
+* 21 \- Use LF character as CR\+LF \(EOL\), suitable for plain text files created on Unix and Linux, which uses LF as EOL\.
+* 12 \- Use CR character as CR\+LF \(EOL\), suitable for plain text files created on systems, which uses CR as EOL\.
+* 11 \- Use every CR character and every LF character as EOL separately\.
 
 # Work states
 
@@ -401,9 +418,10 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
   * **1** \- ANSI viewer and file server \- described in **Readme\_ANSI\.md** file\.
   * **2** \- Telnet client \- described in **Readme\_ANSI\.md** file\.
   * **3** \- Encoding list and keycode test \- described in **Readme\_keys\.md** file\.
+  * **4** \- Render text file or ANSI file into image or movie \- described in **Readme\_render\.md** file\.
 * **Space** \- Characters \(hexadecimal numbers\), which will be treated as space\. The first character in the list is used as character being outside actual text\.
-* **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
-* **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
+* **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **FileReadEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
+* **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **FileWriteEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
 * **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\.
   * The first item is the set name\.
   * The other items are the hexadecimal character codes, which are the frame elements\.
@@ -421,7 +439,7 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 The settings affect the appearance of interface:
 
 
-* **CursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **0** to not draw cursor character and may help in cursor visibility\.
+* **CursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **CursorDisplay=1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **CursorDisplay=0** to not draw cursor character and may help in cursor visibility\.
 * **ColorNormal** \- Color of default background and foreground in all work modes\.
 * **ColorBeyondLine** \- Color of background indicating area beyond end of line, but not below the last line\.
 * **ColorBeyondEnd** \- Color of background indicatin area below the last line\.
@@ -437,7 +455,7 @@ Settings related to console, affects when **WinUse=0** only\.
 
 * **ConInputEncoding** \- Set encoding name or codepage for writing characters\. Use it to solve problems in entering characters, especially diacritic characters using keyboard\. Affects only when you use **WinUse=0**\.
 * **ConOutputEncoding** \- Set encoding name or codepage for printing characters\. Use it to solve problems in displaying characters\. Affects only when you use **WinUse=0**\.
-* **ConUseMemo** \- Use additional text memory in console \(not affects when **WinUse** is set to **1** or **2**\)\. The application uses the console buffer move from the system API while scrolling the text\. You can set one of the following values:
+* **ConUseMemo** \- Use additional text memory in console \(not affects when **WinUse=1** or **WinUse=2**\)\. The application uses the console buffer move from the system API while scrolling the text\. You can set one of the following values:
   * **0** \- Use console buffer moving\. This setting is recommended, while all characters are displayed correctly while text scrolling\.
   * **1** \- Use console buffer moving with rewriting non\-ASCII characters\. Use this setting if some characters are displayed incorrectly during text scrolling although the same characters are displayed correctly during writing/painting using Textpaint functions\. This may slightly slow down the text rendering during scrolling\. 
   * **2** \- Do not use console buffer moving\. Use this setting only if the text rendering crashes during trying to scroll\. This setting causes, that every character on screen is rewritten during text scrolling\.
@@ -453,14 +471,17 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
   * **WinFontName=Font8x8\.png** \- Use bitmap font from **Font8x8\.png** file\.
   * **WinFontName=Courier New** \- Use **Courier New** font\.
 * **WinFontSize** \- Font size in window\. This setting not affects the cell size\.
-* **WinW** \- Number of columns\. To display whole status bar, it should be at least 40\.
+* **WinW** \- Number of columns\. To display whole status bar, it should be at least **WinW=40**\.
 * **WinH** \- Number of rows\.
 * **WinColorBlending** \- Enables color blending for some block characters\. This parameter affects to this characters:
   * **2591h**, **2592h**, **2593h**\.
   * From **1FB8Ch** to **1FB94h**\.
   * From **1FB9Ch** to **1FB9Fh**\.
+* **WinPaletteR** \- The red component of all 16 colors\.
+* **WinPaletteG** \- The green component of all 16 colors\.
+* **WinPaletteB** \- The blue component of all 16 colors\.
 
-The **WinColorBlending** uses other character and mixed foreground color with background color as in bale below:
+The **WinColorBlending** uses other character and mixed foreground color with background color as in table below:
 
 | Original character | Replacement character | Remarks |
 | --- | --- | --- |
@@ -480,6 +501,32 @@ The **WinColorBlending** uses other character and mixed foreground color with ba
 | 1FB92h | 2584h | Changed background color |
 | 1FB93h | 258Ch | Changed background color |
 | 1FB94h | 2590h | Changed background color |
+
+The **WinPaletteR**, **WinPaletteG** and **WinPaletteB** defines the palette, which will be used to display 16 colors in window\. You can define arbitraty colors\. Each of the parameters must consist of 32 hexadecimal digits\. Each 2 digits defines value for one channer of single color\. Below, there are some examples\.
+
+DOS 16\-color palette with dark yellow \(default palette\):
+
+```
+WinPaletteR=00AA00AA00AA00AA55FF55FF55FF55FF
+WinPaletteG=0000AAAA0000AAAA5555FFFF5555FFFF
+WinPaletteB=00000000AAAAAAAA55555555FFFFFFFF
+```
+
+DOS 16\-color with brown instead of dark yellow:
+
+```
+WinPaletteR=00AA00AA00AA00AA55FF55FF55FF55FF
+WinPaletteG=0000AA550000AAAA5555FFFF5555FFFF
+WinPaletteB=00000000AAAAAAAA55555555FFFFFFFF
+```
+
+Windows VGA palette:
+
+```
+WinPaletteR=00800080008000C080FF00FF00FF00FF
+WinPaletteG=00008080000080C08000FFFF0000FFFF
+WinPaletteB=00000000808080C080000000FFFFFFFF
+```
 
 ## Cipher settings
 
@@ -502,7 +549,7 @@ The parameters described above are not the all available parameters\. The other 
 
 ## Character encodings
 
-Console and files uses some encoding for input and output charaters\. You can input codepage or encoding name\. If value consists of digits only, it will be treated as codepage number, otherwise, it will be threated as encoding name\. If you not set or set incorrect name, the system default encoding will be used\.
+Console and files uses some encoding for input and output charaters\. You can input codepage or encoding name\. If value consists of digits only, it will be treated as codepage number, otherwise, it will be threated as encoding name\. If you not set or set incorrect name, the system default encoding will be used\. The **ConInputEncoding** and **ConOutputEncoding** are not the same as **FileReadEncoding** and **FileWriteEncoding**\.
 
 The most common encodings:
 
@@ -513,7 +560,7 @@ The most common encodings:
 | utf\-16 | 1200 | Unicode \- little endian |
 | utf\-16BE | 1201 | Unicode \- big endian |
 
-You can set any encoding supported by \.NET API function `System.Text.Encoding.GetEncoding(Int32)` and `System.Text.Encoding.GetEncoding(String)`, details can be found on the web\. This settings affects only console input/output\. Regardless of this setting, the text files edited using Textpaint must use UTF\-8 encoding\.
+You can set any encoding supported by \.NET API function `System.Text.Encoding.GetEncoding(Int32)` and `System.Text.Encoding.GetEncoding(String)`, details can be found on the web, list of all supported encoding can be achieved on **WorkMode=3**\. This settings affects only console input/output\.
 
 ## Frame elements
 

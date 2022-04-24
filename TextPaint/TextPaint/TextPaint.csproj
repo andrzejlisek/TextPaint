@@ -73,6 +73,7 @@
     <Compile Include="Telnet.cs" />
     <Compile Include="Telnet_Server.cs" />
     <Compile Include="Telnet_Client.cs" />
+    <Compile Include="Core_Render.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

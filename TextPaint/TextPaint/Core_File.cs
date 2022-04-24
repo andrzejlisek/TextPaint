@@ -15,6 +15,8 @@ namespace TextPaint
 
         public bool UseAnsiLoad = false;
         public bool UseAnsiSave = false;
+        public bool AnsiColorBackBlink = false;
+        public bool AnsiColorForeBold = false;
 
 
         public int TextNormalBack = 0;
@@ -192,6 +194,8 @@ namespace TextPaint
                 }
                 int LastB = -1;
                 int LastF = -1;
+                bool LastBlink = false;
+                bool LastBold = false;
                 for (int i = 0; i < TextBuffer.Count; i++)
                 {
                     List<int> TextFileLine;
@@ -199,6 +203,7 @@ namespace TextPaint
                     {
                         TextFileLine = new List<int>();
 
+                        // Beginning of line - reset colors and attributes
                         if (i == 0)
                         {
                             TextFileLine.Add(27);
@@ -209,12 +214,16 @@ namespace TextPaint
 
                         for (int ii = 0; ii < TextBuffer[i].Count; ii++)
                         {
+                            // Get color of current character
                             int TempB;
                             int TempF;
                             ColorFromInt(TextColBuf[i][ii], out TempB, out TempF);
+
+                            // Use escape codes only if color differs from last color
                             if ((LastB != TempB) || (LastF != TempF))
                             {
-                                if ((TempB < 0) || (TempF < 0))
+                                // Default color - reset attributes
+                                if (((TempB < 0) && (LastB >= 0)) || ((TempF < 0) && (LastF >= 0)))
                                 {
                                     TextFileLine.Add(27);
                                     TextFileLine.Add('[');
@@ -222,7 +231,11 @@ namespace TextPaint
                                     TextFileLine.Add('m');
                                     LastB = -1;
                                     LastF = -1;
+                                    LastBlink = false;
+                                    LastBold = false;
                                 }
+
+                                // Background color change
                                 if (LastB != TempB)
                                 {
                                     if ((TempB >= 0) && (TempB <= 7))
@@ -231,19 +244,51 @@ namespace TextPaint
                                         TextFileLine.Add('[');
                                         TextFileLine.Add('4');
                                         TextFileLine.Add(48 + TempB);
+                                        if (AnsiColorBackBlink)
+                                        {
+                                            if (LastBlink)
+                                            {
+                                                TextFileLine.Add(';');
+                                                TextFileLine.Add('2');
+                                                TextFileLine.Add('5');
+                                                LastBlink = false;
+                                            }
+                                        }
                                         TextFileLine.Add('m');
                                     }
                                     if ((TempB >= 8) && (TempB <= 15))
                                     {
-                                        TextFileLine.Add(27);
-                                        TextFileLine.Add('[');
-                                        TextFileLine.Add('1');
-                                        TextFileLine.Add('0');
-                                        TextFileLine.Add(40 + TempB);
-                                        TextFileLine.Add('m');
+                                        if (AnsiColorBackBlink)
+                                        {
+                                            TextFileLine.Add(27);
+                                            TextFileLine.Add('[');
+                                            TextFileLine.Add('4');
+                                            TextFileLine.Add(40 + TempB);
+                                            if (AnsiColorBackBlink)
+                                            {
+                                                if (!LastBlink)
+                                                {
+                                                    TextFileLine.Add(';');
+                                                    TextFileLine.Add('5');
+                                                    LastBlink = true;
+                                                }
+                                            }
+                                            TextFileLine.Add('m');
+                                        }
+                                        else
+                                        {
+                                            TextFileLine.Add(27);
+                                            TextFileLine.Add('[');
+                                            TextFileLine.Add('1');
+                                            TextFileLine.Add('0');
+                                            TextFileLine.Add(40 + TempB);
+                                            TextFileLine.Add('m');
+                                        }
                                     }
                                     LastB = TempB;
                                 }
+
+                                // Foreground color change
                                 if (LastF != TempF)
                                 {
                                     if ((TempF >= 0) && (TempF <= 7))
@@ -252,22 +297,53 @@ namespace TextPaint
                                         TextFileLine.Add('[');
                                         TextFileLine.Add('3');
                                         TextFileLine.Add(48 + TempF);
+                                        if (AnsiColorForeBold)
+                                        {
+                                            if (LastBold)
+                                            {
+                                                TextFileLine.Add(';');
+                                                TextFileLine.Add('2');
+                                                TextFileLine.Add('2');
+                                                LastBold = false;
+                                            }
+                                        }
                                         TextFileLine.Add('m');
                                     }
                                     if ((TempF >= 8) && (TempF <= 15))
                                     {
-                                        TextFileLine.Add(27);
-                                        TextFileLine.Add('[');
-                                        TextFileLine.Add('9');
-                                        TextFileLine.Add(40 + TempF);
-                                        TextFileLine.Add('m');
+                                        if (AnsiColorForeBold)
+                                        {
+                                            TextFileLine.Add(27);
+                                            TextFileLine.Add('[');
+                                            TextFileLine.Add('3');
+                                            TextFileLine.Add(40 + TempF);
+                                            if (!LastBold)
+                                            {
+                                                TextFileLine.Add(';');
+                                                TextFileLine.Add('1');
+                                                LastBold = true;
+                                            }
+                                            TextFileLine.Add('m');
+                                        }
+                                        else
+                                        {
+                                            TextFileLine.Add(27);
+                                            TextFileLine.Add('[');
+                                            TextFileLine.Add('9');
+                                            TextFileLine.Add(40 + TempF);
+                                            TextFileLine.Add('m');
+                                        }
                                     }
                                     LastF = TempF;
                                 }
                             }
-                            TextFileLine.Add(TextBuffer[i][ii]);
+                            if (ii < AnsiMaxX)
+                            {
+                                TextFileLine.Add(TextBuffer[i][ii]);
+                            }
                         }
 
+                        // End of line - reset colors and attributes
                         if (i == (TextBuffer.Count - 1))
                         {
                             TextFileLine.Add(27);
@@ -275,8 +351,14 @@ namespace TextPaint
                             TextFileLine.Add('0');
                             TextFileLine.Add('m');
                         }
-                        TextFileLine.Add(13);
-                        TextFileLine.Add(10);
+
+                        // End of line characters
+                        if ((!ANSIDOSNewLine) || (TextBuffer[i].Count < AnsiMaxX))
+                        {
+                            TextFileLine.Add(13);
+                            TextFileLine.Add(10);
+                        }
+
                         SW.Write(TextWork.IntToStr(TextCipher_.Crypt(TextFileLine, false)));
                     }
                     else
