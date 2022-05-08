@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
+using System.Text;
 
 namespace TextPaint
 {
@@ -30,6 +31,68 @@ namespace TextPaint
 
         public void RenderStart(string RenderFile_, int RenderStep_, int RenderOffset_, bool RenderCursor_)
         {
+            if (CurrentFileName.ToUpperInvariant() == "?ENCODING?")
+            {
+                Console.WriteLine("Creating encoding files...");
+                if (!Directory.Exists(RenderFile_))
+                {
+                    Directory.CreateDirectory(RenderFile_);
+                }
+                int FileI = 0;
+                OneByteEncoding OBE = new OneByteEncoding();
+                foreach (EncodingInfo ei in Encoding.GetEncodings())
+                {
+                    Encoding e = ei.GetEncoding();
+                    string EncName = e.CodePage.ToString().PadLeft(5);
+                    List<string> EncNameL = new List<string>();
+                    EncNameL.Add(e.CodePage.ToString());
+
+                    if ((!EncNameL.Contains(ei.Name)) && (TextWork.EncodingCheckName(e, ei.Name)))
+                    {
+                        EncName = EncName + ((EncNameL.Count == 1) ? ": " : ", ") + ei.Name;
+                        EncNameL.Add(ei.Name);
+                    }
+                    if ((!EncNameL.Contains(e.WebName)) && (TextWork.EncodingCheckName(e, e.WebName)))
+                    {
+                        EncName = EncName + ((EncNameL.Count == 1) ? ": " : ", ") + e.WebName;
+                        EncNameL.Add(e.WebName);
+                    }
+                    Console.Write(EncName);
+                    Console.Write(" - ");
+                    if (OBE.DefImport(e))
+                    {
+                        string EncodingFileName = Path.Combine(RenderFile_, e.CodePage.ToString().PadLeft(5, '0') + ".txt");
+                        ConfigFile CF = new ConfigFile();
+                        for (int i = 0; i < EncNameL.Count; i++)
+                        {
+                            switch (i)
+                            {
+                                case 0:
+                                    CF.ParamSet("Codepage", EncNameL[i]);
+                                    break;
+                                case 1:
+                                    CF.ParamSet("Name", EncNameL[i]);
+                                    break;
+                                case 2:
+                                    CF.ParamSet("AlternativeName", EncNameL[i]);
+                                    break;
+                            }
+                        }
+                        OBE.DefExport(CF);
+                        CF.FileSave(EncodingFileName);
+                        FileI++;
+                        Console.WriteLine("created");
+                    }
+                    else
+                    {
+                        Console.WriteLine("not 8-bit");
+                    }
+                }
+                Console.WriteLine("Created " + FileI + " files.");
+                return;
+            }
+
+
             RenderFile = RenderFile_;
             RenderStep = RenderStep_;
             RenderCursor = RenderCursor_;

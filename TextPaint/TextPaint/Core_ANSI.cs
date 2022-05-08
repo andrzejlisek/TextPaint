@@ -34,6 +34,7 @@ namespace TextPaint
         bool ANSIMoveRightWrapLine = false;
         bool ANSIIgnoreVerticalTab = false;
         bool ANSIIgnoreHorizontalTab = false;
+        bool ANSIIgnoreBackspace = false; 
 
         // 0 - Do not change
         // 1 - Use as CRLF
@@ -742,7 +743,6 @@ namespace TextPaint
             {
                 switch (TextFileLine_i)
                 {
-                    case 8:
                     case 13:
                     case 10:
                         break;
@@ -750,6 +750,12 @@ namespace TextPaint
                         if (__AnsiUseEOF)
                         {
                             __AnsiBeyondEOF = true;
+                        }
+                        break;
+                    case 8:
+                        if (ANSIIgnoreBackspace)
+                        {
+                            TextFileLine_i = DosControl[TextFileLine_i];
                         }
                         break;
                     case 9:
@@ -849,12 +855,15 @@ namespace TextPaint
                     {
                         case 8:
                             {
-                                if (__AnsiX > 0)
+                                if (!ANSIIgnoreBackspace)
                                 {
-                                    __AnsiX--;
-                                    int TempC, TempB, TempF;
-                                    AnsiGet(__AnsiX, __AnsiY, out TempC, out TempB, out TempF);
-                                    //AnsiChar(__AnsiX, __AnsiY, 32, TempB, TempF);
+                                    if (__AnsiX > 0)
+                                    {
+                                        __AnsiX--;
+                                        int TempC, TempB, TempF;
+                                        AnsiGet(__AnsiX, __AnsiY, out TempC, out TempB, out TempF);
+                                        //AnsiChar(__AnsiX, __AnsiY, 32, TempB, TempF);
+                                    }
                                 }
                             }
                             break;

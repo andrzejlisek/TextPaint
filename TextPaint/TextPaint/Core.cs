@@ -25,7 +25,8 @@ namespace TextPaint
         // 0 - Text editor
         // 1 - ANSI display and server
         // 2 - Telnet client
-        // 3 - Keystroke tester
+        // 3 - Keystroke and encoding tester
+        // 4 - Render
         public int WorkMode = 0;
 
         public Telnet Telnet_;
@@ -46,7 +47,58 @@ namespace TextPaint
         private PixelPaint PixelPaint_ = new PixelPaint();
 
         List<string> EncodingList = new List<string>();
+        List<List<int>> EncodingInfo = new List<List<int>>();
+        List<int> EncodingCodePage = new List<int>();
+        List<int[]> EncodingFile = new List<int[]>();
         int EncodingListI;
+        int EncodingListL;
+        int EncodingByte = -1;
+        int[] EncodingArray;
+        List<int> EncodingKey1 = new List<int>();
+        List<int> EncodingKey2 = new List<int>();
+
+        void EncodingAddParam(string ParamName, string DisplayName, ConfigFile CF)
+        {
+            if (CF.ParamExists(ParamName))
+            {
+                if (EncodingList[0].StartsWith("Items"))
+                {
+                    EncodingList.Insert(0, "");
+                    EncodingInfo.Insert(0, null);
+                    EncodingCodePage.Insert(0, -1);
+                }
+                Encoding ParEnc = TextWork.EncodingFromName(CF.ParamGetS(ParamName));
+                string EncName = "";
+                if (ParEnc is OneByteEncoding)
+                {
+                    if (((OneByteEncoding)ParEnc).EncodingName != "")
+                    {
+                        EncName = DisplayName + ": " + ((OneByteEncoding)ParEnc).EncodingName;
+                    }
+                    else
+                    {
+                        EncName = DisplayName + ": FILE";
+                    }
+                    EncodingList.Insert(0, EncName);
+                    EncodingInfo.Insert(0, TextWork.StrToInt(" FILE: "));
+                    int[] EncRaw = ((OneByteEncoding)ParEnc).DefExport();
+                    EncodingCodePage.Insert(0, -2);
+                    EncodingFile.Insert(0, EncRaw);
+                }
+                else
+                {
+                    EncName = DisplayName + ": " + ParEnc.CodePage;
+                    EncodingList.Insert(0, EncName);
+                    EncodingInfo.Insert(0, TextWork.StrToInt(ParEnc.CodePage.ToString().PadLeft(5) + ": "));
+                    EncodingCodePage.Insert(0, ParEnc.CodePage);
+                    EncodingFile.Insert(0, null);
+                }
+                if (EncodingListL < EncName.Length)
+                {
+                    EncodingListL = EncName.Length;
+                }
+            }
+        }
 
         public static string FullPath(string FileName)
         {
@@ -942,6 +994,7 @@ namespace TextPaint
                 ANSIMoveRightWrapLine = true;
                 ANSIIgnoreVerticalTab = true;
                 ANSIIgnoreHorizontalTab = true;
+                ANSIIgnoreBackspace = true;
             }
             else
             {
@@ -951,6 +1004,7 @@ namespace TextPaint
                 ANSIMoveRightWrapLine = false;
                 ANSIIgnoreVerticalTab = false;
                 ANSIIgnoreHorizontalTab = false;
+                ANSIIgnoreBackspace = false;
             }
 
             ReadColor(CF.ParamGetS("ColorNormal"), ref TextNormalBack, ref TextNormalFore);
@@ -1011,8 +1065,21 @@ namespace TextPaint
             {
                 Screen_.RawKeyName = true;
                 EncodingList.Clear();
+                EncodingInfo.Clear();
+                EncodingCodePage.Clear();
+                EncodingFile.Clear();
                 EncodingListI = 0;
-                int MaxSize = 0;
+                EncodingListL = 24;
+                EncodingKey1.Clear();
+                EncodingKey1.Add('`');
+                EncodingKey1.Add('~');
+                EncodingKey1.Add(27);
+                EncodingKey1.Add(9);
+                EncodingKey2.Clear();
+                EncodingKey2.Add(8);
+                EncodingKey2.Add(13);
+                EncodingKey2.Add(10);
+                EncodingKey2.Add(32);
 
                 foreach (EncodingInfo ei in Encoding.GetEncodings())
                 {
@@ -1033,22 +1100,31 @@ namespace TextPaint
                     }
                     EncName = EncName + "  ";
 
-
-
-                    //EncName = EncName + e.IsSingleByte.ToString() + "  ";
-
                     EncodingList.Add(EncName);
-                    if (MaxSize < EncName.Length)
+                    EncodingInfo.Add(TextWork.StrToInt(e.CodePage.ToString().PadLeft(5) + ": "));
+                    EncodingCodePage.Add(e.CodePage);
+                    if (EncodingListL < EncName.Length)
                     {
-                        MaxSize = EncName.Length;
+                        EncodingListL = EncName.Length;
                     }
                 }
+                EncodingList.Insert(0, ("Items: " + EncodingList.Count).PadRight(EncodingListL));
+                EncodingInfo.Insert(0, null);
+                EncodingCodePage.Insert(0, -1);
+                EncodingList.Add("".PadRight(EncodingListL));
+                EncodingInfo.Add(null);
+                EncodingCodePage.Add(-1);
+                EncodingAddParam("TerminalEncoding", "Terminal", CF);
+                EncodingAddParam("ServerEncoding", "Server", CF);
+                EncodingAddParam("FileWriteEncoding", "File write", CF);
+                EncodingAddParam("FileReadEncoding", "File read", CF);
+                EncodingAddParam("ConOutputEncoding", "Console O", CF);
+                EncodingAddParam("ConInputEncoding", "Console I", CF);
+
                 for (int i = 0; i < EncodingList.Count; i++)
                 {
-                    EncodingList[i] = EncodingList[i].PadRight(MaxSize);
+                    EncodingList[i] = EncodingList[i].PadRight(EncodingListL);
                 }
-                EncodingList.Insert(0, ("Items: " + EncodingList.Count).PadRight(MaxSize));
-                EncodingList.Add("".PadRight(MaxSize));
             }
             KeyCounter = 0;
             KeyCounterLast = "";
@@ -1381,7 +1457,90 @@ namespace TextPaint
                         }
 
                         List<int> KeyInfoText = new List<int>();
-                        KeyInfoText.AddRange(TextWork.StrToInt(EncodingList[EncodingListI]));
+
+                        Screen_.Move(0, 1, 0, 0, WinW, WinH - 1);
+                        if (EncodingByte < 0)
+                        {
+                            if (EncodingKey2.Contains(KeyChar))
+                            {
+                                if (EncodingListI > 0)
+                                {
+                                    if (EncodingInfo[EncodingListI - 1] != null)
+                                    {
+                                        if (EncodingCodePage[EncodingListI - 1] < 0)
+                                        {
+                                            EncodingArray = EncodingFile[EncodingListI - 1];
+                                            EncodingListI--;
+                                            EncodingByte = 0;
+                                        }
+                                        else
+                                        {
+                                            OneByteEncoding OBE = new OneByteEncoding();
+                                            if (OBE.DefImport(TextWork.EncodingFromName(EncodingCodePage[EncodingListI - 1].ToString())))
+                                            {
+                                                EncodingArray = OBE.DefExport();
+                                                EncodingListI--;
+                                                EncodingByte = 0;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            if (EncodingKey1.Contains(KeyChar))
+                            {
+                                EncodingListI -= 2;
+                                if (EncodingListI < 0)
+                                {
+                                    EncodingListI += EncodingList.Count;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            if (EncodingKey2.Contains(KeyChar))
+                            {
+                                EncodingByte += 15;
+                                if (EncodingByte >= (256 + 16))
+                                {
+                                    EncodingByte -= (256 + 16);
+                                }
+                            }
+                            if (EncodingKey1.Contains(KeyChar))
+                            {
+                                EncodingByte = -1;
+                            }
+                        }
+                        if (EncodingByte < 0)
+                        {
+                            KeyInfoText.AddRange(TextWork.StrToInt(EncodingList[EncodingListI]));
+                        }
+                        else
+                        {
+                            KeyInfoText.AddRange(EncodingInfo[EncodingListI]);
+                            if (EncodingByte < 16)
+                            {
+                                for (int i = 0; i < 16; i++)
+                                {
+                                    int ii = EncodingByte * 16 + i;
+                                    KeyInfoText.Add(EncodingArray[ii]);
+                                }
+                            }
+                            else
+                            {
+                                KeyInfoText.Add(((EncodingByte - 16) / 16).ToString("X")[0]);
+                                KeyInfoText.Add(((EncodingByte - 16) % 16).ToString("X")[0]);
+                                KeyInfoText.Add('=');
+                                KeyInfoText.AddRange(TextWork.StrToInt(TextWork.CharCode(EncodingArray[(EncodingByte - 16)], 0)));
+                                KeyInfoText.Add(32);
+                                KeyInfoText.Add(39);
+                                KeyInfoText.Add(EncodingArray[(EncodingByte - 16)]);
+                                KeyInfoText.Add(39);
+                            }
+                            while (KeyInfoText.Count < EncodingListL)
+                            {
+                                KeyInfoText.Add(32);
+                            }
+                        }
                         KeyInfoText.Add(34);
                         KeyInfoText.AddRange(TextWork.StrToInt(KeyName));
                         KeyInfoText.Add(34);
@@ -1409,24 +1568,32 @@ namespace TextPaint
                         {
                             KeyInfoText.AddRange(TextWork.StrToInt("[Alt]"));
                         }
+                        if (EncodingByte < 0)
+                        {
+                            EncodingListI++;
+                            if (EncodingListI == EncodingList.Count)
+                            {
+                                EncodingListI = 0;
+                            }
+                        }
+                        else
+                        {
+                            EncodingByte++;
+                            if (EncodingByte >= (256 + 16))
+                            {
+                                EncodingByte -= (256 + 16);
+                            }
+                        }
                         while (KeyInfoText.Count < WinW)
                         {
                             KeyInfoText.Add(32);
                         }
-
-                        Screen_.Move(0, 1, 0, 0, WinW, WinH - 1);
                         for (int i = 0; i < WinW; i++)
                         {
                             Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore);
                         }
 
                         Screen_.SetCursorPosition(0, WinH - 1);
-
-                        EncodingListI++;
-                        if (EncodingListI == EncodingList.Count)
-                        {
-                            EncodingListI = 0;
-                        }
                     }
                 }
                 return;
@@ -2400,7 +2567,7 @@ namespace TextPaint
             FileSave(CurrentFileName);
         }
 
-        public string PrepareFileNameStr(string NewFile_)
+        public static string PrepareFileNameStr(string NewFile_)
         {
             while ((NewFile_.Length > 0) && (TextWork.SpaceChars.Contains(NewFile_[0])))
             {

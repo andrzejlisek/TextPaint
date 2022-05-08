@@ -446,7 +446,21 @@ namespace TextPaint
             else
             {
                 WinIsBitmapFont = false;
-                WinFont = new Font(WinFontName, WinFontSize, FontStyle.Regular);
+                switch (WinFontName)
+                {
+                    case "GenericSerif":
+                        WinFont = new Font(FontFamily.GenericSerif, WinFontSize, FontStyle.Regular);
+                        break;
+                    case "GenericSansSerif":
+                        WinFont = new Font(FontFamily.GenericSansSerif, WinFontSize, FontStyle.Regular);
+                        break;
+                    case "GenericMonospace":
+                        WinFont = new Font(FontFamily.GenericMonospace, WinFontSize, FontStyle.Regular);
+                        break;
+                    default:
+                        WinFont = new Font(WinFontName, WinFontSize, FontStyle.Regular);
+                        break;
+                }
                 WinStrFormat = new StringFormat();
                 WinStrFormat.LineAlignment = StringAlignment.Center;
                 WinStrFormat.Alignment = StringAlignment.Center;

@@ -465,11 +465,15 @@ Settings related to console, affects when **WinUse=0** only\.
 Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 
 
-* **WinCellW** \- Character cell width in window\. If you use the bitmap font, it will be rounded to integer multiply of font glyph width\.
-* **WinCellH** \- Character cell height in window\. If you use the bitmap font, it will be rounded to integer multiply of font glyph height\.
-* **WinFontName** \- Font name or bitmap file in window\. When the file of given name exists, there will be used bitmap file, otherwise, the value will be used as font name\. For example:
-  * **WinFontName=Font8x8\.png** \- Use bitmap font from **Font8x8\.png** file\.
-  * **WinFontName=Courier New** \- Use **Courier New** font\.
+* **WinCellW** \- Character cell width in window\. If you use bitmap font, it will be rounded to integer multiply of font glyph width\.
+* **WinCellH** \- Character cell height in window\. If you use bitmap font, it will be rounded to integer multiply of font glyph height\.
+* **WinFontName** \- Font name or bitmap file in window, the name can be interpreted by one of three ways from highest priority:
+  * **File name** \- Use bitmap font file\.
+  * **Generic font name** \- Use one of three generic font names, the actual font depends on operating system:
+    * **GenericSerif**
+    * **GenericSansSerif**
+    * **GenericMonospace**
+  * **Font name** \- Use selected font, like **Arial**, **Courier**\.
 * **WinFontSize** \- Font size in window\. This setting not affects the cell size\.
 * **WinW** \- Number of columns\. To display whole status bar, it should be at least **WinW=40**\.
 * **WinH** \- Number of rows\.
@@ -512,7 +516,7 @@ WinPaletteG=0000AAAA0000AAAA5555FFFF5555FFFF
 WinPaletteB=00000000AAAAAAAA55555555FFFFFFFF
 ```
 
-DOS 16\-color with brown instead of dark yellow:
+DOS 16\-color palette with brown instead of dark yellow:
 
 ```
 WinPaletteR=00AA00AA00AA00AA55FF55FF55FF55FF
@@ -561,6 +565,20 @@ The most common encodings:
 | utf\-16BE | 1201 | Unicode \- big endian |
 
 You can set any encoding supported by \.NET API function `System.Text.Encoding.GetEncoding(Int32)` and `System.Text.Encoding.GetEncoding(String)`, details can be found on the web, list of all supported encoding can be achieved on **WorkMode=3**\. This settings affects only console input/output\.
+
+## Encoding from file
+
+You can create custom 8\-byte encoding, which encodes every supported character as single byte\. Many 8\-bit encodings, including 437, 1252 codepages, were popular before Unicode was widespreaded\. Such encoding assigns one character to every number from 0 to 255 \(byte value\), the same character may be assigned to several byte values\.
+
+The file has similar convention to **Config\.txt** file, so there are list of parameters with value for each parameter\. In encoding file, the parameter is the byte value denoted as hexadecimal number and the value is denoted as hexadecimal character number\.
+
+Lines, which does not contain the **=** character and blank lines are ignored, so you can write comments and additional information, which will not be processed\. Other parameters, such as **Name**, will also be ignored\.
+
+To use the file, you have to place file name with path in place of the encoding name/codepage\.
+
+You can use the **WorkMode=3** to test encoding file or display character list of system encodings\. Details are in **Readme\_keys\.md** file\.
+
+You can generate files from all system 8\-bit encodings using **WorkMode=4**, details are in **Readme\_render\.md** file\.
 
 ## Frame elements
 
@@ -684,7 +702,7 @@ Using bitmap fonts has also disadvantages:
 
 The bitmap font is organized in pages, single page consists of 256 characters\. Every page has number from 0 to 255, but unicode defines 17 planes from 0 to 16, so in fact, the page number are from 0 to 4351\. Bitmap can use any color mode, but the color will be thresholded into two colors, black and white, so every pixel will be readed as black or white, depending on pixel brightness\.
 
-The bitmap width determines the font glyph and must match the formula `(W * 256) + 16)`, where **W** is the glybh width\. For example, for width 8 pixels, the bitmap must have 2064 pixels width\. The glyph height is determined by bitmap height\. The bitmap height is simply glyph height multiplied by number of pages defined in the bitmap\. The number of defined pages may vary depending on glyphs, which will be defined\.
+The bitmap width determines the font glyph and must match the formula `(W * 256) + 16)`, where **W** is the glyph width\. For example, for width 8 pixels, the bitmap must have 2064 pixels width\. The glyph height is determined by bitmap height\. The bitmap height is simply glyph height multiplied by number of pages defined in the bitmap\. The number of defined pages may vary depending on glyphs, which will be defined\.
 
 Every row consists of binary encoded page number and glyph images of this page\. The page number code occupies 16 pixels from left and is a binary code, when black means 0 and white means 1\. The code height must be the same as glyph height\. On the glyphs part, the black \(dark\) color means 0 \(background\) and the white \(bright\) color means 1 \(foreground\)\.
 

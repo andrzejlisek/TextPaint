@@ -37,6 +37,15 @@ namespace TextPaint
             {
                 return Encoding.Default;
             }
+            string FName = Core.PrepareFileNameStr(Name);
+            if (System.IO.File.Exists(FName))
+            {
+                OneByteEncoding OneByteEncoding_ = new OneByteEncoding();
+                ConfigFile CF = new ConfigFile();
+                CF.FileLoad(FName);
+                OneByteEncoding_.DefImport(CF);
+                return OneByteEncoding_;
+            }
             bool DigitOnly = true;
             for (int i = 0; i < Name.Length; i++)
             {

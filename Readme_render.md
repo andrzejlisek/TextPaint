@@ -70,6 +70,19 @@ Create movie from ANSI animation by creating frame on 5th character, 20th charac
 TextPaint.exe /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 ANSIWidth=80 ANSIHeight=25 RenderStep=15 RenderOffset=5
 ```
 
+# Create files of 8\-bit encodings
+
+Using **WorkMode=4**, you can generate files of all 8\-bit encodings supported by your system\. In order to do this, you have to provide **?ENCODING?** as text/ANSI file name and use **RenderFile** parameter to provide folder\. Other parameters does not affect creating the files in this case and will be ignored\.
+
+Every file will have codepage numer as name with **\.txt** extension\. inside the file, there will be following parameters:
+
+
+* **Codepage** \- Codepage number\.
+* **Name** \- The name of encoding, if exists\.
+* **AlternativeName** \- Other name of encoding if this encoding has two different names\.
+
+Below the parameters, there are hexadecimal byte values as further parameters with assigned characters\. Such file can be used as custom encoding without any modification\.
+
 
 
 

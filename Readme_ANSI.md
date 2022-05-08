@@ -79,6 +79,7 @@ Older ANSI files uses features of DOS terminal, which works slightly differently
 | --- | --- | --- |
 | Text wrapping\. | After writing character at the last column, cursor remains at the same line\. The cursor jumps into beginning of next line only after writing one more character and this character will be written at the first column\. | After writing character at the last column, cursor immediately jumps into beginning of next line\. |
 | Characters from **00h** to **1Fh**, excluding **08h**, **09h**, **0Ah**, **0Bh**, **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
+| Character **08h** \- backspace | Move cursor left one column\. | Write character **25D8h**\. |
 | Character **09h** \- horizontal tab | Move cursor right to the nearest multiply of 6 column\. | Write character **25CBh**\. |
 | Character **0Bh** \- vertical tab | Move cursor down one line\. | Write character **2642h**\. |
 | Sequence **1Bh D** | Move cursor one line up, scroll if necessary\. | Ignore\. |

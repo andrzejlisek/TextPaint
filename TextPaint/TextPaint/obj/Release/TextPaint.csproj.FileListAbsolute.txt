@@ -1,4 +1,5 @@
 /media/xxx/WORK1/__ToBackup/Develop/Csharp/_Console/SD/TextPaint/TextPaint/TextPaint/bin/Release/TextPaint.exe.config
 /media/xxx/WORK1/__ToBackup/Develop/Csharp/_Console/SD/TextPaint/TextPaint/TextPaint/bin/Release/TextPaint.exe
+/media/xxx/WORK1/__ToBackup/Develop/Csharp/_Console/SD/TextPaint/TextPaint/TextPaint/obj/Release/TextPaint.csprojAssemblyReference.cache
 /media/xxx/WORK1/__ToBackup/Develop/Csharp/_Console/SD/TextPaint/TextPaint/TextPaint/obj/Release/TextPaint.csproj.CoreCompileInputs.cache
 /media/xxx/WORK1/__ToBackup/Develop/Csharp/_Console/SD/TextPaint/TextPaint/TextPaint/obj/Release/TextPaint.exe
