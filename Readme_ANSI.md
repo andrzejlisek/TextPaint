@@ -95,7 +95,7 @@ Older ANSI files uses features of DOS terminal, which works slightly differently
 | Character **08h** \- backspace | Move cursor left one column\. | Write character **25D8h**\. |
 | Character **09h** \- horizontal tab | Move cursor right to the nearest multiply of 6 column\. | Write character **25CBh**\. |
 | Character **0Bh** \- vertical tab | Move cursor down one line\. | Write character **2642h**\. |
-| Character **7Ch** | Ignore\. | Write character **7Ch**\. |
+| Character **7Fh** | Ignore\. | Write character **7Fh**\. |
 | Sequence **1Bh D** | Move cursor one line up, scroll if necessary\. | Ignore\. |
 | Sequence **1Bh M** | Move cursor one line down, scroll if necessary\. | Enter into music state\. |
 | Sequence **1Bh \[ x L** | Scroll **x** lines up\. | Ignore\. |
