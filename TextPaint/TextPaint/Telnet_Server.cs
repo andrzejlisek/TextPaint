@@ -36,6 +36,31 @@ namespace TextPaint
                         }
                     }
                     break;
+                case "Oemtilde":
+                    {
+                        switch (WorkState)
+                        {
+                            case 1:
+                                break;
+                            default:
+                                {
+                                    if (Monitor.TryEnter(StatusMutex))
+                                    {
+                                        if ((DisplayStatus < 9))
+                                        {
+                                            DisplayStatus += 3;
+                                        }
+                                        else
+                                        {
+                                            DisplayStatus -= 9;
+                                        }
+                                        Monitor.Exit(StatusMutex);
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    break;
                 case "Tab":
                     {
                         switch (WorkState)
@@ -51,9 +76,9 @@ namespace TextPaint
                                     if (Monitor.TryEnter(StatusMutex))
                                     {
                                         DisplayStatus++;
-                                        if (DisplayStatus == 3)
+                                        if ((DisplayStatus % 3) == 0)
                                         {
-                                            DisplayStatus = 0;
+                                            DisplayStatus -= 3;
                                         }
                                         Monitor.Exit(StatusMutex);
                                     }
@@ -151,17 +176,24 @@ namespace TextPaint
         {
             WorkState = 0;
             List<int> DispBuffer = new List<int>();
-            int DispBufferLen = 50;
+            int DispBufferLen = 1000;
             int FilePos = 0;
-            int FilePosPause = 0;
+            long FileDisp = 0;
+            long FileDispPause = 0;
             List<int> PX = new List<int>();
             Socket SPX = null;
+            int FileDelayStep__ = 0;
             while (Screen_.AppWorking)
             {
                 switch (WorkState)
                 {
                     case 0: // Information screen before file opening
                         {
+                            FileDelayStep__ = FileDelayOffset;
+                            if (FileDelayStep__ == 0)
+                            {
+                                FileDelayStep__ = FileDelayStep;
+                            }
                             Screen_.Clear(Core_.TextNormalBack, Core_.TextNormalFore);
                             Screen_.SetCursorPositionNoRefresh(0, 0);
                             if (ServerPort > 0)
@@ -207,11 +239,13 @@ namespace TextPaint
                             Screen_.WriteLine();
                             Screen_.WriteText("Tab - Show/hide status", MsgB, MsgF);
                             Screen_.WriteLine();
+                            Screen_.WriteText("~` - Change status information", MsgB, MsgF);
+                            Screen_.WriteLine();
                             Screen_.WriteText("Enter - Start/stop autodisplay", MsgB, MsgF);
                             Screen_.WriteLine();
-                            Screen_.WriteText("Space - Process 1 character", MsgB, MsgF);
+                            Screen_.WriteText("Space - Process 1 step", MsgB, MsgF);
                             Screen_.WriteLine();
-                            Screen_.WriteText("Backspace - Process " + FileDelayChars.ToString() + " characters", MsgB, MsgF);
+                            Screen_.WriteText("Backspace - Process " + FileDelayStep.ToString() + " steps", MsgB, MsgF);
                             Screen_.WriteLine();
                             Screen_.WriteLine();
                             Screen_.WriteLine();
@@ -230,6 +264,10 @@ namespace TextPaint
                         break;
                     case 2: // Opening file
                         {
+                            Screen_.WriteLine();
+                            Screen_.WriteText("Please wait...", Core_.TextNormalBack, Core_.TextNormalFore);
+                            Screen_.WriteLine();
+                            Screen_.Refresh();
                             DispBuffer.Clear();
                             DisplayStatus_ = -1;
                             string NewFileNameS = Core_.PrepareFileName(NewFileName);
@@ -254,25 +292,20 @@ namespace TextPaint
                             WorkState = 3;
                             DisplayPaused = true;
                             Core_.AnsiProcessReset(true);
+                            Core_.AnsiProcessSupply(FileCtX);
                             FilePos = 0;
-                            FilePosPause = 0;
+                            FileDisp = 0;
+                            FileDispPause = 0;
                             DisplayStatusText(DispBuffer, FilePos);
-                            Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
+                            Core_.AnsiRepaintCursor();
                         }
                         break;
                     case 3: // Display running
-                        if (FilePos >= FileCtX.Count)
                         {
-                            DisplayStatusText(DispBuffer, FilePos);
-                            Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
-                            WorkState = 4;
-                        }
-                        else
-                        {
-                            if (FilePos >= FilePosPause)
+                            if (FileDisp >= FileDispPause)
                             {
                                 DisplayStatusText(DispBuffer, FilePos);
-                                Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
+                                Core_.AnsiRepaintCursor();
                                 if (FileDelayTime > 0)
                                 {
                                     Thread.Sleep(FileDelayTime);
@@ -291,20 +324,23 @@ namespace TextPaint
                             }
                             else
                             {
-                                PX.Clear();
-                                Core_.FileAdd(FileCtX[FilePos], ref PX);
-                                while (DispBuffer.Count > DispBufferLen)
+                                int CharsToSend = Core_.AnsiProcess(1);
+                                FileDisp++;
+
+                                while (CharsToSend > 0)
                                 {
-                                    DispBuffer.RemoveAt(0);
+                                    while (DispBuffer.Count > (DispBufferLen + DispBufferLen))
+                                    {
+                                        DispBuffer.RemoveRange(0, DispBufferLen);
+                                    }
+                                    DispBuffer.Add(FileCtX[FilePos]);
+                                    if (SPX != null)
+                                    {
+                                        SPX.Send(ServerEncoding.GetBytes(TextWork.IntToStr(FileCtX[FilePos])));
+                                    }
+                                    FilePos++;
+                                    CharsToSend--;
                                 }
-                                DispBuffer.Add(PX[0]);
-                                if (SPX != null)
-                                {
-                                    SPX.Send(ServerEncoding.GetBytes(TextWork.IntToStr(PX)));
-                                }
-                                Core_.AnsiProcess(PX);
-                                //DisplayStatus_ = -1;
-                                FilePos++;
                             }
                         }
                         break;
@@ -312,26 +348,19 @@ namespace TextPaint
                         {
                             DisplayStatusText(DispBuffer, FilePos);
                             Thread.Sleep(20);
-                            if (FilePosPause > FilePos)
+                            if (FileDispPause > FileDisp)
                             {
                                 WorkState = 3;
                             }
                         }
                         break;
                     case 5: // Advance X characters
-                        FilePosPause = FilePos + FileDelayChars;
-                        if ((FilePosPause >= FileCtX.Count) || (FilePosPause < 0))
-                        {
-                            FilePosPause = FileCtX.Count;
-                        }
+                        FileDispPause = FileDisp + FileDelayStep__;
+                        FileDelayStep__ = FileDelayStep;
                         WorkState = 4;
                         break;
                     case 6: // Advance 1 character
-                        FilePosPause = FilePos + 1;
-                        if ((FilePosPause >= FileCtX.Count) || (FilePosPause < 0))
-                        {
-                            FilePosPause = FileCtX.Count;
-                        }
+                        FileDispPause = FileDisp + 1;
                         WorkState = 4;
                         break;
                 }
@@ -355,34 +384,79 @@ namespace TextPaint
             string CharMsg = "  ";
             if (DisplayStatus_ != DisplayStatus0)
             {
-                Core_.AnsiRepaint();
+                Core_.AnsiRepaint(false);
             }
-            if (DisplayStatus0 > 0)
+            int DisplayStatusMod = (DisplayStatus0 % 3);
+            int DisplayStatusDiv = (DisplayStatus0 / 3);
+            if (DisplayStatusMod != 0)
             {
                 CharMsg = "";
-                string CharCounter = (i).ToString() + "/" + FileCtX.Count.ToString() + ": ";
-                for (int iii = DispBuffer.Count - 1; iii >= 0; iii--)
+                if (DisplayStatusDiv <= 2)
                 {
-                    string CharMsg_ = TextWork.CharCode(DispBuffer[iii], 0) + " ";
-                    if ((CharCounter.Length + CharMsg.Length + CharMsg_.Length - 1) < Screen_.WinW)
+                    string CharCounter = (i).ToString() + "/" + FileCtX.Count.ToString() + ": ";
+                    for (int iii = DispBuffer.Count - 1; iii >= 0; iii--)
                     {
-                        CharMsg = CharMsg_ + CharMsg;
+                        string CharMsg_ = TextWork.CharCode(DispBuffer[iii], 0) + " ";
+                        switch (DisplayStatusDiv)
+                        {
+                            case 0:
+                                if (DispBuffer[iii] >= 32)
+                                {
+                                    if (DispBuffer[iii] == 32)
+                                    {
+                                        CharMsg_ = TextWork.IntToStr(0xFFFD) + " ";
+                                    }
+                                    else
+                                    {
+                                        CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
+                                    }
+                                }
+                                break;
+                            case 1:
+                                if ((DispBuffer[iii] >= 32) && (DispBuffer[iii] <= 126))
+                                {
+                                    if (DispBuffer[iii] == 32)
+                                    {
+                                        CharMsg_ = TextWork.IntToStr(0xFFFD) + " ";
+                                    }
+                                    else
+                                    {
+                                        CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
+                                    }
+                                }
+                                break;
+                        }
+                        if ((CharCounter.Length + CharMsg.Length + CharMsg_.Length - 1) < Screen_.WinW)
+                        {
+                            CharMsg = CharMsg_ + CharMsg;
+                        }
+                    }
+                    CharMsg = CharCounter + CharMsg;
+                }
+                else
+                {
+                    if (Core_.__AnsiProcessDelayMin > Core_.__AnsiProcessDelayMax)
+                    {
+                        CharMsg = "Step: " + Core_.__AnsiProcessStep + "  Min: ?  Max: ?  ";
+                    }
+                    else
+                    {
+                        CharMsg = "Step: " + Core_.__AnsiProcessStep + "  Min: " + Core_.__AnsiProcessDelayMin + "  Max: " + Core_.__AnsiProcessDelayMax + "  ";
                     }
                 }
-                CharMsg = CharCounter + CharMsg;
                 CharMsg = CharMsg.Substring(0, CharMsg.Length - 1).PadRight(Screen_.WinW, ' ');
-                if (DisplayStatus0 == 1)
+                if (DisplayStatusMod == 1)
                 {
                     Screen_.SetCursorPositionNoRefresh(0, 0);
                     Screen_.WriteText(CharMsg, Core_.StatusBack, Core_.StatusFore);
                 }
-                if (DisplayStatus0 == 2)
+                if (DisplayStatusMod == 2)
                 {
                     Screen_.SetCursorPositionNoRefresh(0, Screen_.WinH - 1);
                     Screen_.WriteText(CharMsg, Core_.StatusBack, Core_.StatusFore);
                 }
             }
-            Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
+            Core_.AnsiRepaintCursor();
             DisplayStatus_ = DisplayStatus0;
         }
 

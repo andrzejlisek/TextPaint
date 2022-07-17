@@ -16,6 +16,18 @@ namespace TextPaint
     /// </summary>
     public class Screen
     {
+        struct DummyCharItemDef
+        {
+            public int X;
+            public int Y;
+            public int C;
+            public int B;
+            public int F;
+            public int FontW;
+            public int FontH;
+        }
+        List<DummyCharItemDef> DummyCharList = new List<DummyCharItemDef>();
+
         protected object GraphMutex = new object();
 
         public bool MultiThread = false;
@@ -30,7 +42,10 @@ namespace TextPaint
         protected int[,] ScrChrC;
         protected int[,] ScrChrB;
         protected int[,] ScrChrF;
-        
+        protected int[,] ScrChrFontW;
+        protected int[,] ScrChrFontH;
+
+
         public void MemoPrepare()
         {
             if (UseMemo != 0)
@@ -38,6 +53,8 @@ namespace TextPaint
                 ScrChrB = new int[WinW, WinH];
                 ScrChrF = new int[WinW, WinH];
                 ScrChrC = new int[WinW, WinH];
+                ScrChrFontW = new int[WinW, WinH];
+                ScrChrFontH = new int[WinW, WinH];
                 for (int Y = 0; Y < WinH; Y++)
                 {
                     for (int X = 0; X < WinW; X++)
@@ -48,16 +65,16 @@ namespace TextPaint
             }
         }
 
-        protected virtual void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore)
+        protected virtual void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             
         }
 
-        public void PutChar(int X, int Y, int C, int ColorBack, int ColorFore)
+        public void PutChar(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH))
             {
-                PutChar_(X, Y, C, ColorBack, ColorFore);
+                PutChar_(X, Y, C, ColorBack, ColorFore, FontW, FontH);
                 if (UseMemo > 0)
                 {
                     if (C == 0)
@@ -67,6 +84,8 @@ namespace TextPaint
                     ScrChrC[X, Y] = C;
                     ScrChrB[X, Y] = ColorBack;
                     ScrChrF[X, Y] = ColorFore;
+                    ScrChrFontW[X, Y] = FontW;
+                    ScrChrFontH[X, Y] = FontH;
                     return;
                 }
             }
@@ -85,7 +104,7 @@ namespace TextPaint
             {
                 for (int X = 0; X < WinW; X++)
                 {
-                    PutChar_(X, Y, 32, ColorB, ColorF);
+                    PutChar_(X, Y, 32, ColorB, ColorF, 0, 0);
                 }
             }
         }
@@ -116,11 +135,11 @@ namespace TextPaint
             {
                 if (i < StatusText.Count)
                 {
-                    PutChar(i, WinH - 1, StatusText[i], ColorBack, ColorFore);
+                    PutChar(i, WinH - 1, StatusText[i], ColorBack, ColorFore, 0, 0);
                 }
                 else
                 {
-                    PutChar(i, WinH - 1, ' ', ColorBack, ColorFore);
+                    PutChar(i, WinH - 1, ' ', ColorBack, ColorFore, 0, 0);
                 }
             }
         }
@@ -130,6 +149,8 @@ namespace TextPaint
         protected int CursorC = -1;
         protected int CursorB = -1;
         protected int CursorF = -1;
+        protected int CursorFontW = 0;
+        protected int CursorFontH = 0;
         protected bool CursorNeedRepaint = false;
 
         public virtual void SetCursorPositionNoRefresh(int X, int Y)
@@ -152,7 +173,7 @@ namespace TextPaint
         {
             for (int i = 0; i < Text.Count; i++)
             {
-                PutChar(CursorX, CursorY, Text[i], ColorB, ColorF);
+                PutChar(CursorX, CursorY, Text[i], ColorB, ColorF, 0, 0);
                 CursorX++;
                 if (CursorX == WinW)
                 {
@@ -173,7 +194,7 @@ namespace TextPaint
                 CursorY--;
                 CursorX = WinW - 1;
             }
-            PutChar(CursorX, CursorY, 32, ColorB, ColorF);
+            PutChar(CursorX, CursorY, 32, ColorB, ColorF, 0, 0);
         }
 
         public void WriteText(string Text, int ColorB, int ColorF)

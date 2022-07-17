@@ -19,8 +19,7 @@ namespace TextPaint
     /// </summary>
     public partial class Core
     {
-
-        public int AnsiMaxVal = 2000000000;
+        const int MaxlineSize = 10000;
 
         // 0 - Text editor
         // 1 - ANSI display and server
@@ -135,9 +134,45 @@ namespace TextPaint
 
         public Core()
         {
+            for (int i = 0; i < 16; i++)
+            {
+                Color256[i] = i;
+            }
+            for (int i_R = 0; i_R < 6; i_R++)
+            {
+                for (int i_G = 0; i_G < 6; i_G++)
+                {
+                    for (int i_B = 0; i_B < 6; i_B++)
+                    {
+                        int i_ = i_R * 36 + i_G * 6 + i_B + 16;
+                        Color256[i_] = 0;
+                        if (i_B >= 3)
+                        {
+                            Color256[i_] = Color256[i_] + 4;
+                        }
+                        if (i_G >= 3)
+                        {
+                            Color256[i_] = Color256[i_] + 2;
+                        }
+                        if (i_R >= 3)
+                        {
+                            Color256[i_] = Color256[i_] + 1;
+                        }
+                        if ((i_R + i_G + i_B) >= 8)
+                        {
+                            Color256[i_] += 8;
+                        }
+                    }
+                }
+            }
+            for (int i = 0; i < 6; i++)
+            {
+                Color256[232 + i] = 0;
+                Color256[238 + i] = 8;
+                Color256[244 + i] = 7;
+                Color256[250 + i] = 15;
+            }
         }
-
-        const int MaxlineSize = 10000;
 
         List<List<int>> TextBuffer = new List<List<int>>();
         List<List<int>> TextColBuf = new List<List<int>>();
@@ -919,6 +954,7 @@ namespace TextPaint
             
             ConfigFile CF = new ConfigFile();
             //Console.WriteLine(AppDir());
+            //Console.ReadLine();
             CF.FileLoad(AppDir() + "Config.txt");
 
             for (int i = 1; i < CmdArgs.Length; i++)
@@ -960,6 +996,65 @@ namespace TextPaint
                 CurrentFileName_ = AppDir() + "Config.txt";
             }
 
+
+            // Load character maps
+            string[] CharDOS = CF.ParamGetS("ANSICharsDOS").Split(',');
+            string[] CharsVT100 = CF.ParamGetS("ANSICharsVT100").Split(',');
+            string[] CharsVT52 = CF.ParamGetS("ANSICharsVT52").Split(',');
+            for (int i = 0; i < 32; i++)
+            {
+                if (CharDOS.Length >= 32)
+                {
+                    int T = TextWork.CodeChar(CharDOS[i]);
+                    if (T >= 32)
+                    {
+                        DosControl[i] = T;
+                    }
+                    else
+                    {
+                        DosControl[i] = 32;
+                    }
+                }
+                if (CharsVT100.Length >= 32)
+                {
+                    int T = TextWork.CodeChar(CharsVT100[i]);
+                    if (T >= 32)
+                    {
+                        VT100_SemigraphChars[i] = T;
+                    }
+                    else
+                    {
+                        VT100_SemigraphChars[i] = 32;
+                    }
+                }
+                if (CharsVT52.Length >= 32)
+                {
+                    int T = TextWork.CodeChar(CharsVT52[i]);
+                    if (T >= 32)
+                    {
+                        VT52_SemigraphChars[i] = T;
+                    }
+                    else
+                    {
+                        VT52_SemigraphChars[i] = 32;
+                    }
+                }
+            }
+
+
+            // Create key substitute map
+            int SubI = 1;
+            SubstituteKey = CF.ParamGetS("SunstituteKey");
+            string SubO = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "O");
+            string SubR = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "R");
+            while ((SubO != "") && (SubR != ""))
+            {
+                SubstituteMap.Add(SubR, SubO);
+                SubI++;
+                SubO = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "O");
+                SubR = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "R");
+            }
+
             CurrentFileName = CurrentFileName_;
             
             WinW = -1;
@@ -976,36 +1071,37 @@ namespace TextPaint
             TextColBuf.Clear();
             FileREnc = CF.ParamGetS("FileReadEncoding");
             FileWEnc = CF.ParamGetS("FileWriteEncoding");
+            FileReadChars = CF.ParamGetI("FileReadChars");
             UseAnsiLoad = CF.ParamGetB("ANSIRead");
             UseAnsiSave = CF.ParamGetB("ANSIWrite");
             AnsiMaxX = CF.ParamGetI("ANSIWidth");
             AnsiMaxY = CF.ParamGetI("ANSIHeight");
+            __AnsiLineOccupy1_Use = CF.ParamGetB("ANSIBufferAbove");
+            __AnsiLineOccupy2_Use = CF.ParamGetB("ANSIBufferBelow");
             ANSI_CR = CF.ParamGetI("ANSIReadCR");
             ANSI_LF = CF.ParamGetI("ANSIReadLF");
             AnsiColorBackBlink = CF.ParamGetB("ANSIWriteBlink");
             AnsiColorForeBold = CF.ParamGetB("ANSIWriteBold");
             TextBeyondLineMargin = CF.ParamGetI("BeyondLineMargin");
 
-            if (CF.ParamGetB("ANSIDOS"))
+            ANSIDOS = CF.ParamGetB("ANSIDOS");
+            if (AnsiMaxX <= 0)
             {
-                ANSIPrintControlChars = true;
-                ANSIMusic = true;
-                ANSIDOSNewLine = true;
-                ANSIMoveRightWrapLine = true;
-                ANSIIgnoreVerticalTab = true;
-                ANSIIgnoreHorizontalTab = true;
-                ANSIIgnoreBackspace = true;
+                AnsiMaxX = 80;
             }
-            else
+            if (AnsiMaxY <= 0)
             {
-                ANSIPrintControlChars = false;
-                ANSIMusic = false;
-                ANSIDOSNewLine = false;
-                ANSIMoveRightWrapLine = false;
-                ANSIIgnoreVerticalTab = false;
-                ANSIIgnoreHorizontalTab = false;
-                ANSIIgnoreBackspace = false;
+                if (ANSIDOS)
+                {
+                    AnsiMaxY = 25;
+                }
+                else
+                {
+                    AnsiMaxY = 24;
+                }
             }
+            ANSIScrollDist1 = CF.ParamGetI("ANSIScrollChars1");
+            ANSIScrollDist2 = CF.ParamGetI("ANSIScrollChars2");
 
             ReadColor(CF.ParamGetS("ColorNormal"), ref TextNormalBack, ref TextNormalFore);
             ReadColor(CF.ParamGetS("ColorBeyondLine"), ref TextBeyondLineBack, ref TextBeyondLineFore);
@@ -1016,6 +1112,7 @@ namespace TextPaint
 
             ANSIIgnoreBlink = CF.ParamGetB("ANSIIgnoreBlink");
             ANSIIgnoreBold = CF.ParamGetB("ANSIIgnoreBold");
+            ANSIReverseMode = CF.ParamGetI("ANSIReverseMode");
             UseWindow = (CF.ParamGetI("WinUse") > 0);
             CursorDisplay = CF.ParamGetB("CursorDisplay");
             bool ColorBlending = CF.ParamGetB("WinColorBlending");
@@ -1044,14 +1141,6 @@ namespace TextPaint
                     Screen_ = new ScreenConsole(this, CF, TextNormalBack, TextNormalFore);
                     Screen_.UseMemo = CF.ParamGetI("ConUseMemo");
                 }
-            }
-            if (AnsiMaxX <= 0)
-            {
-                AnsiMaxX = AnsiMaxVal;
-            }
-            if (AnsiMaxY <= 0)
-            {
-                AnsiMaxY = AnsiMaxVal;
             }
             if (WorkMode == 1)
             {
@@ -1135,7 +1224,7 @@ namespace TextPaint
             else
             {
                 Screen_ = new ScreenWindow(this, CF, 1, 1, ColorBlending, true);
-                RenderStart(CF.ParamGetS("RenderFile"), CF.ParamGetI("RenderStep"), CF.ParamGetI("RenderOffset"), CF.ParamGetB("RenderCursor"));
+                RenderStart(CF.ParamGetS("RenderFile"), CF.ParamGetI("RenderStep"), CF.ParamGetI("RenderOffset"), CF.ParamGetI("RenderFrame"), CF.ParamGetB("RenderCursor"), CF.ParamGetS("RenderType"));
             }
         }
 
@@ -1170,15 +1259,17 @@ namespace TextPaint
                     {
                         int ColorB = 0;
                         int ColorF = 0;
+                        int FontW = 0;
+                        int FontH = 0;
+                        ColorFromInt(ScrCharCol[Y][X], out ColorB, out ColorF, out FontW, out FontH);
                         switch (ScrCharType[Y][X])
                         {
                             case 0:
-                                ColorFromInt(ScrCharCol[Y][X], out ColorB, out ColorF);
                                 if (ColorB < 0) { ColorB = TextNormalBack; }
                                 if (ColorF < 0) { ColorF = TextNormalFore; }
                                 break;
                             case 1:
-                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && (AnsiMaxX < AnsiMaxVal) && ((X + DisplayX) < AnsiMaxX)))
+                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && ((X + DisplayX) < AnsiMaxX)))
                                 {
                                     ColorB = TextNormalBack;
                                     ColorF = TextNormalFore;
@@ -1203,7 +1294,7 @@ namespace TextPaint
                         ScrCharTypeDisp[Y][X] = ScrCharType[Y][X];
                         ScrCharStrDisp[Y][X] = ScrCharStr[Y][X];
                         ScrCharColDisp[Y][X] = ScrCharCol[Y][X];
-                        Screen_.PutChar(X, Y, ScrCharStr[Y][X], ColorB, ColorF);
+                        Screen_.PutChar(X, Y, ScrCharStr[Y][X], ColorB, ColorF, FontW, FontH);
                     }
                 }
             }
@@ -1328,8 +1419,8 @@ namespace TextPaint
 
                     }
                     StatusText.Append(" " + TextWork.CharCode(StatusCursorChar, 1) + " " + TextWork.CharToStr(StatusCursorChar) + " ");
-                    int _ColorB, _ColorF;
-                    ColorFromInt(StatusCursorColo, out _ColorB, out _ColorF);
+                    int _ColorB, _ColorF, _FontW, _FontH;
+                    ColorFromInt(StatusCursorColo, out _ColorB, out _ColorF, out _FontW, out _FontH);
                     if ((_ColorB >= 0) && (_ColorB <= 15))
                     {
                         StatusText.Append(_ColorB.ToString("X"));
@@ -1347,6 +1438,18 @@ namespace TextPaint
                         StatusText.Append("-");
                     }
                     StatusText.Append(" ");
+
+
+                    // FONT SIZE NOT IMPLEMENTED YET
+                    if (false)
+                    {
+                        StatusText.Append("FONT=");
+                        StatusText.Append(_FontW);
+                        StatusText.Append(",");
+                        StatusText.Append(_FontH);
+                        StatusText.Append(" ");
+                    }
+
                 }
 
                 switch (WorkState)
@@ -1396,6 +1499,7 @@ namespace TextPaint
                     }
                 }
 
+
                 Screen_.SetStatusText(StatusText.ToString(), StatusBack, StatusFore);
                 if (InfoScreen_.Shown)
                 {
@@ -1427,7 +1531,72 @@ namespace TextPaint
         int KeyCounter = 0;
         string KeyCounterLast = "";
 
+        string SubstituteKey = "";
+        int SubstituteState = 0;
+        Dictionary<string, string> SubstituteMap = new Dictionary<string, string>();
+
         public void CoreEvent(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        {
+            if ((KeyName == SubstituteKey) || (((int)KeyChar).ToString() == SubstituteKey))
+            {
+                if ((!ModShift) && (!ModCtrl) && (!ModAlt))
+                {
+                    switch (SubstituteState)
+                    {
+                        case 0:
+                            SubstituteState = 1;
+                            break;
+                        case 1:
+                            SubstituteState = 0;
+                            CoreEvent_(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                            break;
+                        case 2:
+                            SubstituteState = 3;
+                            break;
+                        case 3:
+                            SubstituteState = 2;
+                            CoreEvent_(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                            break;
+                    }
+                    return;
+                }
+            }
+            bool UseSubstitute = false;
+            switch (SubstituteState)
+            {
+                case 1:
+                    SubstituteState = 2;
+                    UseSubstitute = true;
+                    break;
+                case 2:
+                    UseSubstitute = true;
+                    break;
+                case 3:
+                    SubstituteState = 0;
+                    break;
+            }
+            if (UseSubstitute)
+            {
+                string KeyName0 = KeyName;
+                int KeyNameI = KeyName0.IndexOf("\"->\"");
+                if (KeyNameI >= 0)
+                {
+                    KeyName0 = KeyName0.Substring(KeyNameI + 4);
+                }
+                if (!SubstituteMap.ContainsKey(KeyName0))
+                {
+                    KeyName0 = ((int)KeyChar).ToString();
+                }
+                if (SubstituteMap.ContainsKey(KeyName0))
+                {
+                    KeyName = SubstituteMap[KeyName0];
+                    KeyChar = (char)0;
+                }
+            }
+            CoreEvent_(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+        }
+
+        public void CoreEvent_(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
         {
             if (WorkMode != 0)
             {
@@ -1590,7 +1759,7 @@ namespace TextPaint
                         }
                         for (int i = 0; i < WinW; i++)
                         {
-                            Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore);
+                            Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore, 0, 0);
                         }
 
                         Screen_.SetCursorPosition(0, WinH - 1);
@@ -1723,14 +1892,6 @@ namespace TextPaint
                     Semigraphics_.AnsiMaxY_ = AnsiMaxY;
                     Semigraphics_.ANSI_CR_ = ANSI_CR;
                     Semigraphics_.ANSI_LF_ = ANSI_LF;
-                    if (Semigraphics_.AnsiMaxX_ == AnsiMaxVal)
-                    {
-                        Semigraphics_.AnsiMaxX_ = 0;
-                    }
-                    if (Semigraphics_.AnsiMaxY_ == AnsiMaxVal)
-                    {
-                        Semigraphics_.AnsiMaxY_ = 0;
-                    }
                     Semigraphics_.SelectCharInit();
                     return;
                 case "Tab":

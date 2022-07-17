@@ -1,0 +1,112 @@
+@0
+Common keys:
+  Arrows, Home, End, PageUp, PageDown - Move cursor
+  Tab - Cursor display style
+  Esc - Text writing direction
+  F1, F2, F3, F4 - Change state or display information
+  F7 - Save file
+  F8 - Reload file
+  F9 - Character selector
+  F12 - Quit
+  Z - Undo (not works in state 1 and 2)
+  X - Redo (not works in state 1 and 2)
+
+To undo or redo in state 0 or 1:
+  1. Switch temporarily to state 2 or 3.
+  2. Press Z or X key to undo or redo.
+  3. Switch back to state 0 or 1.
+
+@1
+State 1 - Write text:
+  Esc - Change writing direction.
+  Backspace - Move cursor in opposite direction.
+  Insert - Insert line or character.
+  Delete - Delete line or character.
+  Enter - Change Insert/Delete mode
+  Any alphanumeric key - Write key character
+@2
+State 2 - Write characters:
+  Backspace - Move cursor in opposite direction
+  Insert - Insert line or character
+  Delete - Delete line or character
+  Enter - Change Insert/Delete mode
+  Any alphanumeric key - Write favorite character asigned to key
+@3
+State 3 - Character paint:
+  W,S,A,D - Change figure size.
+  Q,E - Change cursor position within the rectangle or diamond.
+  1 - Change figure shape.
+  2 - Change character set.
+  3 - Draw hollow frame.
+  4 - Draw filled frame.
+  5 - Start or stop drawing line.
+  C - Copy the text.
+  V - Paste the text.
+  Insert - Insert line or character.
+  Delete - Delete line or character.
+  Enter - Change Insert/Delete mode.
+
+  I or Numpad Plus - Write vertical line.
+  K or Numpad Minus - Write horizontal line.
+  Space or Numpad 0 - Write selected character.
+
+Frame corners, tees and crosses assigned to letters or Numpad digits:
+
+  T---Y---U         T         7---8---9         7
+  |   |   |        / \        |   |   |        / \
+  |   |   |       G   Y       |   |   |       4   8
+  |   |   |      / \ / \      |   |   |      / \ / \
+  G---H---J     B   H   U     4---5---6     1   5   9
+  |   |   |      \ / \ /      |   |   |      \ / \ /
+  |   |   |       N   J       |   |   |       2   6
+  |   |   |        \ /        |   |   |        \ /
+  B---N---M         M         1---2---3         3
+@4
+State 4 - Pixel paint:
+  W,S,A,D - Move size cursor.
+  I,K,J,L - Move picture between cursors.
+  1 - Change paint configuration.
+  2 - Change default color.
+  3 - Draw one pixel or flood fill.
+  4 - Draw line.
+  5 - Draw rectangle.
+  6 - Draw ellipse.
+  P - Turn pencil on/off.
+  M - Change picture move mode.
+  N - Invert colors.
+  C - Copy picture.
+  V - Paste picture.
+  Q,E - Move cursors around rectangle corners.
+  R - Change paint color.
+  F - Change paint fill option.
+@9
+
+Character and color selector:
+  Arrows - Choose character or color.
+  PageUp, PageDown - Depends on state:
+    Character selector: Flip one page.
+    Color selector: Change number of columns for ANSI file load.
+  Home, End - Depends on state:
+    Character selector: Flip 16 pages.
+    Color selector: Change number of rows for ANSI file load.
+  F1, F2: - Depends on state:
+    Character selector: Switch the plane.
+    Color selector: Switch the CR and LF character parsing (3 choices for each).
+  F3 - Select between states:
+    Character selector: Switch into Color selector.
+    Color selector: Switch into Character selector.
+  Delete - Go to character or color under text cursor.
+  Insert - Depends on state:
+    Character selector: Switch between ordinary and favorite state.
+    Color selector: Toggle drawing text and color (3 choices).
+  Backspace (character selector only):
+    Ordinary: Select character for save as favorite.
+    Favorite: Select character or put character on pointed place.
+  Tab - Move character selector window.
+  Enter - Change selected character or color and close.
+  Escape - Close without changing selected character or color.
+  Any alphanumeric key (character selector only):
+    Ordinary: Save pointed character into favorite set under pressed key.
+    Favorite: Go to place assigned with pressed key.
+@
+

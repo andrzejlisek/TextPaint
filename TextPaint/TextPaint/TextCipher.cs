@@ -219,7 +219,7 @@ namespace TextPaint
             string Password_ = Password;
             Core_.Screen_.SetStatusText(PasswordHeader + Password_, Core_.StatusBack, Core_.StatusFore);
             int CurPos = PasswordCursor + PasswordHeader.Length;
-            Core_.Screen_.PutChar(CurPos, Core_.Screen_.WinH - 1, (Password_ + " ")[PasswordCursor], Core_.StatusBack, Core_.StatusFore);
+            Core_.Screen_.PutChar(CurPos, Core_.Screen_.WinH - 1, (Password_ + " ")[PasswordCursor], Core_.StatusBack, Core_.StatusFore, 0, 0);
             Core_.Screen_.SetCursorPosition(CurPos, Core_.Screen_.WinH - 1);
         }
 

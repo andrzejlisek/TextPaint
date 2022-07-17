@@ -17,6 +17,7 @@ namespace TextPaint
         public bool UseAnsiSave = false;
         public bool AnsiColorBackBlink = false;
         public bool AnsiColorForeBold = false;
+        public int FileReadChars = 0;
 
 
         public int TextNormalBack = 0;
@@ -35,7 +36,7 @@ namespace TextPaint
         public int PopupFore = 15;
 
 
-        public int ColorToInt(int Back, int Fore)
+        public static int ColorToInt(int Back, int Fore, int FontW, int FontH)
         {
             int Col = 0;
             if (Back >= 0)
@@ -48,13 +49,17 @@ namespace TextPaint
                 Col = Col + (Fore << 8);
                 Col = Col + (1 << 17);
             }
+            Col = Col + (FontW << 18);
+            Col = Col + (FontH << 24);
             return Col;
         }
 
-        public void ColorFromInt(int Col, out int Back, out int Fore)
+        public static void ColorFromInt(int Col, out int Back, out int Fore, out int FontW, out int FontH)
         {
             Back = -1;
             Fore = -1;
+            FontW = 0;
+            FontH = 0;
             if ((Col & (1 << 16)) > 0)
             {
                 Back = Col & 255;
@@ -63,38 +68,8 @@ namespace TextPaint
             {
                 Fore = (Col >> 8) & 255;
             }
-        }
-
-        public void FileAdd(int DataI, ref List<int> DataO)
-        {
-            switch (DataI)
-            {
-                case 13:
-                    if (ANSI_CR == 0)
-                    {
-                        DataO.Add(13);
-                    }
-                    if (ANSI_CR == 1)
-                    {
-                        DataO.Add(13);
-                        DataO.Add(10);
-                    }
-                    break;
-                case 10:
-                    if (ANSI_LF == 0)
-                    {
-                        DataO.Add(10);
-                    }
-                    if (ANSI_LF == 1)
-                    {
-                        DataO.Add(13);
-                        DataO.Add(10);
-                    }
-                    break;
-                default:
-                    DataO.Add(DataI);
-                    break;
-            }
+            FontW = (Col >> 18) & 63;
+            FontH = (Col >> 24) & 63;
         }
 
         public void FileLoad(string FileName)
@@ -125,23 +100,87 @@ namespace TextPaint
 
                 AnsiProcessReset(true);
 
-                string Buf = null;
+                string Buf;
                 int TestLines = 0;
-                //Console.Clear();
-                List<int> EOL = new List<int>();
-                EOL.Add(13);
-                EOL.Add(10);
 
                 if (UseAnsiLoad)
                 {
                     Buf = SR.ReadToEnd();
                     List<int> TextFileLine_ = TextCipher_.Crypt(TextWork.StrToInt(Buf), true);
-                    List<int> TextFileLine = new List<int>();
-                    for (int i = 0; i < TextFileLine_.Count; i++)
+                    if (FileReadChars > 0)
                     {
-                        FileAdd(TextFileLine_[i], ref TextFileLine);
+                        AnsiProcessSupply(TextFileLine_.GetRange(0, FileReadChars));
                     }
-                    AnsiProcess(TextFileLine);
+                    else
+                    {
+                        AnsiProcessSupply(TextFileLine_);
+                    }
+                    AnsiProcess(-1);
+                    TextBuffer.Clear();
+                    TextColBuf.Clear();
+
+
+                    // Before screen
+                    for (int i = 0; i < __AnsiLineOccupy1.Count; i++)
+                    {
+                        List<int> TextBufferLine = new List<int>();
+                        List<int> TextColBufLine = new List<int>();
+                        int LineMax = (__AnsiLineOccupy1[i].Count / __AnsiLineOccupyFactor) - 1;
+                        for (int ii = 0; ii <= LineMax; ii++)
+                        {
+                            TextBufferLine.Add(__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 0]);
+                            int ColorB = __AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 1];
+                            int ColorF = __AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 2];
+                            int FontW = __AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 3];
+                            int FontH = __AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 4];
+                            TextColBufLine.Add(ColorToInt(ColorB, ColorF, FontW, FontH));
+                        }
+
+                        TextBuffer.Add(TextBufferLine);
+                        TextColBuf.Add(TextColBufLine);
+                    }
+
+                    // Screen
+                    for (int i = 0; i < __AnsiLineOccupy.Count; i++)
+                    {
+                        List<int> TextBufferLine = new List<int>();
+                        List<int> TextColBufLine = new List<int>();
+                        int LineMax = (__AnsiLineOccupy[i].Count / __AnsiLineOccupyFactor) - 1;
+                        for (int ii = 0; ii <= LineMax; ii++)
+                        {
+                            TextBufferLine.Add(__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 0]);
+                            int ColorB = __AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 1];
+                            int ColorF = __AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 2];
+                            int FontW = __AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 3];
+                            int FontH = __AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 4];
+                            TextColBufLine.Add(ColorToInt(ColorB, ColorF, FontW, FontH));
+                        }
+
+                        TextBuffer.Add(TextBufferLine);
+                        TextColBuf.Add(TextColBufLine);
+                    }
+
+                    // After screen
+                    for (int i = (__AnsiLineOccupy2.Count - 1); i >= 0; i--)
+                    {
+                        List<int> TextBufferLine = new List<int>();
+                        List<int> TextColBufLine = new List<int>();
+                        int LineMax = (__AnsiLineOccupy2[i].Count / __AnsiLineOccupyFactor) - 1;
+                        for (int ii = 0; ii <= LineMax; ii++)
+                        {
+                            TextBufferLine.Add(__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 0]);
+                            int ColorB = __AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 1];
+                            int ColorF = __AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 2];
+                            int FontW = __AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 3];
+                            int FontH = __AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 4];
+                            TextColBufLine.Add(ColorToInt(ColorB, ColorF, FontW, FontH));
+                        }
+
+                        TextBuffer.Add(TextBufferLine);
+                        TextColBuf.Add(TextColBufLine);
+                    }
+
+                    TextBufferTrim();
                 }
                 else
                 {
@@ -169,6 +208,7 @@ namespace TextPaint
             ToggleDrawColo = (TempMemo.Pop() == 1);
         }
 
+
         public void FileSave(string FileName)
         {
             if (FileName == "")
@@ -192,173 +232,16 @@ namespace TextPaint
                 {
                     SW = new StreamWriter(FS);
                 }
-                int LastB = -1;
-                int LastF = -1;
-                bool LastBlink = false;
-                bool LastBold = false;
+                AnsiFile AnsiFile_ = new AnsiFile();
+                AnsiFile_.Reset();
                 for (int i = 0; i < TextBuffer.Count; i++)
                 {
                     List<int> TextFileLine;
                     if (UseAnsiSave)
                     {
-                        TextFileLine = new List<int>();
-
-                        // Beginning of line - reset colors and attributes
-                        if (i == 0)
-                        {
-                            TextFileLine.Add(27);
-                            TextFileLine.Add('[');
-                            TextFileLine.Add('0');
-                            TextFileLine.Add('m');
-                        }
-
-                        for (int ii = 0; ii < TextBuffer[i].Count; ii++)
-                        {
-                            // Get color of current character
-                            int TempB;
-                            int TempF;
-                            ColorFromInt(TextColBuf[i][ii], out TempB, out TempF);
-
-                            // Use escape codes only if color differs from last color
-                            if ((LastB != TempB) || (LastF != TempF))
-                            {
-                                // Default color - reset attributes
-                                if (((TempB < 0) && (LastB >= 0)) || ((TempF < 0) && (LastF >= 0)))
-                                {
-                                    TextFileLine.Add(27);
-                                    TextFileLine.Add('[');
-                                    TextFileLine.Add('0');
-                                    TextFileLine.Add('m');
-                                    LastB = -1;
-                                    LastF = -1;
-                                    LastBlink = false;
-                                    LastBold = false;
-                                }
-
-                                // Background color change
-                                if (LastB != TempB)
-                                {
-                                    if ((TempB >= 0) && (TempB <= 7))
-                                    {
-                                        TextFileLine.Add(27);
-                                        TextFileLine.Add('[');
-                                        TextFileLine.Add('4');
-                                        TextFileLine.Add(48 + TempB);
-                                        if (AnsiColorBackBlink)
-                                        {
-                                            if (LastBlink)
-                                            {
-                                                TextFileLine.Add(';');
-                                                TextFileLine.Add('2');
-                                                TextFileLine.Add('5');
-                                                LastBlink = false;
-                                            }
-                                        }
-                                        TextFileLine.Add('m');
-                                    }
-                                    if ((TempB >= 8) && (TempB <= 15))
-                                    {
-                                        if (AnsiColorBackBlink)
-                                        {
-                                            TextFileLine.Add(27);
-                                            TextFileLine.Add('[');
-                                            TextFileLine.Add('4');
-                                            TextFileLine.Add(40 + TempB);
-                                            if (AnsiColorBackBlink)
-                                            {
-                                                if (!LastBlink)
-                                                {
-                                                    TextFileLine.Add(';');
-                                                    TextFileLine.Add('5');
-                                                    LastBlink = true;
-                                                }
-                                            }
-                                            TextFileLine.Add('m');
-                                        }
-                                        else
-                                        {
-                                            TextFileLine.Add(27);
-                                            TextFileLine.Add('[');
-                                            TextFileLine.Add('1');
-                                            TextFileLine.Add('0');
-                                            TextFileLine.Add(40 + TempB);
-                                            TextFileLine.Add('m');
-                                        }
-                                    }
-                                    LastB = TempB;
-                                }
-
-                                // Foreground color change
-                                if (LastF != TempF)
-                                {
-                                    if ((TempF >= 0) && (TempF <= 7))
-                                    {
-                                        TextFileLine.Add(27);
-                                        TextFileLine.Add('[');
-                                        TextFileLine.Add('3');
-                                        TextFileLine.Add(48 + TempF);
-                                        if (AnsiColorForeBold)
-                                        {
-                                            if (LastBold)
-                                            {
-                                                TextFileLine.Add(';');
-                                                TextFileLine.Add('2');
-                                                TextFileLine.Add('2');
-                                                LastBold = false;
-                                            }
-                                        }
-                                        TextFileLine.Add('m');
-                                    }
-                                    if ((TempF >= 8) && (TempF <= 15))
-                                    {
-                                        if (AnsiColorForeBold)
-                                        {
-                                            TextFileLine.Add(27);
-                                            TextFileLine.Add('[');
-                                            TextFileLine.Add('3');
-                                            TextFileLine.Add(40 + TempF);
-                                            if (!LastBold)
-                                            {
-                                                TextFileLine.Add(';');
-                                                TextFileLine.Add('1');
-                                                LastBold = true;
-                                            }
-                                            TextFileLine.Add('m');
-                                        }
-                                        else
-                                        {
-                                            TextFileLine.Add(27);
-                                            TextFileLine.Add('[');
-                                            TextFileLine.Add('9');
-                                            TextFileLine.Add(40 + TempF);
-                                            TextFileLine.Add('m');
-                                        }
-                                    }
-                                    LastF = TempF;
-                                }
-                            }
-                            if (ii < AnsiMaxX)
-                            {
-                                TextFileLine.Add(TextBuffer[i][ii]);
-                            }
-                        }
-
-                        // End of line - reset colors and attributes
-                        if (i == (TextBuffer.Count - 1))
-                        {
-                            TextFileLine.Add(27);
-                            TextFileLine.Add('[');
-                            TextFileLine.Add('0');
-                            TextFileLine.Add('m');
-                        }
-
-                        // End of line characters
-                        if ((!ANSIDOSNewLine) || (TextBuffer[i].Count < AnsiMaxX))
-                        {
-                            TextFileLine.Add(13);
-                            TextFileLine.Add(10);
-                        }
-
+                        bool LinePrefix = (i == 0);
+                        bool LinePostfix = (i == (TextBuffer.Count - 1));
+                        TextFileLine = AnsiFile_.Process(TextBuffer[i], TextColBuf[i], ANSIDOS, LinePrefix, LinePostfix, AnsiMaxX, AnsiColorBackBlink, AnsiColorForeBold);
                         SW.Write(TextWork.IntToStr(TextCipher_.Crypt(TextFileLine, false)));
                     }
                     else
@@ -375,6 +258,5 @@ namespace TextPaint
 
             }
         }
-
     }
 }

@@ -7,6 +7,11 @@ namespace TextPaint
 {
     public class TextWork
     {
+        public static byte[] TelnetTimerBegin = new byte[] { 0x1B, 0x5B, 0x31, 0x3B };
+        public static byte[] TelnetTimerEnd = new byte[] { 0x56 };
+
+        public static int TelnetDummyChar = 0xFEFF;
+
         public TextWork()
         {
         }
@@ -106,7 +111,7 @@ namespace TextPaint
             }
             if (Mode == 2)
             {
-                return CharCodeX.PadLeft(5, ' ');
+                return CharCodeX.PadLeft(4, '0').PadLeft(5, ' ');
             }
             else
             {
@@ -167,6 +172,24 @@ namespace TextPaint
                 }
             }
             return L;
+        }
+
+        public static List<int> CodeToInt(string STR)
+        {
+            List<int> S = new List<int>();
+            for (int i = 0; i < STR.Length / 2; i++)
+            {
+                string STR_Char = STR.Substring(i * 2, 2);
+                if (STR_Char[0] == '_')
+                {
+                    S.Add((int)Encoding.UTF8.GetBytes(STR_Char)[1]);
+                }
+                else
+                {
+                    S.Add(int.Parse(STR_Char, NumberStyles.HexNumber));
+                }
+            }
+            return S;
         }
 
         public static string IntToStr(int I)

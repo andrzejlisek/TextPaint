@@ -23,6 +23,10 @@ namespace TextPaint
         List<string[]> NegoAnswers = new List<string[]>();
 
         Dictionary<string, string> TerminalKeys = new Dictionary<string, string>();
+        List<string> TerminalKeys0 = new List<string>();
+        List<string> TerminalKeys1 = new List<string>();
+        List<string> TerminalKeys2 = new List<string>();
+        List<string> TerminalKeys3 = new List<string>();
 
         int ServerPort = 0;
 
@@ -32,9 +36,66 @@ namespace TextPaint
         Encoding TerminalEncoding;
         Encoding ServerEncoding;
         int FileDelayTime = 100;
-        int FileDelayChars = 1;
+        int FileDelayStep = 1;
+        int FileDelayOffset = 0;
+
+        long TelnetTimerResolution = 1000;
+        string TelnetFileName = "";
+        bool TelnetFileUse = false;
+        FileStream TelnetFileS = null;
+        StreamWriter TelnetFileW = null;
+        int TerminalStep = 0;
 
         bool TelnetClient = false;
+        string TelnetKeyboardConf;
+        string TelnetKeyboardConfMax = "1112";
+        int TelnetKeyboardConfI = 0;
+        bool TelnetFuncKeyOther = false;
+
+        void TelnetKeyboardConfMove()
+        {
+            TelnetKeyboardConfI++;
+            if (TelnetKeyboardConfI == TelnetKeyboardConfMax.Length)
+            {
+                TelnetKeyboardConfI = 0;
+            }
+        }
+
+        void TelnetKeyboardConfStep()
+        {
+            int Val = int.Parse(TelnetKeyboardConf[TelnetKeyboardConfI].ToString());
+
+            if (TelnetKeyboardConf[TelnetKeyboardConfI] == TelnetKeyboardConfMax[TelnetKeyboardConfI])
+            {
+                Val = 0;
+            }
+            else
+            {
+                Val++;
+            }
+            string X = "";
+            for (int i = 0; i < TelnetKeyboardConf.Length; i++)
+            {
+                if (i == TelnetKeyboardConfI)
+                {
+                    X = X + Val.ToString();
+                }
+                else
+                {
+                    X = X + TelnetKeyboardConf[i].ToString();
+                }
+            }
+            TelnetKeyboardConf = X;
+        }
+
+        string GetTelnetKeyboardConf(int N)
+        {
+            if (Core_.__AnsiVT52)
+            {
+                return "9";
+            }
+            return TelnetKeyboardConf[N].ToString();
+        }
 
         string EscapeKey = "";
 
@@ -48,19 +109,66 @@ namespace TextPaint
             TerminalEncoding = TextWork.EncodingFromName(CF.ParamGetS("TerminalEncoding"));
             ServerEncoding = TextWork.EncodingFromName(CF.ParamGetS("ServerEncoding"));
             FileDelayTime = CF.ParamGetI("FileDelayTime");
-            FileDelayChars = CF.ParamGetI("FileDelayChars");
+            FileDelayStep = CF.ParamGetI("FileDelayStep");
+            FileDelayOffset = CF.ParamGetI("FileDelayOffset");
+            Core_.__AnsiProcessDelayFactor = CF.ParamGetI("FileDelayFrame");
 
-            bool VT100func = CF.ParamGetB("TerminalVTFuncKeys");
-            bool VT100arrows = CF.ParamGetB("TerminalVTArrowKeys");
+            TelnetKeyboardConf = CF.ParamGetI("TerminalKeys").ToString();
+            bool NotGood = false;
+            if (TelnetKeyboardConf.Length != 4)
+            {
+                NotGood = true;
+            }
+            else
+            {
+                if (!("01".Contains(TelnetKeyboardConf[0])))
+                {
+                    NotGood = true;
+                }
+                if (!("01".Contains(TelnetKeyboardConf[1])))
+                {
+                    NotGood = true;
+                }
+                if (!("01".Contains(TelnetKeyboardConf[2])))
+                {
+                    NotGood = true;
+                }
+                if (!("012".Contains(TelnetKeyboardConf[3])))
+                {
+                    NotGood = true;
+                }
+            }
+            if (NotGood)
+            {
+                TelnetKeyboardConf = "0000";
+            }
 
+            TelnetTimerResolution = CF.ParamGetL("TerminalTimeResolution");
+            TelnetFileName = CF.ParamGetS("TerminalFile");
+
+            TerminalStep = CF.ParamGetI("TerminalStep");
+            if (TerminalStep == 0)
+            {
+                TerminalStep = int.MaxValue;
+            }
+
+
+            if (TelnetTimerResolution <= 0)
+            {
+                TelnetTimerResolution = 100;
+            }
 
             if (FileDelayTime < 0)
             {
                 FileDelayTime = 0;
             }
-            if (FileDelayChars <= 0)
+            if (FileDelayStep <= 0)
             {
-                FileDelayChars = 1;
+                FileDelayStep = 1;
+            }
+            if (FileDelayOffset < 0)
+            {
+                FileDelayOffset = 0;
             }
 
             string TermName_ = CF.ParamGetS("TerminalName");
@@ -98,59 +206,110 @@ namespace TextPaint
             NegoAnswers.Add(new string[] { "fffe??", "fffc" });
 
 
-            TerminalKeys.Add("Escape", "1B");
-            TerminalKeys.Add("Enter", "0D0A");
-            TerminalKeys.Add("Insert", "1B5B327E");
-            TerminalKeys.Add("Delete", "1B5B337E"); //7F
-            TerminalKeys.Add("Home", "1B5B317E");
-            TerminalKeys.Add("End", "1B5B347E");
-            TerminalKeys.Add("PageUp", "1B5B357E");
-            TerminalKeys.Add("PageDown", "1B5B367E");
-            if (VT100arrows)
-            {
-                TerminalKeys.Add("Up", "1B4F41");
-                TerminalKeys.Add("Down", "1B4F42");
-                TerminalKeys.Add("Left", "1B4F44");
-                TerminalKeys.Add("Right", "1B4F43");
-            }
-            else
-            {
-                TerminalKeys.Add("Up", "1B5b41");
-                TerminalKeys.Add("Down", "1B5b42");
-                TerminalKeys.Add("Left", "1B5b44");
-                TerminalKeys.Add("Right", "1B5b43");
-            }
-            if (VT100func)
-            {
-                TerminalKeys.Add("F1", "1B4F50");
-                TerminalKeys.Add("F2", "1B4F51");
-                TerminalKeys.Add("F3", "1B4F52");
-                TerminalKeys.Add("F4", "1B4F53");
-                TerminalKeys.Add("F5", "1B4F54");
-                TerminalKeys.Add("F6", "1B4F55");
-                TerminalKeys.Add("F7", "1B4F56");
-                TerminalKeys.Add("F8", "1B4F57");
-                TerminalKeys.Add("F9", "1B4F58");
-                TerminalKeys.Add("F10", "1B4F59");
-                TerminalKeys.Add("F11", "1B4F5A");
-                TerminalKeys.Add("F12", "1B4F5B");
-            }
-            else
-            {
-                TerminalKeys.Add("F1", "1B5B31317E");
-                TerminalKeys.Add("F2", "1B5B31327E");
-                TerminalKeys.Add("F3", "1B5B31337E");
-                TerminalKeys.Add("F4", "1B5B31347E");
-                TerminalKeys.Add("F5", "1B5B31357E");
-                TerminalKeys.Add("F6", "1B5B31377E");
-                TerminalKeys.Add("F7", "1B5B31387E");
-                TerminalKeys.Add("F8", "1B5B31397E");
-                TerminalKeys.Add("F9", "1B5B32307E");
-                TerminalKeys.Add("F10", "1B5B32317E");
-                TerminalKeys.Add("F11", "1B5B32337E");
-                TerminalKeys.Add("F12", "1B5B32347E");
-            }
+            TerminalKeys0.Add("Up");
+            TerminalKeys0.Add("Down");
+            TerminalKeys0.Add("Right");
+            TerminalKeys0.Add("Left");
+            TerminalKeys1.Add("F1");
+            TerminalKeys1.Add("F2");
+            TerminalKeys1.Add("F3");
+            TerminalKeys1.Add("F4");
+            TerminalKeys2.Add("F5");
+            TerminalKeys2.Add("F6");
+            TerminalKeys2.Add("F7");
+            TerminalKeys2.Add("F8");
+            TerminalKeys2.Add("F9");
+            TerminalKeys2.Add("F10");
+            TerminalKeys2.Add("F11");
+            TerminalKeys2.Add("F12");
+            TerminalKeys3.Add("Home");
+            TerminalKeys3.Add("End");
 
+            // Common keys
+            TerminalKeys.Add("Escape", "1B");
+            TerminalKeys.Add("Enter0", "0D");
+            TerminalKeys.Add("Enter1", "0D0A");
+            TerminalKeys.Add("Backspace", "7F");
+
+            // Keys depending on configuration 0
+            TerminalKeys.Add("Up_0", "1B_[_A");
+            TerminalKeys.Add("Down_0", "1B_[_B");
+            TerminalKeys.Add("Right_0", "1B_[_C");
+            TerminalKeys.Add("Left_0", "1B_[_D");
+            TerminalKeys.Add("Up_1", "1B_O_A");
+            TerminalKeys.Add("Down_1", "1B_O_B");
+            TerminalKeys.Add("Right_1", "1B_O_C");
+            TerminalKeys.Add("Left_1", "1B_O_D");
+
+            // Keys depending on configuration 1 and 2
+            TerminalKeys.Add("F1_0", "1B_[_1_1_~");
+            TerminalKeys.Add("F2_0", "1B_[_1_2_~");
+            TerminalKeys.Add("F3_0", "1B_[_1_3_~");
+            TerminalKeys.Add("F4_0", "1B_[_1_4_~");
+            TerminalKeys.Add("F5_0", "1B_[_1_5_~");
+            TerminalKeys.Add("F6_0", "1B_[_1_7_~");
+            TerminalKeys.Add("F7_0", "1B_[_1_8_~");
+            TerminalKeys.Add("F8_0", "1B_[_1_9_~");
+            TerminalKeys.Add("F9_0", "1B_[_2_0_~");
+            TerminalKeys.Add("F10_0", "1B_[_2_1_~");
+            TerminalKeys.Add("F11_0", "1B_[_2_3_~");
+            TerminalKeys.Add("F12_0", "1B_[_2_4_~");
+            TerminalKeys.Add("F1_1", "1B_O_P");
+            TerminalKeys.Add("F2_1", "1B_O_Q");
+            TerminalKeys.Add("F3_1", "1B_O_R");
+            TerminalKeys.Add("F4_1", "1B_O_S");
+            TerminalKeys.Add("F5_1", "1B_O_T");
+            TerminalKeys.Add("F6_1", "1B_O_U");
+            TerminalKeys.Add("F7_1", "1B_O_V");
+            TerminalKeys.Add("F8_1", "1B_O_W");
+            TerminalKeys.Add("F9_1", "1B_O_X");
+            TerminalKeys.Add("F10_1", "1B_O_Y");
+            TerminalKeys.Add("F11_1", "1B_O_Z");
+            TerminalKeys.Add("F12_1", "1B_O_[");
+
+            // Keys depending on configuration 3
+            TerminalKeys.Add("Insert_0", "1B_[_2_~");
+            TerminalKeys.Add("Delete_0", "1B_[_3_~");
+            TerminalKeys.Add("Home_0", "1B_[_1_~");
+            TerminalKeys.Add("End_0", "1B_[_4_~");
+            TerminalKeys.Add("PageUp_0", "1B_[_5_~");
+            TerminalKeys.Add("PageDown_0", "1B_[_6_~");
+            TerminalKeys.Add("Insert_1", "1B_[_2_~");
+            TerminalKeys.Add("Delete_1", "1B_[_3_~");
+            TerminalKeys.Add("Home_1", "1B_O_H");
+            TerminalKeys.Add("End_1", "1B_O_F");
+            TerminalKeys.Add("PageUp_1", "1B_[_5_~");
+            TerminalKeys.Add("PageDown_1", "1B_[_6_~");
+            TerminalKeys.Add("Insert_2", "1B_[_2_~");
+            TerminalKeys.Add("Delete_2", "1B_[_3_~");
+            TerminalKeys.Add("Home_2", "1B_[_H");
+            TerminalKeys.Add("End_2", "1B_[_F");
+            TerminalKeys.Add("PageUp_2", "1B_[_5_~");
+            TerminalKeys.Add("PageDown_2", "1B_[_6_~");
+
+            // Keys for VT52 mode
+            TerminalKeys.Add("Up_9", "1B_A");
+            TerminalKeys.Add("Down_9", "1B_B");
+            TerminalKeys.Add("Right_9", "1B_C");
+            TerminalKeys.Add("Left_9", "1B_D");
+            TerminalKeys.Add("F1_9", "1B_P");
+            TerminalKeys.Add("F2_9", "1B_Q");
+            TerminalKeys.Add("F3_9", "1B_R");
+            TerminalKeys.Add("F4_9", "1B_S");
+            TerminalKeys.Add("F5_9", "1B_T");
+            TerminalKeys.Add("F6_9", "1B_U");
+            TerminalKeys.Add("F7_9", "1B_V");
+            TerminalKeys.Add("F8_9", "1B_W");
+            TerminalKeys.Add("F9_9", "1B_X");
+            TerminalKeys.Add("F10_9", "1B_Y");
+            TerminalKeys.Add("F11_9", "1B_Z");
+            TerminalKeys.Add("F12_9", "1B_[");
+            TerminalKeys.Add("Insert_9", "1B_L");
+            TerminalKeys.Add("Delete_9", "1B_M");
+            TerminalKeys.Add("Home_9", "1B_H");
+            TerminalKeys.Add("End_9", "1B_E");
+            TerminalKeys.Add("PageUp_9", "1B_I");
+            TerminalKeys.Add("PageDown_9", "1B_G");
         }
 
         public Core Core_;
@@ -221,7 +380,7 @@ namespace TextPaint
 
         public void TelnetRepaint()
         {
-            Core_.AnsiRepaint();
+            Core_.AnsiRepaint(false);
         }
 
 

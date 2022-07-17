@@ -19,7 +19,10 @@ There are available following work modes, choosen by **WorkMode** parameter:
 * **WorkMode=1** \- ANSI viewer with progressive printing and server\. This mode can be used to view animation created by progressive placing characters and is described in **Readme\_ANSI\.md** file\.
 * **WorkMode=2** \- Telnet client, which is parially compatible with VT100, ANSI and derivative terminal emulators\. Details about this mode are described in **Readme\_ANSI\.md** file\.
 * **WorkMode=3** \- Encoding list display and keycode test\. The only purpose is displaying supported encoding list and code/name of every pressed key, which is needed to implement additional functions and test the **TextPaint** in various platforms\. This mode is described in **Readme\_keys\.md** file\.
-* **WorkMode=4** \- Render text into bitmap image detailed in **Readme\_render\.md** file\. In this mode, **TextPaint** does not run any interface, it behavies as simple command line application\.
+* **WorkMode=4** \- Non\-interactive simple command line application, without any interface:
+  * Render text into bitmap image detailed in **Readme\_render\.md** file\.
+  * Convert XBIN or BIN file to ANSI text file\.
+  * Save to files all available 1\-byte encodings\.
 
 # Application running
 
@@ -218,10 +221,10 @@ Sometimes, the number of rows can also be specified for particular file and the 
 If there file loaded with **ANSIRead=1** is actually plain text file, the file can contain different end\-of\-line character\. If the file is loaded incorrectly, you can change parsing of CR \(**0Dh**\) and LF \(**0Ah**\) character in color selector\. You can press **F1** or **F2** during color selector to change way of the character processing, the current state is diaplayed as two digits on the top of character selector\. Example settings:
 
 
-* 00 \- Standard process of CR and LF characters, suitable for all ANSI files and text files using CR\+LF like files created in DOS and Windows\.
-* 21 \- Use LF character as CR\+LF \(EOL\), suitable for plain text files created on Unix and Linux, which uses LF as EOL\.
-* 12 \- Use CR character as CR\+LF \(EOL\), suitable for plain text files created on systems, which uses CR as EOL\.
-* 11 \- Use every CR character and every LF character as EOL separately\.
+* **00** \- Standard process of CR and LF characters, suitable for all ANSI files and text files using CR\+LF like files created in DOS and Windows\.
+* **21** \- Use LF character as CR\+LF \(EOL\), suitable for plain text files created on Unix and Linux, which uses LF as EOL\.
+* **12** \- Use CR character as CR\+LF \(EOL\), suitable for plain text files created on systems, which uses CR as EOL\.
+* **11** \- Use every CR character and every LF character as EOL separately\.
 
 # Work states
 
@@ -422,6 +425,7 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 * **Space** \- Characters \(hexadecimal numbers\), which will be treated as space\. The first character in the list is used as character being outside actual text\.
 * **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **FileReadEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
 * **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **FileWriteEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
+* **FileReadChars** \- If provided greater than **0**, there is number of first characters \(not bytes\), which will be read from file, it is useful, when you want to create text/picture based on ANSI animation\. The parameter works only in **WorkMode=0**\.
 * **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\.
   * The first item is the set name\.
   * The other items are the hexadecimal character codes, which are the frame elements\.
@@ -484,6 +488,7 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 * **WinPaletteR** \- The red component of all 16 colors\.
 * **WinPaletteG** \- The green component of all 16 colors\.
 * **WinPaletteB** \- The blue component of all 16 colors\.
+* **WinPaletteFile** \- If provided, there is external file containing the palette\. If the file does not exist or is unreadable, the parameter will be ignored\. The structure of file are the same as **Config\.txt**, but it contains only three parameters: **WinPaletteR**, **WinPaletteG**, **WinPaletteB**\.
 
 The **WinColorBlending** uses other character and mixed foreground color with background color as in table below:
 
@@ -531,6 +536,8 @@ WinPaletteR=00800080008000C080FF00FF00FF00FF
 WinPaletteG=00008080000080C08000FFFF0000FFFF
 WinPaletteB=00000000808080C080000000FFFFFFFF
 ```
+
+You can set the **WinPaletteR**, **WinPaletteG** and **WinPaletteB** parameter in other text file and you can provide the file name to **WinPaletteFile** parameter\. If there are both propertly defined **WinPaletteFile** and **WinPaletteR**/**WinPaletteG**/**WinPaletteB** parameters, the **WinPaletteFile** has higher priority\.
 
 ## Cipher settings
 
@@ -708,9 +715,9 @@ Every row consists of binary encoded page number and glyph images of this page\.
 
 The page order int he bitmap is not important\.
 
-## Supplied examples
+## Supplied fonts
 
-The **TextPaint** supplies example bitmap fonts, which can be used\. In the bitmaps, there was applied the following color convention:
+The **TextPaint** supplies example bitmap fonts in **Fonts** subfolder, which can be used\. In the bitmaps, there was applied the following color convention:
 
 
 * **White on black** \- Original glyphs existing in source\.
@@ -730,6 +737,48 @@ The example fonts are generated based on three sources, disinguished by font fil
 * **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added **1FB93h** glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
 * **Small** \- [https://opengameart\.org/content/4x4\-px\-bitmap\-font](https://opengameart.org/content/4x4-px-bitmap-font "https://opengameart.org/content/4x4-px-bitmap-font") \- Small font, which is manually extended with many semigraphical glyphs and can be used to view large ASCII/ANSI arts\. The readibility of letters and digits is poor due to small character size\.
 * **Amiga** \- [https://github\.com/rewtnull/amigafonts](https://github.com/rewtnull/amigafonts "https://github.com/rewtnull/amigafonts") \- Fonts suitable for some ASCII\-art or ANSI\-art files, which was created on Amiga computers\.
+
+# Other supplied files
+
+In the TextPaint filder, there are included some other files than bitmap fonts, which can help to use this software, especially the editor \(**WorkMode=0**\)\.
+
+## Encodings
+
+TextPaint can use custom 1\-byte encoding\. In the Encodings subfolder, there are 4 files\. The following 2 files are suitable for opening ANSI/ASCII files and has control character mapped as are:
+
+
+* **ASCII\.txt** \- The base ASCII\-compatible encoding, where the character number equals to byte balue\. You can create copy of the file and use it to create own encoding\. The encoding is the same as ISO\-8859\-1\.
+* **DOS437\.txt** \- The slightly modified standard DOS code page 437\. The modification are changing few characters to match to **Dos** font\. The ambiguous characters are listed an the end of the file \(lines without **=** sign are ignored\)\. The file or standard 437 code page should be used to open most old ANSI and ASCII files\.
+
+There are another 2 encodings, which are designed for converting BIN or XBIN file to ANSI file\. The only difference are in assignment to values from **00h** to **1Fh**:
+
+
+* **BIN\_ASCII\.txt** \- Encoding based on **ASCII\.txt**, the control characters are remaped to from **2400h** to **241Fh**, the characters are printable equivalents to control characters\.
+* **BIN\_DOS437\.txt** \- Encoding based on **DOS437\.txt**, the control characters are mapped to standard DOS glyphs\.
+
+## Palettes
+
+In the **Palettes** subfolder, there are three example palette files, which can be used to parameter **WinPaletteFile**:
+
+
+* **DOS\.txt** \- Standard DOS palette without exception\.
+* **DOSBrown\.txt** \- Standard DOS palette with exception, that there is brown color instead of dark yellow\.
+* **WinVGA\.txt** \- Standard Windows 16\-color VGA palette\.
+
+## Samples
+
+There are samples for demonstration and test purposes in **WorkMode=0**\. Files other than **8bitASCII\.txt **are encoded using UTF\-8\.
+
+
+* **8bitASCII\.txt** \- Standard 8\-bit ASCII file, which should be opened using 1\-byte encoding\. You can test 1\-byte encoding matches and display all available character in such encoding\. There is only file, which is in ANSCII encoding\.
+* **Borders\.txt** \- Demonstrates border and block characters\.
+* **Cipher\.txt** \- Demonstrates text chiphering\. To use this file, you chould open using following parameters:
+  * **CipherMode=0**
+  * **CipherAlphabet=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789**
+  * **CipherBegin=005B**
+  * **CipherEnd=005D**
+* **Math\.txt** \- Demonstrates the Unicode alphabets used in mathemating notation\.
+* **Unscii\.txt** \- Demonstration art for Unscii font\. There is corrected art based on [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/")\.
 
 
 

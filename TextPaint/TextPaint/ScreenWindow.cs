@@ -8,8 +8,10 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Drawing.Drawing2D;
 using System.Drawing.Imaging;
 using System.IO;
+using System.Text;
 using System.Threading;
 using System.Windows.Forms;
 
@@ -53,10 +55,15 @@ namespace TextPaint
         /// <summary>
         /// Glybh bank used to drawing characters on the screen
         /// </summary>
-        Dictionary<long, Bitmap> GlyphBank = new Dictionary<long, Bitmap>();
+        Dictionary<long, Bitmap>[] GlyphBank;
 
-        Bitmap GlyphBankGet(int ColorB, int ColorF, int Char)
+        Bitmap GlyphBankGet(int ColorB, int ColorF, int Char, int FontWH)
         {
+            if (FontWH < 0)
+            {
+                return null;
+            }
+
             // Characters above 0xFFFFF are very rarely used
             // and resignation from buffering there saves 1 bit in index number
             if (Char > 0xFFFFF)
@@ -64,9 +71,9 @@ namespace TextPaint
                 return null;
             }
             long Idx = Char + (ColorB << 20) + (ColorF << 24);
-            if (GlyphBank.ContainsKey(Idx))
+            if (GlyphBank[FontWH].ContainsKey(Idx))
             {
-                return GlyphBank[Idx];
+                return GlyphBank[FontWH][Idx];
             }
             else
             {
@@ -74,8 +81,13 @@ namespace TextPaint
             }
         }
 
-        void GlyphBankSet(int ColorB, int ColorF, int Char, Bitmap Glyph)
+        void GlyphBankSet(int ColorB, int ColorF, int Char, Bitmap Glyph, int FontWH)
         {
+            if (FontWH < 0)
+            {
+                return;
+            }
+
             // Characters above 0xFFFFF are very rarely used
             // and resignation from buffering there saves 1 bit in index number
             if (Char > 0xFFFFF)
@@ -83,7 +95,7 @@ namespace TextPaint
                 return;
             }
             long Idx = Char + (ColorB << 20) + (ColorF << 24);
-            GlyphBank.Add(Idx, Glyph);
+            GlyphBank[FontWH].Add(Idx, Glyph);
         }
 
         class PictureBoxEx
@@ -321,8 +333,104 @@ namespace TextPaint
         Brush[] DrawColorB;
         Color[] DrawColor;
 
+        int[] FontW_Num_Min;
+        int[] FontW_Num_Max;
+
+        void SetTextRectangles()
+        {
+            FontW_Num_Min = new int[21];
+            FontW_Num_Max = new int[21];
+            FontW_Num_Min[1] = 0; FontW_Num_Max[1] = 0;
+            FontW_Num_Min[2] = 1; FontW_Num_Max[2] = 2;
+            FontW_Num_Min[3] = 3; FontW_Num_Max[3] = 5;
+            FontW_Num_Min[4] = 6; FontW_Num_Max[4] = 9;
+            FontW_Num_Min[5] = 10; FontW_Num_Max[5] = 14;
+            FontW_Num_Min[6] = 15; FontW_Num_Max[6] = 20;
+            FontW_Num_Min[7] = 21; FontW_Num_Max[7] = 27;
+            FontW_Num_Min[8] = 28; FontW_Num_Max[8] = 35;
+            FontW_Num_Min[9] = 36; FontW_Num_Max[9] = 44;
+            FontW_Num_Min[10] = 45; FontW_Num_Max[10] = 54;
+            FontW_Num_Min[11] = 55; FontW_Num_Max[11] = 65;
+            FontW_Num_Min[12] = 66; FontW_Num_Max[12] = 77;
+            FontW_Num_Min[13] = 78; FontW_Num_Max[13] = 90;
+            FontW_Num_Min[14] = 91; FontW_Num_Max[14] = 104;
+            FontW_Num_Min[15] = 105; FontW_Num_Max[15] = 119;
+            FontW_Num_Min[16] = 120; FontW_Num_Max[16] = 135;
+            FontW_Num_Min[17] = 136; FontW_Num_Max[17] = 152;
+            FontW_Num_Min[18] = 153; FontW_Num_Max[18] = 170;
+            FontW_Num_Min[19] = 171; FontW_Num_Max[19] = 189;
+            FontW_Num_Min[20] = 190; FontW_Num_Max[20] = 209;
+
+            FormCtrlR = new RectangleF[256, 256];
+            FormCtrlR_Trans = new int[256];
+            for (int W = 0; W < 255; W++)
+            {
+                FormCtrlR_Trans[W] = 1;
+                for (int i = 1; i < FontW_Num_Min.Length; i++)
+                {
+                    if ((W >= FontW_Num_Min[i]) && (W <= FontW_Num_Max[i])) FormCtrlR_Trans[W] = i;
+                }
+                for (int H = 0; H < 10; H++)
+                {
+                    float RectX = 0;
+                    float RectY = 0;
+                    float CellW_ = CellW;
+                    float CellH_ = CellH;
+                    switch (W)
+                    {
+                        case 2:
+                            RectX = 0 - (CellW_ / 2);
+                            break;
+                        case 4:
+                            RectX = 0 - (CellW_ / 3);
+                            break;
+                        case 5:
+                            RectX = 0 - ((CellW_ * 2) / 3);
+                            break;
+                        case 7:
+                            RectX = 0 - ((CellW_ * 1) / 4);
+                            break;
+                        case 8:
+                            RectX = 0 - ((CellW_ * 2) / 4);
+                            break;
+                        case 9:
+                            RectX = 0 - ((CellW_ * 3) / 4);
+                            break;
+                    }
+                    switch (H)
+                    {
+                        case 2:
+                            RectY = 0 - (CellH_ / 2);
+                            break;
+                        case 4:
+                            RectY = 0 - (CellH_ / 3);
+                            break;
+                        case 5:
+                            RectY = 0 - ((CellH_ * 2) / 3);
+                            break;
+                        case 7:
+                            RectY = 0 - ((CellH_ * 1) / 4);
+                            break;
+                        case 8:
+                            RectY = 0 - ((CellH_ * 2) / 4);
+                            break;
+                        case 9:
+                            RectY = 0 - ((CellH_ * 3) / 4);
+                            break;
+                    }
+                    FormCtrlR[W, H] = new RectangleF(RectX, RectY, CellW_, CellH_);
+                }
+            }
+        }
+
         public ScreenWindow(Core Core__, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, bool DummyScreen)
         {
+            GlyphBank = new Dictionary<long, Bitmap>[9];
+            for (int i = 0; i < GlyphBank.Length; i++)
+            {
+                GlyphBank[i] = new Dictionary<long, Bitmap>();
+            }
+
             UseMemo = 0;
             ColorBlending = ColorBlending_;
             if (!DummyScreen)
@@ -353,9 +461,18 @@ namespace TextPaint
             string PalR = CF.ParamGetS("WinPaletteR");
             string PalG = CF.ParamGetS("WinPaletteG");
             string PalB = CF.ParamGetS("WinPaletteB");
+            string PalFile = CF.ParamGetS("WinPaletteFile");
+            if (File.Exists(PalFile))
+            {
+                ConfigFile CF_Pal = new ConfigFile();
+                CF_Pal.FileLoad(PalFile);
+                PalR = CF_Pal.ParamGetS("WinPaletteR", PalR);
+                PalG = CF_Pal.ParamGetS("WinPaletteG", PalG);
+                PalB = CF_Pal.ParamGetS("WinPaletteB", PalB);
+            }
             if ((PalR.Length == 32) && (PalG.Length == 32) && (PalB.Length == 32))
             {
-                for (int i = 0; i < 15; i++)
+                for (int i = 0; i < 16; i++)
                 {
                     int ValR = int.Parse(PalR.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
                     int ValG = int.Parse(PalG.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
@@ -536,7 +653,10 @@ namespace TextPaint
         int[,] FormCtrlB;
         int[,] FormCtrlF;
         int[,] FormCtrlC;
-        Rectangle[,] FormCtrlR;
+        int[,] FormCtrlFontW;
+        int[,] FormCtrlFontH;
+        RectangleF[,] FormCtrlR;
+        int[] FormCtrlR_Trans;
         Font WinFont;
         StringFormat WinStrFormat;
         PictureBoxEx PictureBox_;
@@ -556,15 +676,17 @@ namespace TextPaint
             WinW = W;
             WinH = H;
 
-            Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, PixelFormat.Format24bppRgb);
             Bitmap_G = Graphics.FromImage(Bitmap_);
 
             FormCtrlB = new int[WinW, WinH];
             FormCtrlF = new int[WinW, WinH];
             FormCtrlC = new int[WinW, WinH];
-            FormCtrlR = new Rectangle[WinW, WinH];
+            FormCtrlFontW = new int[WinW, WinH];
+            FormCtrlFontH = new int[WinW, WinH];
+            SetTextRectangles();
 
-            CursorBmp = new Bitmap(CellW, CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            CursorBmp = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
             CursorBmp_G = Graphics.FromImage(CursorBmp);
 
             for (int Y = 0; Y < WinH; Y++)
@@ -574,7 +696,8 @@ namespace TextPaint
                     FormCtrlB[X, Y] = -1;
                     FormCtrlF[X, Y] = -1;
                     FormCtrlC[X, Y] = ' ';
-                    FormCtrlR[X, Y] = new Rectangle(X * CellW, Y * CellH, CellW, CellH);
+                    FormCtrlFontW[X, Y] = 0;
+                    FormCtrlFontH[X, Y] = 0;
                 }
             }
             CursorB = -1;
@@ -582,9 +705,76 @@ namespace TextPaint
             CursorC = -1;
         }
 
+        public string DummyGetScreenText(int IsANSI, int DefBack, int DefFore)
+        {
+            List<int>[] S_Text = new List<int>[WinH];
+            List<int>[] S_Colo = new List<int>[WinH];
+
+            StringBuilder S = new StringBuilder();
+            for (int Y = 0; Y < WinH; Y++)
+            {
+                S_Text[Y] = new List<int>();
+                S_Colo[Y] = new List<int>();
+                for (int X = 0; X < WinW; X++)
+                {
+                    if (FormCtrlC[X, Y] >= 32)
+                    {
+                        S_Text[Y].Add(FormCtrlC[X, Y]);
+                        int TempB = FormCtrlB[X, Y];
+                        int TempF = FormCtrlF[X, Y];
+                        if (TempB == DefBack) { TempB = -1; }
+                        if (TempF == DefFore) { TempF = -1; }
+                        S_Colo[Y].Add(Core.ColorToInt(TempB, TempF, FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]));
+                    }
+                }
+                if (IsANSI == 0)
+                {
+                    while ((S_Text[Y].Count > 0) && TextWork.SpaceChars.Contains(S_Text[Y][S_Text[Y].Count - 1]))
+                    {
+                        S_Text[Y].RemoveAt(S_Text[Y].Count - 1);
+                    }
+                }
+            }
+            S = new StringBuilder();
+            int LastLine = (WinH - 1);
+            if (IsANSI == 0)
+            {
+                while ((LastLine >= 0) && (S_Text[LastLine].Count == 0))
+                {
+                    LastLine--;
+                }
+            }
+
+            if (IsANSI > 0)
+            {
+                AnsiFile AnsiFile_ = new AnsiFile();
+                AnsiFile_.Reset();
+                for (int i = 0; i <= LastLine; i++)
+                {
+                    bool DOS = (IsANSI == 2);
+                    bool Prefix = (i == 0);
+                    bool Postfix = (i == LastLine);
+                    S.Append(TextWork.IntToStr(AnsiFile_.Process(S_Text[i], S_Colo[i], DOS, Prefix, Postfix, WinW, false, false)));
+                }
+            }
+            else
+            {
+                for (int i = 0; i <= LastLine; i++)
+                {
+                    S.Append(TextWork.IntToStr(S_Text[i]));
+                    if (i < LastLine)
+                    {
+                        S.Append('\r');
+                        S.Append('\n');
+                    }
+                }
+            }
+            return S.ToString();
+        }
+
         public Bitmap DummyGetScreenBitmap(bool DrawCursor)
         {
-            Bitmap BmpExp = new Bitmap(Bitmap_.Width, Bitmap_.Height, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Bitmap BmpExp = new Bitmap(Bitmap_.Width, Bitmap_.Height, PixelFormat.Format24bppRgb);
             Graphics BmpExpG = Graphics.FromImage(BmpExp);
             BmpExpG.DrawImageUnscaled(Bitmap_, 0, 0);
             if (DrawCursor)
@@ -610,13 +800,15 @@ namespace TextPaint
                 WinW = Form_.ClientSize.Width / CellW;
                 WinH = Form_.ClientSize.Height / CellH;
 
-                Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, PixelFormat.Format24bppRgb);
                 Bitmap_G = Graphics.FromImage(Bitmap_);
 
                 FormCtrlB = new int[WinW, WinH];
                 FormCtrlF = new int[WinW, WinH];
                 FormCtrlC = new int[WinW, WinH];
-                FormCtrlR = new Rectangle[WinW, WinH];
+                FormCtrlFontW = new int[WinW, WinH];
+                FormCtrlFontH = new int[WinW, WinH];
+                SetTextRectangles();
                 Form_.Controls.Clear();
                 PictureBox_ = new PictureBoxEx(WinPicturePanel ? 2 : 1);
                 PictureBox_.Ctrl.Left = (Form_.ClientSize.Width - Bitmap_.Width) / 2;
@@ -626,7 +818,7 @@ namespace TextPaint
                 PictureBox_.Image = Bitmap_;
 
 
-                CursorBmp = new Bitmap(CellW, CellH, System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+                CursorBmp = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
                 CursorBmp_G = Graphics.FromImage(CursorBmp);
                 CursorBox = new PictureBoxEx(WinPicturePanel ? 2 : 0);
                 CursorBox.Ctrl.Left = 0 - CellW - CellW;
@@ -653,7 +845,8 @@ namespace TextPaint
                         FormCtrlB[X, Y] = -1;
                         FormCtrlF[X, Y] = -1;
                         FormCtrlC[X, Y] = ' ';
-                        FormCtrlR[X, Y] = new Rectangle(X * CellW, Y * CellH, CellW, CellH);
+                        FormCtrlFontW[X, Y] = 0;
+                        FormCtrlFontH[X, Y] = 0;
                     }
                 }
                 CursorB = -1;
@@ -690,10 +883,12 @@ namespace TextPaint
                 if (F[0] != null)
                 {
                     CoreEvent("FileDrop1", (char)(0), false, false, false);
+                    CoreEvent("", '"', false, false, false);
                     for (int i = 0; i < F[0].Length; i++)
                     {
                         CoreEvent("", F[0][i], false, false, false);
                     }
+                    CoreEvent("", '"', false, false, false);
                     CoreEvent("FileDrop2", (char)(0), false, false, false);
                 }
             }
@@ -766,14 +961,14 @@ namespace TextPaint
             }
         }
 
-        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore)
+        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             Monitor.Enter(GraphMutex);
-            PutChar_Work(X, Y, C, ColorBack, ColorFore);
+            PutChar_Work(X, Y, C, ColorBack, ColorFore, FontW, FontH);
             Monitor.Exit(GraphMutex);
         }
 
-        private void PutChar_Work(int X, int Y, int C, int ColorBack, int ColorFore)
+        private void PutChar_Work(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             bool Diff = false;
             if (FormCtrlC[X, Y] != C)
@@ -791,7 +986,17 @@ namespace TextPaint
                 FormCtrlF[X, Y] = ColorFore;
                 Diff = true;
             }
-            Diff = true;
+            if (FormCtrlFontW[X, Y] != FontW)
+            {
+                FormCtrlFontW[X, Y] = FontW;
+                Diff = true;
+            }
+            if (FormCtrlFontH[X, Y] != FontH)
+            {
+                FormCtrlFontH[X, Y] = FontH;
+                Diff = true;
+            }
+            //Diff = true;
             if (Diff)
             {
                 Color DrawBack = DrawColor[ColorBack];
@@ -906,7 +1111,8 @@ namespace TextPaint
                             break;
                     }
                 }
-                Bitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C);
+                int FontWH = ((FontW < 3) && (FontH < 3)) ? (FontH * 3 + FontW) : -1;
+                Bitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C, FontWH);
                 if (TempGlyph == null)
                 {
                     TempGlyph = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
@@ -945,11 +1151,40 @@ namespace TextPaint
                         {
                             C__ = 32 * CellW;
                         }
+                        int FontDivW = 1;
+                        int FontDivH = 1;
+                        int FontOffW = 0;
+                        int FontOffH = 0;
+                        if (FontW > 0)
+                        {
+                            for (int i = 1; i < FontW_Num_Min.Length; i++)
+                            {
+                                if ((FontW >= FontW_Num_Min[i]) && (FontW <= FontW_Num_Max[i]))
+                                {
+                                    FontDivW = i;
+                                    FontOffW = (FontW - FontW_Num_Min[i]) * CellW;
+                                    break;
+                                }
+                            }
+                        }
+                        if (FontH >= 0)
+                        {
+                            for (int i = 1; i < FontW_Num_Min.Length; i++)
+                            {
+                                if ((FontH >= FontW_Num_Min[i]) && (FontH <= FontW_Num_Max[i]))
+                                {
+                                    FontDivH = i;
+                                    FontOffH = (FontH - FontW_Num_Min[i]) * CellH;
+                                    break;
+                                }
+                            }
+                        }
+
                         for (int Y_ = 0; Y_ < CellH; Y_++)
                         {
                             for (int X_ = 0; X_ < CellW; X_++)
                             {
-                                if (WinBitmapGlyph[CPI + Y_, C__ + X_])
+                                if (WinBitmapGlyph[CPI + ((Y_ + FontOffH) / FontDivH), C__ + ((X_ + FontOffW) / FontDivW)])
                                 {
                                     TempGlyph.SetPixel(X_, Y_, DrawFore);
                                 }
@@ -968,7 +1203,8 @@ namespace TextPaint
                             TempGlyphG.FillRectangle(DrawBackB, 0, 0, CellW, CellH);
                             if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
                             {
-                                TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, DrawForeB, FormCtrlR[0, 0], WinStrFormat);
+                                TempGlyphG.ScaleTransform(FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH]);
+                                TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, DrawForeB, FormCtrlR[FontW, FontH], WinStrFormat);
                             }
                         }
                         catch
@@ -976,11 +1212,13 @@ namespace TextPaint
 
                         }
                     }
-                    GlyphBankSet(ColorBack, ColorFore, C, TempGlyph);
+                    GlyphBankSet(ColorBack, ColorFore, C, TempGlyph, FontWH);
                 }
                 if (MultiThread) Monitor.Enter(Bitmap_);
                 Bitmap_G.DrawImageUnscaled(TempGlyph, X * CellW, Y * CellH);
                 if (MultiThread) Monitor.Exit(Bitmap_);
+
+
             }
         }
 
@@ -1007,7 +1245,7 @@ namespace TextPaint
                 H--;
             }
             Monitor.Enter(GraphMutex);
-            Bitmap Bitmap_Temp = Bitmap_.Clone(new Rectangle(SrcX * CellW, SrcY * CellH, W * CellW, H * CellH), System.Drawing.Imaging.PixelFormat.Format24bppRgb);
+            Bitmap Bitmap_Temp = Bitmap_.Clone(new Rectangle(SrcX * CellW, SrcY * CellH, W * CellW, H * CellH), PixelFormat.Format24bppRgb);
             Bitmap_G.DrawImage(Bitmap_Temp, DstX * CellW, DstY * CellH);
             int X_D, Y_D, X_S, Y_S;
             if (SrcY > DstY)
@@ -1143,6 +1381,16 @@ namespace TextPaint
                 {
                     CursorNeedRepaint = true;
                     CursorC = FormCtrlC[CursorX, CursorY];
+                }
+                if (CursorFontW != FormCtrlFontW[CursorX, CursorY])
+                {
+                    CursorNeedRepaint = true;
+                    CursorFontW = FormCtrlFontW[CursorX, CursorY];
+                }
+                if (CursorFontH != FormCtrlFontH[CursorX, CursorY])
+                {
+                    CursorNeedRepaint = true;
+                    CursorFontH = FormCtrlFontH[CursorX, CursorY];
                 }
                 if (MultiThread)
                 {

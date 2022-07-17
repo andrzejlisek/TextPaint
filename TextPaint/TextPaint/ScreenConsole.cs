@@ -51,7 +51,7 @@ namespace TextPaint
             DefaultFore = ConsoleColor_[DefFore];
         }
 
-        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore)
+        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             Monitor.Enter(GraphMutex);
             if ((Y == (WinH - 1)) && (X == (WinW - 1)))
@@ -163,7 +163,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
                                 }
                             }
                         }
@@ -175,7 +175,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
                                 }
                             }
                         }
@@ -193,7 +193,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
                                 }
                             }
                         }
@@ -205,7 +205,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
                                 }
                             }
                         }

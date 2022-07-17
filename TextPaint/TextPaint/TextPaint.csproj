@@ -75,6 +75,12 @@
     <Compile Include="Telnet_Client.cs" />
     <Compile Include="Core_Render.cs" />
     <Compile Include="OneByteEncoding.cs" />
+    <Compile Include="CharSequence.cs" />
+    <Compile Include="XBIN.cs" />
+    <Compile Include="Core_ANSI_Parse.cs" />
+    <Compile Include="Core_ANSI_Scroll.cs" />
+    <Compile Include="Core_ANSI_FontSize.cs" />
+    <Compile Include="AnsiFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
