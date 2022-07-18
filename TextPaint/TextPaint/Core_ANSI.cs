@@ -35,8 +35,10 @@ namespace TextPaint
         int[] Color256 = new int[256];
 
         bool ANSIDOS = false;
+        bool ANSIPrintBackspace = false;
         bool ANSIIgnoreBlink = false;
         bool ANSIIgnoreBold = false;
+        bool ANSIIgnoreConcealed = false;
 
         // 0 - Do not change
         // 1 - Use as CRLF
@@ -721,7 +723,7 @@ namespace TextPaint
                 }
             }
 
-            if (__AnsiFontInvisible)
+            if (__AnsiFontInvisible && (!ANSIIgnoreConcealed))
             {
                 __AnsiForeWork = __AnsiBackWork;
             }

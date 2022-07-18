@@ -43,15 +43,17 @@ The following parameters are especially related to creating or interpreting ANSI
 * **ANSIDOS** \- Use DOS behavior instead of standard VT100/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
 * **ANSIIgnoreBlink** \- Ignore blink attribute while interpreting ANSI data\. Some ANSI files was created assuming that terminal displays blinking text as steady text on bright background\. Some other ANSI files was created assuming terminal displays text as blinking and this attribute should be ignored while TextPaint does not support other attributes than colors of background and text\.
 * **ANSIIgnoreBold** \- Ignore bold attribute while interpreting ANSI data\.
-* **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
-  * **0** \- Write file as plain text, ommiting colors\.
-  * **1** \- Write file as ANSI text including color definition\.
-* **ANSIWriteBold** \- Use bold attribute instead of color attribute for save high intensity foreground color, work only if **ANSIWrite=1**\.
-* **ANSIWriteBlink** \- Use blink attribute instead of color attribute for save high intensity background color, work only if **ANSIWrite=1**\.
+* **ANSIIgnoreConcealed** \- Ignore concealed \(hidden, invisible\) attribute while interpreting ANSI data\.
 * **ANSIReverseMode** \- Mode for reverse color:
   * **0** \- Before bold and blink \- compatible with DOS, usable in most cases\.
   * **1** \- After bold and blink \- with **ANSIIgnoreBlink=1** is more close to original VT100 terminal\.
-* **ANSICharsDOS** \- List of 32 replacement character codes, to use as printable of characters from **00h** to **31h** if **DOSMODE=1**\.
+* **ANSIPrintBackspace** \- Print backspace character \(while **ANSIDOS=1**\) or ignore backspace character \(while **ANSIDOS=0**\) instead of moving cursor backward\.
+* **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
+  * **0** \- Write file as plain text, ommiting colors\.
+  * **1** \- Write file as ANSI text including color definition\.
+* **ANSIWriteBold** \- Use bold attribute instead of color attribute for save high intensity foreground color, work only while **ANSIWrite=1**\.
+* **ANSIWriteBlink** \- Use blink attribute instead of color attribute for save high intensity background color, work only while **ANSIWrite=1**\.
+* **ANSICharsDOS** \- List of 32 replacement character codes, to use as printable of characters from **00h** to **31h** while **DOSMODE=1**\.
 * **ANSICharsVT100** \- List of 32 replacement character codes, to use as VT100 graphics characters from **5Fh** to **7Eh**\.
 * **ANSICharsVT52** \- List of 32 replacement character codes, to use as VT52 graphics characters from **5Fh** to **7Eh**\.
 

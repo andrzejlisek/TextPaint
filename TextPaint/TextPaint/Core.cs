@@ -1085,6 +1085,7 @@ namespace TextPaint
             TextBeyondLineMargin = CF.ParamGetI("BeyondLineMargin");
 
             ANSIDOS = CF.ParamGetB("ANSIDOS");
+            ANSIPrintBackspace = CF.ParamGetB("ANSIPrintBackspace");
             if (AnsiMaxX <= 0)
             {
                 AnsiMaxX = 80;
@@ -1112,6 +1113,7 @@ namespace TextPaint
 
             ANSIIgnoreBlink = CF.ParamGetB("ANSIIgnoreBlink");
             ANSIIgnoreBold = CF.ParamGetB("ANSIIgnoreBold");
+            ANSIIgnoreConcealed = CF.ParamGetB("ANSIIgnoreConcealed");
             ANSIReverseMode = CF.ParamGetI("ANSIReverseMode");
             UseWindow = (CF.ParamGetI("WinUse") > 0);
             CursorDisplay = CF.ParamGetB("CursorDisplay");

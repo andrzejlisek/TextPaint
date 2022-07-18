@@ -1163,6 +1163,11 @@ namespace TextPaint
                         }
                         break;
                     case 8:
+                        if (ANSIPrintBackspace)
+                        {
+                            TextFileLine_i = DosControl[TextFileLine_i];
+                        }
+                        break;
                     case 9:
                     case 11:
                     case 14:
@@ -1277,7 +1282,7 @@ namespace TextPaint
                     {
                         case 8:
                             {
-                                if (!ANSIDOS)
+                                if (!ANSIPrintBackspace)
                                 {
                                     if (__AnsiX == AnsiMaxX)
                                     {
