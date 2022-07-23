@@ -996,7 +996,6 @@ namespace TextPaint
                 FormCtrlFontH[X, Y] = FontH;
                 Diff = true;
             }
-            //Diff = true;
             if (Diff)
             {
                 Color DrawBack = DrawColor[ColorBack];
@@ -1263,6 +1262,8 @@ namespace TextPaint
                             FormCtrlC[X_D, Y_D] = FormCtrlC[X_S, Y_S];
                             FormCtrlB[X_D, Y_D] = FormCtrlB[X_S, Y_S];
                             FormCtrlF[X_D, Y_D] = FormCtrlF[X_S, Y_S];
+                            FormCtrlFontW[X_D, Y_D] = FormCtrlFontW[X_S, Y_S];
+                            FormCtrlFontH[X_D, Y_D] = FormCtrlFontH[X_S, Y_S];
                         }
                     }
                     else
@@ -1276,6 +1277,8 @@ namespace TextPaint
                             FormCtrlC[X_D, Y_D] = FormCtrlC[X_S, Y_S];
                             FormCtrlB[X_D, Y_D] = FormCtrlB[X_S, Y_S];
                             FormCtrlF[X_D, Y_D] = FormCtrlF[X_S, Y_S];
+                            FormCtrlFontW[X_D, Y_D] = FormCtrlFontW[X_S, Y_S];
+                            FormCtrlFontH[X_D, Y_D] = FormCtrlFontH[X_S, Y_S];
                         }
                     }
                 }
@@ -1295,6 +1298,8 @@ namespace TextPaint
                             FormCtrlC[X_D, Y_D] = FormCtrlC[X_S, Y_S];
                             FormCtrlB[X_D, Y_D] = FormCtrlB[X_S, Y_S];
                             FormCtrlF[X_D, Y_D] = FormCtrlF[X_S, Y_S];
+                            FormCtrlFontW[X_D, Y_D] = FormCtrlFontW[X_S, Y_S];
+                            FormCtrlFontH[X_D, Y_D] = FormCtrlFontH[X_S, Y_S];
                         }
                     }
                     else
@@ -1308,6 +1313,8 @@ namespace TextPaint
                             FormCtrlC[X_D, Y_D] = FormCtrlC[X_S, Y_S];
                             FormCtrlB[X_D, Y_D] = FormCtrlB[X_S, Y_S];
                             FormCtrlF[X_D, Y_D] = FormCtrlF[X_S, Y_S];
+                            FormCtrlFontW[X_D, Y_D] = FormCtrlFontW[X_S, Y_S];
+                            FormCtrlFontH[X_D, Y_D] = FormCtrlFontH[X_S, Y_S];
                         }
                     }
                 }

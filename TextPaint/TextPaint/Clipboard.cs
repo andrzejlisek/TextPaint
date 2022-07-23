@@ -68,29 +68,63 @@ namespace TextPaint
 
         private static string LastSysText = "";
 
+        private static string SysClipboardGetSystem()
+        {
+            try
+            {
+                if (System.Windows.Forms.Clipboard.ContainsText())
+                {
+                    string Txt_ = System.Windows.Forms.Clipboard.GetText();
+                    if (Txt_ == null)
+                    {
+                        Txt_ = "";
+                    }
+                    return Txt_;
+                }
+                else
+                {
+                    return null;
+                }
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        public static string SysClipboardSetSystem(string Txt)
+        {
+            try
+            {
+                System.Windows.Forms.Clipboard.SetText(Txt);
+                return System.Windows.Forms.Clipboard.GetText();
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
         public static bool SysClipboardGet()
         {
-            if (System.Windows.Forms.Clipboard.ContainsText())
-            {
-                string Txt_ = System.Windows.Forms.Clipboard.GetText();
-                if (Txt_ != LastSysText)
-                {
-                    string[] Txt = Txt_.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
-                    TextClipboardT.Clear();
-                    TextClipboardC.Clear();
-                    for (int i = 0; i < Txt.Length; i++)
-                    {
-                        TextClipboardT.Add(TextWork.StrToInt(Txt[i]));
-                        TextClipboardC.Add(TextWork.BlkCol(TextClipboardT[i].Count));
-                    }
-                }
-                return true;
-            }
-            else
+            string Txt_ = SysClipboardGetSystem();
+            if (Txt_ == null)
             {
                 LastSysText = "";
                 return false;
             }
+            if (Txt_ != LastSysText)
+            {
+                string[] Txt = Txt_.Split(new[] { "\r\n", "\r", "\n" }, StringSplitOptions.None);
+                TextClipboardT.Clear();
+                TextClipboardC.Clear();
+                for (int i = 0; i < Txt.Length; i++)
+                {
+                    TextClipboardT.Add(TextWork.StrToInt(Txt[i]));
+                    TextClipboardC.Add(TextWork.BlkCol(TextClipboardT[i].Count));
+                }
+            }
+            return true;
         }
 
         public static void SysClipboardSet()
@@ -100,8 +134,11 @@ namespace TextPaint
             {
                 Txt.AppendLine(TextWork.IntToStr(TextClipboardT[i]));
             }
-            System.Windows.Forms.Clipboard.SetText(Txt.ToString());
-            LastSysText = System.Windows.Forms.Clipboard.GetText();
+            LastSysText = SysClipboardSetSystem(Txt.ToString());
+            if (LastSysText == null)
+            {
+                LastSysText = "";
+            }
         }
 
 

@@ -436,7 +436,17 @@ namespace TextPaint
                     {
                         if (X < L)
                         {
-                            Screen_.PutChar(X, Y, __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0], __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1], __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2], __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 3], __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 4]);
+                            int ColorB = __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1];
+                            int ColorF = __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2];
+                            if (ColorB < 0)
+                            {
+                                ColorB = TextNormalBack;
+                            }
+                            if (ColorF < 0)
+                            {
+                                ColorF = TextNormalFore;
+                            }
+                            Screen_.PutChar(X, Y, __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0], ColorB, ColorF, __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 3], __AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 4]);
                         }
                         else
                         {

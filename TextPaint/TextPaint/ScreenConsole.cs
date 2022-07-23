@@ -17,14 +17,43 @@ namespace TextPaint
     /// </summary>
     public class ScreenConsole : Screen
     {
+        bool UseTerminalColorCodes = false;
         string ConIEnc = "";
         string ConOEnc = "";
 
         ConsoleColor[] ConsoleColor_ = new ConsoleColor[16];
-        ConsoleColor LastColorBack = ConsoleColor.Black;
-        ConsoleColor LastColorFore = ConsoleColor.Gray;
-        ConsoleColor DefaultBack = ConsoleColor.Black;
-        ConsoleColor DefaultFore = ConsoleColor.Gray;
+        string[] ConsoleColor_B = new string[16];
+        string[] ConsoleColor_F = new string[16];
+        int LastColorBack = 0;
+        int LastColorFore = 7;
+        int DefaultBack = 0;
+        int DefaultFore = 7;
+
+
+
+        void SetBackColor(int N)
+        {
+            if (UseTerminalColorCodes)
+            {
+                Console.Write(ConsoleColor_B[N]);
+            }
+            else
+            {
+                Console.BackgroundColor = ConsoleColor_[N];
+            }
+        }
+
+        void SetForeColor(int N)
+        {
+            if (UseTerminalColorCodes)
+            {
+                Console.Write(ConsoleColor_F[N]);
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor_[N];
+            }
+        }
 
         public ScreenConsole(Core Core__, ConfigFile CF, int DefBack, int DefFore)
         {
@@ -47,8 +76,43 @@ namespace TextPaint
             ConsoleColor_[13] = ConsoleColor.Magenta;
             ConsoleColor_[14] = ConsoleColor.Cyan;
             ConsoleColor_[15] = ConsoleColor.White;
-            DefaultBack = ConsoleColor_[DefBack];
-            DefaultFore = ConsoleColor_[DefFore];
+
+            ConsoleColor_B[0] = "\x1b[40m";
+            ConsoleColor_B[1] = "\x1b[41m";
+            ConsoleColor_B[2] = "\x1b[42m";
+            ConsoleColor_B[3] = "\x1b[43m";
+            ConsoleColor_B[4] = "\x1b[44m";
+            ConsoleColor_B[5] = "\x1b[45m";
+            ConsoleColor_B[6] = "\x1b[46m";
+            ConsoleColor_B[7] = "\x1b[47m";
+            ConsoleColor_B[8] = "\x1b[100m";
+            ConsoleColor_B[9] = "\x1b[101m";
+            ConsoleColor_B[10] = "\x1b[102m";
+            ConsoleColor_B[11] = "\x1b[103m";
+            ConsoleColor_B[12] = "\x1b[104m";
+            ConsoleColor_B[13] = "\x1b[105m";
+            ConsoleColor_B[14] = "\x1b[106m";
+            ConsoleColor_B[15] = "\x1b[107m";
+
+            ConsoleColor_F[0] = "\x1b[30m";
+            ConsoleColor_F[1] = "\x1b[31m";
+            ConsoleColor_F[2] = "\x1b[32m";
+            ConsoleColor_F[3] = "\x1b[33m";
+            ConsoleColor_F[4] = "\x1b[34m";
+            ConsoleColor_F[5] = "\x1b[35m";
+            ConsoleColor_F[6] = "\x1b[36m";
+            ConsoleColor_F[7] = "\x1b[37m";
+            ConsoleColor_F[8] = "\x1b[90m";
+            ConsoleColor_F[9] = "\x1b[91m";
+            ConsoleColor_F[10] = "\x1b[92m";
+            ConsoleColor_F[11] = "\x1b[93m";
+            ConsoleColor_F[12] = "\x1b[94m";
+            ConsoleColor_F[13] = "\x1b[95m";
+            ConsoleColor_F[14] = "\x1b[96m";
+            ConsoleColor_F[15] = "\x1b[97m";
+
+            DefaultBack = DefBack;
+            DefaultFore = DefFore;
         }
 
         protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
@@ -68,15 +132,15 @@ namespace TextPaint
                 Monitor.Exit(GraphMutex);
                 return;
             }
-            if (LastColorBack != ConsoleColor_[ColorBack])
+            if (LastColorBack != ColorBack)
             {
-                LastColorBack = ConsoleColor_[ColorBack];
-                Console.BackgroundColor = ConsoleColor_[ColorBack];
+                LastColorBack = ColorBack;
+                SetBackColor(ColorBack);
             }
-            if (LastColorFore != ConsoleColor_[ColorFore])
+            if (LastColorFore != ColorFore)
             {
-                LastColorFore = ConsoleColor_[ColorFore];
-                Console.ForegroundColor = ConsoleColor_[ColorFore];
+                LastColorFore = ColorFore;
+                SetForeColor(ColorFore);
             }
             if (UseMemo != 0)
             {
@@ -244,8 +308,8 @@ namespace TextPaint
                     Console.ForegroundColor = ToolFore;
                     Console.Clear();
                 }*/
-                Console.BackgroundColor = DefaultBack;
-                Console.ForegroundColor = DefaultFore;
+                SetBackColor(DefaultBack);
+                SetForeColor(DefaultFore);
                 LastColorBack = DefaultBack;
                 LastColorFore = DefaultFore;
                 Console.Clear();
@@ -282,8 +346,8 @@ namespace TextPaint
                 ConsoleKeyInfo CKI = Console.ReadKey(true);
                 Core_.CoreEvent(UniKeyName(CKI.Key.ToString()), CKI.KeyChar, CKI.Modifiers.HasFlag(ConsoleModifiers.Shift), CKI.Modifiers.HasFlag(ConsoleModifiers.Control), CKI.Modifiers.HasFlag(ConsoleModifiers.Alt));
             }
-            Console.BackgroundColor = DefaultBack;
-            Console.ForegroundColor = DefaultFore;
+            SetBackColor(DefaultBack);
+            SetForeColor(DefaultFore);
             LastColorBack = DefaultBack;
             LastColorFore = DefaultFore;
             Console.Clear();
