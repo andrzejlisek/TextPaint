@@ -75,12 +75,6 @@ The parameters affects only in **WorkMode=2** while connecting or working as Tel
 
 * **TerminalEncoding** \- Character encoding used to aquire characters from Telnet service\.
 * **TerminalName** \- Terminal name sent to server, when server asks for client terminal name\. In some cases service can require certain terminal name or service behavior can vary depending on provided terminal name\.
-* **TerminalVTFuncKeys** \- Sequence, which will be sent by pressing function keys:
-  * **0** \- ANSI sequence\.
-  * **1** \- VT100 sequence\.
-* **TerminalVTArrowKeys** \- Sequence, which will be sent by pressing arrow keys:
-  * **0** \- ANSI sequence\.
-  * **1** \- VT100 sequence\.
 * **TerminalFile** \- If not blank, there is the file, to which the terminal display will be dumped with time markers\. This file can be played directly using **WorkMode=1** or rendered using **WorkMode=4**\.
 * **TerminalTimeResolution** \- The number of milliseconds between two display cycles\. Decreasing this value induces the more fluenty terminal display, but causes more CPU usage during working\.
 * **TerminalStep** \- The maximum number of processing steps within single display cycle\. The **0** value means unlimited number\. This parameter can be used to simulate low receiving transfer speed or for smooth scroll simulation\.
