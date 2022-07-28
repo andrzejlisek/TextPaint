@@ -12,7 +12,7 @@ namespace TextPaint
         bool AnsiScrollRev = false;
         int AnsiScrollLinesI = 0;
 
-        enum AnsiScrollCommandDef { None, Char, FirstLast };
+        enum AnsiScrollCommandDef { None, Char, FirstLast, Tab };
         int AnsiScrollCounter = 0;
         AnsiScrollCommandDef AnsiScrollCommand = AnsiScrollCommandDef.None;
         int AnsiScrollParam1 = 0;
@@ -68,6 +68,9 @@ namespace TextPaint
                         __AnsiScrollFirst = AnsiScrollParam1;
                         __AnsiScrollLast = AnsiScrollParam2;
                         break;
+                    case AnsiScrollCommandDef.Tab:
+                        AnsiDoTab(AnsiScrollParam1);
+                        break;
                 }
                 AnsiScrollCommand = AnsiScrollCommandDef.None;
             }
@@ -104,6 +107,62 @@ namespace TextPaint
             }
             AnsiScrollCounter--;
             return ScrollDisp;
+        }
+
+        public void AnsiScrollColumns(int Columns)
+        {
+            AnsiCalcColor();
+            for (int i = __AnsiScrollFirst; i <= __AnsiScrollLast; i++)
+            {
+                if (__AnsiLineOccupy.Count > i)
+                {
+                    int Columns_ = Columns;
+                    while (Columns_ < 0)
+                    {
+                        if (AnsiGetFontSize(i) > 0)
+                        {
+                            __AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
+                            __AnsiLineOccupy[i].Insert(0, 2);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
+                            __AnsiLineOccupy[i].Insert(0, 32);
+                            __AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
+                            __AnsiLineOccupy[i].Insert(0, 1);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
+                            __AnsiLineOccupy[i].Insert(0, 32);
+                        }
+                        else
+                        {
+                            __AnsiLineOccupy[i].Insert(0, 0);
+                            __AnsiLineOccupy[i].Insert(0, 0);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
+                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
+                            __AnsiLineOccupy[i].Insert(0, 32);
+                        }
+                        Columns_++;
+                    }
+                    while (Columns_ > 0)
+                    {
+                        if (AnsiGetFontSize(i) > 0)
+                        {
+                            if (__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor))
+                            {
+                                __AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor));
+                            }
+                        }
+                        else
+                        {
+                            if (__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor))
+                            {
+                                __AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor));
+                            }
+                        }
+                        Columns_--;
+                    }
+                    AnsiRepaintLine(i);
+                }
+            }
         }
 
         public void AnsiScrollLines(int Lines)
@@ -144,7 +203,7 @@ namespace TextPaint
 
                 for (int i = 0; i < AnsiMaxX; i++)
                 {
-                    AnsiChar(i, __AnsiScrollFirst, 32, __AnsiBackWork, __AnsiForeWork, 0, 0);
+                    AnsiChar(i, __AnsiScrollFirst, 32, __AnsiBackScroll, __AnsiForeScroll, 0, 0);
                 }
 
                 for (int i = (WinH - 1); i <= __AnsiScrollLast; i++)
@@ -189,7 +248,7 @@ namespace TextPaint
 
                 for (int i = 0; i < AnsiMaxX; i++)
                 {
-                    AnsiChar(i, __AnsiScrollLast, 32, __AnsiBackWork, __AnsiForeWork, 0, 0);
+                    AnsiChar(i, __AnsiScrollLast, 32, __AnsiBackScroll, __AnsiForeScroll, 0, 0);
                 }
 
                 for (int i = (WinH - 1); i <= __AnsiScrollLast; i++)
@@ -201,5 +260,82 @@ namespace TextPaint
             }
         }
 
+
+
+        void AnsiDoTab(int TabTimes)
+        {
+            if (TabTimes > 0)
+            {
+                while (TabTimes > 0)
+                {
+                    if (__AnsiX > (AnsiMaxX - 1))
+                    {
+                        __AnsiX = 0;
+                        __AnsiY++;
+                        if ((AnsiMaxY > 0) && (__AnsiY > __AnsiScrollLast))
+                        {
+                            AnsiScrollInit(__AnsiY - __AnsiScrollLast, AnsiScrollCommandDef.Tab, TabTimes - 1, 0, 0);
+                            __AnsiY = __AnsiScrollLast;
+                            return;
+                        }
+                    }
+                    else
+                    {
+                        __AnsiX++;
+                        if (__AnsiTabs[__AnsiTabs.Count - 1] > __AnsiX)
+                        {
+                            while (!__AnsiTabs.Contains(__AnsiX))
+                            {
+                                __AnsiX++;
+                            }
+                        }
+                        else
+                        {
+                            while ((__AnsiX % 8) > 0)
+                            {
+                                __AnsiX++;
+                            }
+                        }
+                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        {
+                            if (__AnsiX >= (AnsiMaxX / 2))
+                            {
+                                __AnsiX = (AnsiMaxX / 2) - 1;
+                            }
+                        }
+                        else
+                        {
+                            if (__AnsiX >= AnsiMaxX)
+                            {
+                                __AnsiX = AnsiMaxX - 1;
+                            }
+                        }
+                    }
+                    TabTimes--;
+                }
+            }
+            else
+            {
+                while (TabTimes < 0)
+                {
+                    __AnsiX--;
+                    if (__AnsiTabs[__AnsiTabs.Count - 1] > __AnsiX)
+                    {
+                        while ((!__AnsiTabs.Contains(__AnsiX)) && (__AnsiX > 0))
+                        {
+                            __AnsiX--;
+                        }
+                    }
+                    else
+                    {
+                        while (((__AnsiX % 8) > 0) && (__AnsiX > 0))
+                        {
+                            __AnsiX--;
+                        }
+                    }
+                    TabTimes++;
+                }
+            }
+        }
     }
 }

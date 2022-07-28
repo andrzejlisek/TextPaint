@@ -46,6 +46,8 @@ namespace TextPaint
         public int ANSI_CR = 0;
         public int ANSI_LF = 0;
 
+        int __AnsiBackScroll = -1;
+        int __AnsiForeScroll = -1;
         int __AnsiBack = -1;
         int __AnsiFore = -1;
         int __AnsiBackWork = -1;
@@ -231,15 +233,7 @@ namespace TextPaint
             {
                 return 0;
             }
-            if (AnsiBufferI >= AnsiBuffer.Count)
-            {
-                return 0;
-            }
-            bool WasScroll = false;
-            if (WorkMode == 4)
-            {
-                WasScroll = true;
-            }
+            bool StdProc = true;
             while (ProcessCount > 0)
             {
                 __AnsiProcessStep++;
@@ -248,119 +242,124 @@ namespace TextPaint
                 {
                     break;
                 }
-                if (__AnsiProcessStep > __AnsiProcessDelay)
+                StdProc = true;
+                if (AnsiCharPrintRepeater > 0)
                 {
-
-                    if (AnsiScrollCounter == 0)
+                    StdProc = false;
+                    AnsiCharPrint(AnsiCharPrintLast);
+                    AnsiCharPrintRepeater--;
+                    if (AnsiCharPrintRepeater == 0)
                     {
-                        if (AnsiBufferI >= AnsiBuffer.Count)
-                        {
-                            if (Processed == 0)
-                            {
-                                if (WasScroll)
-                                {
-                                    Processed = -1;
-                                }
-                            }
-                            return Processed;
-                        }
+                        AnsiCharPrintLast = -1;
+                    }
+                }
+                if (__AnsiProcessStep <= __AnsiProcessDelay)
+                {
+                    StdProc = false;
 
-                        if (__AnsiCommand)
-                        {
-                            if (AnsiBuffer[AnsiBufferI] < 32)
-                            {
-                                if (AnsiBuffer[AnsiBufferI] == 27)
-                                {
-                                    __AnsiCmd.Clear();
-                                }
-                                else
-                                {
-                                    AnsiCharPrint(AnsiBuffer[AnsiBufferI]);
-                                }
-                            }
-                            else
-                            {
-                                __AnsiCmd.Add(AnsiBuffer[AnsiBufferI]);
-                                if (__AnsiTestCmd)
-                                {
-                                    if (__AnsiCmd.Count > 20)
-                                    {
-                                        Console.WriteLine("ANSI long command " + TextWork.IntToStr(__AnsiCmd));
-                                    }
-                                }
-                            }
+                }
+                if (AnsiScrollCounter > 0)
+                {
+                    StdProc = false;
+                    if (AnsiScrollProcess())
+                    {
+                    }
+                }
+                if (StdProc)
+                {
+                    if (AnsiBufferI >= AnsiBuffer.Count)
+                    {
+                        return Processed;
+                    }
 
-                            if (__AnsiCmd.Count > 0)
-                            {
-                                if (__AnsiVT52)
-                                {
-                                    AnsiProcess_VT52();
-                                }
-                                else
-                                {
-                                    AnsiProcess_Fixed(AnsiBuffer[AnsiBufferI]);
-
-                                    if (__AnsiCommand && (__AnsiCmd[0] != ']') && (__AnsiCmd.Count >= 2) && (((AnsiBuffer[AnsiBufferI] >= 0x41) && (AnsiBuffer[AnsiBufferI] <= 0x5A)) || ((AnsiBuffer[AnsiBufferI] >= 0x61) && (AnsiBuffer[AnsiBufferI] <= 0x7A)) || (AnsiBuffer[AnsiBufferI] == '@')))
-                                    {
-                                        __AnsiCommand = false;
-                                        string AnsiCmd_ = TextWork.IntToStr(__AnsiCmd);
-                                        if (AnsiCmd_.StartsWith("[?"))
-                                        {
-                                            AnsiProcess_CSI_Question(AnsiCmd_);
-                                        }
-                                        if (AnsiCmd_.StartsWith("[") && (!AnsiCmd_.StartsWith("[?")))
-                                        {
-                                            AnsiProcess_CSI_Fixed(AnsiCmd_);
-                                        }
-                                        else
-                                        {
-                                            if (__AnsiTestCmd)
-                                            {
-                                                Console.WriteLine("ANSI non-standard command " + AnsiCmd_);
-                                            }
-                                        }
-                                        string AnsiCmd_0 = "";
-                                        for (int i0 = 0; i0 < AnsiCmd_.Length; i0++)
-                                        {
-                                            if (AnsiCmd_[i0] >= 32)
-                                            {
-                                                AnsiCmd_0 += AnsiCmd_[i0].ToString();
-                                            }
-                                            else
-                                            {
-                                                AnsiCmd_0 = AnsiCmd_0 + "{" + ((int)AnsiCmd_[i0]).ToString("X") + "}";
-                                            }
-                                        }
-                                        if (__AnsiTestCmd)
-                                        {
-                                            Console.WriteLine("ANSI command: " + AnsiCmd_0);
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        else
+                    if (__AnsiCommand)
+                    {
+                        if (AnsiBuffer[AnsiBufferI] < 32)
                         {
                             if (AnsiBuffer[AnsiBufferI] == 27)
                             {
                                 __AnsiCmd.Clear();
-                                __AnsiCommand = true;
                             }
                             else
                             {
                                 AnsiCharPrint(AnsiBuffer[AnsiBufferI]);
                             }
                         }
-                        Processed++;
-                        AnsiBufferI++;
+                        else
+                        {
+                            __AnsiCmd.Add(AnsiBuffer[AnsiBufferI]);
+                            if (__AnsiTestCmd)
+                            {
+                                if (__AnsiCmd.Count > 20)
+                                {
+                                    Console.WriteLine("ANSI long command " + TextWork.IntToStr(__AnsiCmd));
+                                }
+                            }
+                        }
+
+                        if (__AnsiCmd.Count > 0)
+                        {
+                            if (__AnsiVT52)
+                            {
+                                AnsiProcess_VT52();
+                            }
+                            else
+                            {
+                                AnsiProcess_Fixed(AnsiBuffer[AnsiBufferI]);
+
+                                if (__AnsiCommand && (__AnsiCmd[0] != ']') && (__AnsiCmd.Count >= 2) && (((AnsiBuffer[AnsiBufferI] >= 0x41) && (AnsiBuffer[AnsiBufferI] <= 0x5A)) || ((AnsiBuffer[AnsiBufferI] >= 0x61) && (AnsiBuffer[AnsiBufferI] <= 0x7A)) || (AnsiBuffer[AnsiBufferI] == '@') || (AnsiBuffer[AnsiBufferI] == '`')))
+                                {
+                                    __AnsiCommand = false;
+                                    string AnsiCmd_ = TextWork.IntToStr(__AnsiCmd);
+                                    if (AnsiCmd_.StartsWith("[?"))
+                                    {
+                                        AnsiProcess_CSI_Question(AnsiCmd_);
+                                    }
+                                    if (AnsiCmd_.StartsWith("[") && (!AnsiCmd_.StartsWith("[?")))
+                                    {
+                                        AnsiProcess_CSI_Fixed(AnsiCmd_);
+                                    }
+                                    else
+                                    {
+                                        if (__AnsiTestCmd)
+                                        {
+                                            Console.WriteLine("ANSI non-standard command " + AnsiCmd_);
+                                        }
+                                    }
+                                    string AnsiCmd_0 = "";
+                                    for (int i0 = 0; i0 < AnsiCmd_.Length; i0++)
+                                    {
+                                        if (AnsiCmd_[i0] >= 32)
+                                        {
+                                            AnsiCmd_0 += AnsiCmd_[i0].ToString();
+                                        }
+                                        else
+                                        {
+                                            AnsiCmd_0 = AnsiCmd_0 + "{" + ((int)AnsiCmd_[i0]).ToString("X") + "}";
+                                        }
+                                    }
+                                    if (__AnsiTestCmd)
+                                    {
+                                        Console.WriteLine("ANSI command: " + AnsiCmd_0);
+                                    }
+                                }
+                            }
+                        }
                     }
                     else
                     {
-                        if (AnsiScrollProcess())
+                        if (AnsiBuffer[AnsiBufferI] == 27)
                         {
-                            WasScroll = true;
+                            __AnsiCmd.Clear();
+                            __AnsiCommand = true;
+                        }
+                        else
+                        {
+                            AnsiCharPrint(AnsiBuffer[AnsiBufferI]);
                         }
                     }
+                    Processed++;
+                    AnsiBufferI++;
                 }
 
 
@@ -369,7 +368,7 @@ namespace TextPaint
             }
             if (Processed == 0)
             {
-                if (WasScroll)
+                if (!StdProc)
                 {
                     Processed = -1;
                 }
@@ -676,6 +675,8 @@ namespace TextPaint
             {
                 __AnsiForeWork = TextNormalFore;
             }
+            __AnsiBackScroll = __AnsiBackWork;
+            __AnsiForeScroll = __AnsiForeWork;
 
             if (ANSIReverseMode == 0)
             {
@@ -738,13 +739,27 @@ namespace TextPaint
                 __AnsiForeWork = __AnsiBackWork;
             }
 
-            if ((B < 0) && (__AnsiBackWork == TextNormalBack))
+            if (B < 0)
             {
-                __AnsiBackWork = -1;
+                if (__AnsiBackWork == TextNormalBack)
+                {
+                    __AnsiBackWork = -1;
+                }
+                if (__AnsiBackScroll == TextNormalBack)
+                {
+                    __AnsiBackScroll = -1;
+                }
             }
-            if ((F < 0) && (__AnsiForeWork == TextNormalFore))
+            if (F < 0)
             {
-                __AnsiForeWork = -1;
+                if (__AnsiForeWork == TextNormalFore)
+                {
+                    __AnsiForeWork = -1;
+                }
+                if (__AnsiForeScroll == TextNormalFore)
+                {
+                    __AnsiForeScroll = -1;
+                }
             }
         }
     }

@@ -739,11 +739,20 @@ namespace TextPaint
                     }
                     break;
                 case 'A':
-                    if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
-                    __AnsiY -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
-                    if (__AnsiY < __AnsiScrollFirst)
+                    if (AnsiCmd_[AnsiCmd_.Length - 2] == ' ')
                     {
-                        __AnsiY = __AnsiScrollFirst;
+                        if (AnsiParams[0] == " ") { AnsiParams[0] = "1 "; }
+                        if (AnsiParams[0] == "0 ") { AnsiParams[0] = "1 "; }
+                        AnsiScrollColumns(0 - AnsiProcess_Int(AnsiParams[0].Substring(0, AnsiParams[0].Length - 1), AnsiCmd_));
+                    }
+                    else
+                    {
+                        if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                        __AnsiY -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
+                        if (__AnsiY < __AnsiScrollFirst)
+                        {
+                            __AnsiY = __AnsiScrollFirst;
+                        }
                     }
                     break;
                 case 'B':
@@ -795,15 +804,27 @@ namespace TextPaint
                     __AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                     break;
 
+                case '`':
+                    if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                    __AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                    break;
+                case 'a':
+                    if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                    __AnsiX += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    break;
+
                 case 'E':
                     __AnsiX = 0;
+                    if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
                     __AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                     break;
                 case 'F':
                     __AnsiX = 0;
+                    if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
                     __AnsiY -= AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                     break;
                 case 'G':
+                    if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
                     __AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
                     break;
                 case 'S':
@@ -877,6 +898,13 @@ namespace TextPaint
                     }
                     break;
                 case '@':
+                    if (AnsiCmd_[AnsiCmd_.Length - 2] == ' ')
+                    {
+                        if (AnsiParams[0] == " ") { AnsiParams[0] = "1 "; }
+                        if (AnsiParams[0] == "0 ") { AnsiParams[0] = "1 "; }
+                        AnsiScrollColumns(AnsiProcess_Int(AnsiParams[0].Substring(0, AnsiParams[0].Length - 1), AnsiCmd_));
+                    }
+                    else
                     {
                         if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
                         int InsCycle = AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
@@ -998,6 +1026,31 @@ namespace TextPaint
                                 __AnsiTabs.Clear();
                                 __AnsiTabs.Add(-1);
                                 break;
+                        }
+                    }
+                    break;
+
+                case 'I':
+                    {
+                        if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                        if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
+                        AnsiDoTab(AnsiProcess_Int(AnsiParams[0], AnsiCmd_));
+                    }
+                    break;
+                case 'Z':
+                    {
+                        if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                        if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
+                        AnsiDoTab(0 - AnsiProcess_Int(AnsiParams[0], AnsiCmd_));
+                    }
+                    break;
+                case 'b':
+                    {
+                        if (AnsiParams[0] == "") { AnsiParams[0] = "1"; }
+                        if (AnsiParams[0] == "0") { AnsiParams[0] = "1"; }
+                        if (AnsiCharPrintLast >= 0)
+                        {
+                            AnsiCharPrintRepeater = AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                         }
                     }
                     break;
@@ -1139,6 +1192,9 @@ namespace TextPaint
             }
         }
 
+        private int AnsiCharPrintLast = -1;
+        private int AnsiCharPrintRepeater = 0;
+
         private void AnsiCharPrint(int TextFileLine_i)
         {
             if (TextFileLine_i == 127)
@@ -1155,12 +1211,7 @@ namespace TextPaint
                 {
                     case 13:
                     case 10:
-                        break;
                     case 26:
-                        if (__AnsiUseEOF)
-                        {
-                            __AnsiBeyondEOF = true;
-                        }
                         break;
                     case 8:
                         if (ANSIPrintBackspace)
@@ -1210,6 +1261,7 @@ namespace TextPaint
                 {
                     if (ANSIDOS)
                     {
+                        AnsiCharPrintLast = TextFileLine_i;
                         AnsiCharFI(__AnsiX, __AnsiY, TextFileLine_i, __AnsiBackWork, __AnsiForeWork);
                         __AnsiX++;
                         if ((AnsiMaxX > 0) && (__AnsiX == AnsiMaxX))
@@ -1254,6 +1306,7 @@ namespace TextPaint
                         }
                         if (CharNoScroll)
                         {
+                            AnsiCharPrintLast = TextFileLine_i;
                             AnsiCharFI(__AnsiX, __AnsiY, TextFileLine_i, __AnsiBackWork, __AnsiForeWork);
                             __AnsiX++;
                         }
@@ -1299,35 +1352,7 @@ namespace TextPaint
                             {
                                 if (!ANSIDOS)
                                 {
-                                    __AnsiX++;
-                                    if (__AnsiTabs[__AnsiTabs.Count - 1] > __AnsiX)
-                                    {
-                                        while (!__AnsiTabs.Contains(__AnsiX))
-                                        {
-                                            __AnsiX++;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        while ((__AnsiX % 8) > 0)
-                                        {
-                                            __AnsiX++;
-                                        }
-                                    }
-                                    if (AnsiGetFontSize(__AnsiY) > 0)
-                                    {
-                                        if (__AnsiX >= (AnsiMaxX / 2))
-                                        {
-                                            __AnsiX = (AnsiMaxX / 2) - 1;
-                                        }
-                                    }
-                                    else
-                                    {
-                                        if (__AnsiX >= AnsiMaxX)
-                                        {
-                                            __AnsiX = AnsiMaxX - 1;
-                                        }
-                                    }
+                                    AnsiDoTab(1);
                                 }
                             }
                             break;
@@ -1404,6 +1429,12 @@ namespace TextPaint
                             if (!ANSIDOS)
                             {
                                 VT100_SemigraphNum = 0;
+                            }
+                            break;
+                        case 26:
+                            if (__AnsiUseEOF)
+                            {
+                                __AnsiBeyondEOF = true;
                             }
                             break;
                     }
