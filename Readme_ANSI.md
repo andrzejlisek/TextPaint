@@ -56,6 +56,16 @@ The following parameters are especially related to creating or interpreting ANSI
 * **ANSICharsDOS** \- List of 32 replacement character codes, to use as printable of characters from **00h** to **31h** while **DOSMODE=1**\.
 * **ANSICharsVT100** \- List of 32 replacement character codes, to use as VT100 graphics characters from **5Fh** to **7Eh**\.
 * **ANSICharsVT52** \- List of 32 replacement character codes, to use as VT52 graphics characters from **5Fh** to **7Eh**\.
+* **ANSIScrollSmooth** \- Display smooth scroll when smooth scroll state is set\. This parameter may have following values:
+  * **0** \- Do not use smooth scroll\.
+  * **1** \- No text movement, delay only\.
+  * **2** \- Move text by half of height\.\.
+  * **3** \- Move text by quarter of height\.
+  * **4** \- Move text by eighth of height\.
+* **ANSIScrollChars** \- Number of characters, which smooth scroll durates\. Use 0 to turn off smooth scroll\.
+* **ANSIScrollBuffer** \- Buffer arriving characters while scrolling:
+  * **0** \- Smooth scrolling pauses character loading, scrolling extens text display time by scrolling time\.
+  * **1** \- Smooth scrolling does not pause character loading, the buffered characters will be processed instantly after scrolling end\.
 
 ## File and server settings
 
@@ -87,10 +97,11 @@ Older ANSI files uses features of DOS terminal, which works slightly differently
 | Feature | ANSIDOS=0 | ANSIDOS=1 |
 | --- | --- | --- |
 | Text wrapping\. | After writing character at the last column, cursor remains at the same line\. The cursor jumps into beginning of next line only after writing one more character and this character will be written at the first column\. | After writing character at the last column, cursor immediately jumps into beginning of next line\. |
-| Characters from **00h** to **1Fh**, excluding **08h**, **09h**, **0Ah**, **0Bh**, **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
+| Characters from **00h** to **1Fh**, excluding from **08h** to **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
 | Character **08h** \- backspace | Move cursor left one column\. | Write character **25D8h**\. |
 | Character **09h** \- horizontal tab | Move cursor right to the nearest multiply of 6 column\. | Write character **25CBh**\. |
 | Character **0Bh** \- vertical tab | Move cursor down one line\. | Write character **2642h**\. |
+| Character **0Ch** \- form feed | Same as **0Ah**\. | Write character **2640h**\. |
 | Character **7Fh** | Ignore\. | Write character **7Fh**\. |
 | Sequence **1Bh D** | Move cursor one line up, scroll if necessary\. | Ignore\. |
 | Sequence **1Bh M** | Move cursor one line down, scroll if necessary\. | Enter into music state\. |
@@ -109,40 +120,40 @@ When **ANSIDOS=0**, the music state is not available\. Generating the sound is n
 
 Characters from 00h to 1Fh are control characters and should be treated as non\-printable characters\. DOS has ability to print control character in some cases and it was used in some ANSI files\.
 
-| Byte value | Default printable character |
-| --- | --- |
-| 00h | 0020h |
-| 01h | 263Ah |
-| 02h | 263Bh |
-| 03h | 2665h |
-| 04h | 2666h |
-| 05h | 2663h |
-| 06h | 2660h |
-| 07h | 2022h |
-| 08h | 25D8h |
-| 09h | 25CBh |
-| 0Ah | 25D9h |
-| 0Bh | 2642h |
-| 0Ch | 2640h |
-| 0Dh | 266Ah |
-| 0Eh | 266Bh |
-| 0Fh | 263Ch |
-| 10h | 25BAh |
-| 11h | 25C4h |
-| 12h | 2195h |
-| 13h | 203Ch |
-| 14h | 00B6h |
-| 15h | 00A7h |
-| 16h | 25ACh |
-| 17h | 21A8h |
-| 18h | 2191h |
-| 19h | 2193h |
-| 1Ah | 2192h |
-| 1Bh | 2190h |
-| 1Ch | 221Fh |
-| 1Dh | 2194h |
-| 1Eh | 25B2h |
-| 1Fh | 25BCh |
+| Byte value | Character name | Default printable character |
+| --- | --- | --- |
+| 00h | NUL | 0020h |
+| 01h | SOH | 263Ah |
+| 02h | STX | 263Bh |
+| 03h | ETX | 2665h |
+| 04h | EOT | 2666h |
+| 05h | ENQ | 2663h |
+| 06h | ACK | 2660h |
+| 07h | BEL | 2022h |
+| 08h | BS | 25D8h |
+| 09h | HT | 25CBh |
+| 0Ah | LF | 25D9h |
+| 0Bh | VT | 2642h |
+| 0Ch | FF | 2640h |
+| 0Dh | CR | 266Ah |
+| 0Eh | SO | 266Bh |
+| 0Fh | SI | 263Ch |
+| 10h | DLE | 25BAh |
+| 11h | DC1 | 25C4h |
+| 12h | DC2 | 2195h |
+| 13h | DC3 | 203Ch |
+| 14h | DC4 | 00B6h |
+| 15h | NAK | 00A7h |
+| 16h | SYN | 25ACh |
+| 17h | ETB | 21A8h |
+| 18h | CAN | 2191h |
+| 19h | EM | 2193h |
+| 1Ah | SUB | 2192h |
+| 1Bh | ESC | 2190h |
+| 1Ch | FS | 221Fh |
+| 1Dh | GS | 2194h |
+| 1Eh | RS | 25B2h |
+| 1Fh | US | 25BCh |
 
 The characters from **00h** to **1Fh** from the ANSI file can be printed in exception of **0Ah**, **0Dh**, **1Ah** and **1Bh**\.
 
@@ -239,7 +250,7 @@ The telnet client has several control code sets for some special keys to achieve
 
 There is keys and codes, which will sent to server for each possible setting:
 
-| Key | Number of digit | Value = 0 | Value = 1 | Value =2 |
+| Key | Number of digits | Value = 0 | Value = 1 | Value = 2 |
 | --- | --- | --- | --- | --- |
 | Up Arrow | 1 | 1Bh \[ A | 1Bh O A | N/A |
 | Down Arrow | 1 | 1Bh \[ B | 1Bh O B | N/A |
@@ -294,46 +305,46 @@ TextPaint has implemented limited set of escape sequences used to ANSI data proc
 
 The sequences consists of constant number of character in exception by **1Bh \]**, which ends by **07h**\.
 
-| Escape sequence | Meaning |
-| --- | --- |
-| 1Bh \( 0 | Use semigraphical characters for bank 0\. |
-| 1Bh \( P1 | Use standard characters for bank 0, when P1 > 0\. |
-| 1Bh \) 0 | Use semigraphical characters for bank 1\. |
-| 1Bh \) P1 | Use standard characters for bank 1, when P1 > 0\. |
-| 1Bh \* 0 | Use semigraphical characters for bank 2\. |
-| 1Bh \* P1 | Use standard characters for bank 2, when P1 > 0\. |
-| 1Bh \+ 0 | Use semigraphical characters for bank 3\. |
-| 1Bh \+ P1 | Use standard characters for bank 3, when P1 > 0\. |
-| 1Bh n | Use character bank 2\. |
-| 1Bh o | Use character bank 3\. |
-| 1Bh \# 0 | Ignore\. |
-| 1Bh \# 1 | Ignore\. |
-| 1Bh \# 2 | Ignore\. |
-| 1Bh \# 3 | Set current line font to double width and double height, display upper part\. |
-| 1Bh \# 4 | Set current line font to double width and double height, display lower part\. |
-| 1Bh \# 5 | Set current line font to normal width and normal height\. |
-| 1Bh \# 6 | Set current line font to double width and normal height\. |
-| 1Bh \# 7 | Ignore\. |
-| 1Bh \# 8 | Fill screen with **E** character\. |
-| 1Bh \# 9 | Ignore\. |
-| 1Bh \] \.\.\. 07h | Ignore\. |
-| 1Bh 7 | Save current cursor position and text attributes\. |
-| 1Bh 8 | Restore saved cursor position and text attributes\. |
-| 1Bh D \- **ANSIDOS=0** | Move cursor down by 1 step, scroll screen if needed\. |
-| 1Bh D \- **ANSIDOS=1** | Ignore\. |
-| 1Bh M \- **ANSIDOS=0** | Move cursor up by 1 step, scroll screen if needed\. |
-| 1Bh M \- **ANSIDOS=1** | Enter to music state, ignore following characters\. |
-| 1Bh E | Move cursor down by 1 step, scroll screen if needed and move cursor to first column\. |
-| 1Bh H | Add current column to tabulator list |
-| 08h | Move cursor one step left\. |
-| 09h \- **ANSIDOS=0** | Move cursor right to nearest multiply of 8 or defined tab stop\. |
-| 0Ah | Move cursor one line down, scroll screen if needed\. |
-| 0Bh \- **ANSIDOS=0** | Move cursor one line down, scroll screen if needed\. |
-| 0Dh | Move cursor to first column\. |
-| 0Eh \- **ANSIDOS=1** | Exit from music state if in music state, otherwise, write character\. |
-| 0Eh \- **ANSIDOS=0** | Use character bank 1\. |
-| 0Fh \- **ANSIDOS=0** | Use character bank 0\. |
-| 1Ah | Break data processing, ignore in **WorkMode=2**\. |
+| Escape sequence | XTERM name | Meaning |
+| --- | --- | --- |
+| 1Bh \( P1 |   | Character set for bank 0: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
+| 1Bh \) P1 |   | Character set for bank 1: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
+| 1Bh \* P1 |   | Character set for bank 2: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
+| 1Bh \+ P1 |   | Character set for bank 3: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
+| 1Bh n | LS2 | Use character bank 2\. |
+| 1Bh o | LS3 | Use character bank 3\. |
+| 1Bh c | RIS | Reset terminal\. |
+| 1Bh \# 0 |   | Ignore\. |
+| 1Bh \# 1 |   | Ignore\. |
+| 1Bh \# 2 |   | Ignore\. |
+| 1Bh \# 3 | DECDHL | Set current line font to double width and double height, display upper part\. |
+| 1Bh \# 4 | DECDHL | Set current line font to double width and double height, display lower part\. |
+| 1Bh \# 5 | DECSWL | Set current line font to normal width and normal height\. |
+| 1Bh \# 6 | DECDWL | Set current line font to double width and normal height\. |
+| 1Bh \# 7 |   | Ignore\. |
+| 1Bh \# 8 | DECALN | Fill screen with **E** character\. |
+| 1Bh \# 9 |   | Ignore\. |
+| 1Bh \] \.\.\. 07h |   | Ignore\. |
+| 1Bh 6 | DECBI | Move line left by deleting first character\. |
+| 1Bh 7 | DECSC | Save current cursor position and text attributes\. |
+| 1Bh 8 | DECRC | Restore saved cursor position and text attributes\. |
+| 1Bh 9 | DECFI | Move line right by inserting space before first character\. |
+| 1Bh D \- **ANSIDOS=0** | IND | Move cursor down by 1 step, scroll screen if needed\. |
+| 1Bh D \- **ANSIDOS=1** |   | Ignore\. |
+| 1Bh M \- **ANSIDOS=0** | RI | Move cursor up by 1 step, scroll screen if needed\. |
+| 1Bh M \- **ANSIDOS=1** |   | Enter to music state, ignore following characters\. |
+| 1Bh E | NEL | Move cursor down by 1 step, scroll screen if needed and move cursor to first column\. |
+| 1Bh H | HTS | Add current column to tabulator list |
+| 08h | BS | Move cursor one step left\. |
+| 09h \- **ANSIDOS=0** | TAB | Move cursor right to nearest multiply of 8 or defined tab stop\. |
+| 0Ah | LF | Move cursor one line down, scroll screen if needed\. |
+| 0Bh \- **ANSIDOS=0** | VT | Move cursor one line down, scroll screen if needed\. |
+| 0Ch \- **ANSIDOS=0** | FF | Move cursor one line down, scroll screen if needed\. |
+| 0Dh | CR | Move cursor to first column\. |
+| 0Eh \- **ANSIDOS=1** |   | Exit from music state if in music state, otherwise, write character\. |
+| 0Eh \- **ANSIDOS=0** | SO | Use character bank 1\. |
+| 0Fh \- **ANSIDOS=0** | SI | Use character bank 0\. |
+| 1Ah | SUB | Break data processing, ignore in **WorkMode=2**\. |
 
 When **ANSIDOS=1**, every character between **01h** to **1Fh** will be written as standard character in exception of characters: **08h**, **0Ah**, **0Dh**, **1Ah** and **1Bh**\.
 
@@ -341,82 +352,87 @@ When **ANSIDOS=0**, every character between **01h** to **1Fh** will be ignored i
 
 ## The standard sequences
 
-Every standard sequence begins with **1Bh** followed by \[ character and ends with one of the characters:
-
-
-* Digit\.
-* Lowercase letter\.
-* Uppercase letter\.
-* **>** character\.
+Every standard sequence begins with **1Bh** followed by \[ character and ends with any letter or the character **@** or **\`**:
 
 The standard sequences with **?** charater and without parameters:
 
-| Escape sequence | Meaning |
-| --- | --- |
-| 1Bh \[ ? 2 l | Enter into VT52 mode\. |
-| 1Bh \[ ? 3 h | Clear screen and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 3 l | Clear screen and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 4 h | Enable smooth scrolling |
-| 1Bh \[ ? 3 l | Disable smooth scrolling |
-| 1Bh \[ ? 6 h | Enable origin mode and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 6 l | Disable origin mode and move cursor to top left corner of screen\. |
-| 1Bh \[ ? 7 h | Disable screen wrapping |
-| 1Bh \[ ? 7 l | Enable screen wrapping |
+| Escape sequence | XTERM name | Meaning |
+| --- | --- | --- |
+| 1Bh \[ ? 2 l | DECRST / DECANM | Enter into VT52 mode\. |
+| 1Bh \[ ? 3 h | DECSET / DECCOLM | Clear screen and move cursor to top left corner of cursor area\. |
+| 1Bh \[ ? 3 l | DECRST / DECCOLM | Clear screen and move cursor to top left corner of cursor area\. |
+| 1Bh \[ ? 4 h | DECSET / DECSCLM | Enable smooth scrolling |
+| 1Bh \[ ? 4 l | DECRST / DECSCLM | Disable smooth scrolling |
+| 1Bh \[ ? 6 h | DECSET / DECOM | Enable origin mode and move cursor to top left corner of cursor area\. |
+| 1Bh \[ ? 6 l | DECRST / DECOM | Disable origin mode and move cursor to top left corner of screen\. |
+| 1Bh \[ ? 7 h | DECSET / DECAWM | Disable screen wrapping\. |
+| 1Bh \[ ? 7 l | DECRST / DECAWM | Enable screen wrapping\. |
+| 1Bh \[ ? 69 h | DECSET / DECLRMM | Enable left and right margin\. |
+| 1Bh \[ ? 69 l | DECRST / DECLRMM | Disable left and right margin\. |
 
 The standard sequences without **?** character and may contains parameters\. When parameter is ommited, the default value is **1**:
 
-| Escape sequence | Meaning |
-| --- | --- |
-| 1Bh \[ \! p | Reset terminal state including clearing the screen\. |
-| 1Bh \[ s | Save current cursor position and text attributes\. |
-| 1Bh \[ u | Restore saved cursor position and text attributes\. |
-| 1Bh \[ 4 h | Enable inserting mode\. |
-| 1Bh \[ 4 l | Disable inserting mode\. |
-| 1Bh \[ 20 h | Enable new line mode \(**WorkMode=2** only\)\. |
-| 1Bh \[ 20 l | Disable new line mode \(**WorkMode=2** only\)\. |
-| 1Bh \[ 0 J | Clear screen from cursor to bottom right corner\. |
-| 1Bh \[ 1 J | Clear screen from top left corner to cursor\. |
-| 1Bh \[ 2 J | Clear screen and move cursor to top left corner of screen\. |
-| 1Bh \[ 0 K | Clear current line from cursor to right edge\. |
-| 1Bh \[ 1 K | Clear current line from left edge to cursor\. |
-| 1Bh \[ 2 K | Clear current line from left edge to right edge\. |
-| 1Bh \[ P1 ; P2 H | Move cursor to column P1 and line P2, move cursor to be within cursor area\. |
-| 1Bh \[ P1 A | Move cursor up through P1 steps\. |
-| 1Bh \[ P1 B | Move cursor down through P1 steps\. |
-| 1Bh \[ P1 C | Move cursor right through P1 steps\. |
-| 1Bh \[ P1 D | Move cursor left through P1 steps\. |
-| 1Bh \[ P1 d | Move cursor to P1 line\. |
-| 1Bh \[ P1 e | Move cursor down P1 through P1 steps\. |
-| 1Bh \[ P1 E | Move cursor to the first column and P1 lines down\. |
-| 1Bh \[ P1 F | Move cursor to the first column and P1 lines up\. |
-| 1Bh \[ P1 G | Move cursor to P1 column\. |
-| 1Bh \[ P1 S | Scroll cursor area P1 times down\. |
-| 1Bh \[ P1 T | Scroll cursor area P1 times up\. |
-| 1Bh \[ P1 ; P2 r | Define cursor area as from P1 line to P2 line, move cursor to be within cursor area\. |
-| 1Bh \[ P1 L \- **ANSIDOS=0** | Scroll cursor area P1 times up\. |
-| 1Bh \[ P1 L \- **ANSIDOS=1** | Ignore\. |
-| 1Bh \[ P1 M \- **ANSIDOS=0** | Scroll cursor area P1 times down\. |
-| 1Bh \[ P1 M \- **ANSIDOS=1** | Enter to music state, ignore following characters\. |
-| 1Bh \[ \.\.\. m | Set attributes, number of parameters can vary\. |
-| 1Bh \[ P1 @ | Insert P1 spaces and move text being right to be cursor P1 times\. |
-| 1Bh \[ P1 P | Delete character and move text being right to be cursor P1 times\. |
-| 1Bh \[ P1 X | Delete P1 characters right to be cursor without text movement\. |
-| 1Bh \[ 0 g | Remove current column from tabulator list |
-| 1Bh \[ 3 g | Clear tabulator list |
+| Escape sequence | XTERM name | Meaning |
+| --- | --- | --- |
+| 1Bh \[ \! p | DECSTR | Reset terminal state including clearing the screen\. |
+| 1Bh \[ s | SCOSC | Save current cursor position and text attributes\. |
+| 1Bh \[ u | SCORC | Restore saved cursor position and text attributes\. |
+| 1Bh \[ 4 h | SM / IRM | Enable inserting mode\. |
+| 1Bh \[ 4 l | RM / IRM | Disable inserting mode\. |
+| 1Bh \[ 20 h | SM / LNM | Enable new line mode \(**WorkMode=2** only\)\. |
+| 1Bh \[ 20 l | RM / LNM | Disable new line mode \(**WorkMode=2** only\)\. |
+| 1Bh \[ 0 J | ED | Clear screen from cursor to bottom right corner\. |
+| 1Bh \[ 1 J | ED | Clear screen from top left corner to cursor\. |
+| 1Bh \[ 2 J | ED | Clear screen and move cursor to top left corner of screen\. |
+| 1Bh \[ 0 K | EL | Clear current line from cursor to right edge\. |
+| 1Bh \[ 1 K | EL | Clear current line from left edge to cursor\. |
+| 1Bh \[ 2 K | EL | Clear current line from left edge to right edge\. |
+| 1Bh \[ P1 ; P2 H | CUP | Move cursor to column P1 and line P2, move cursor to be within cursor area\. |
+| 1Bh \[ P1 ; P2 f | HVP | Move cursor to column P1 and line P2, move cursor to be within cursor area\. |
+| 1Bh \[ P1 A | CUU | Move cursor up through P1 steps\. |
+| 1Bh \[ P1 B | CUD | Move cursor down through P1 steps\. |
+| 1Bh \[ P1 C | CUF | Move cursor right through P1 steps\. |
+| 1Bh \[ P1 D | CUB | Move cursor left through P1 steps\. |
+| 1Bh \[ P1 d | VPA | Move cursor to P1 line\. |
+| 1Bh \[ P1 e | VPR | Move cursor down through P1 lines\. |
+| 1Bh \[ P1 \` | HPA | Move cursor to P1 column\. |
+| 1Bh \[ P1 a | HPR | Move cursor right through P1 columns\. |
+| 1Bh \[ P1 E | CNL | Move cursor to the first column and P1 lines down\. |
+| 1Bh \[ P1 F | CPL | Move cursor to the first column and P1 lines up\. |
+| 1Bh \[ P1 G | CHA | Move cursor to P1 column\. |
+| 1Bh \[ P1 S | SU | Scroll cursor area P1 times down\. |
+| 1Bh \[ P1 T | SD | Scroll cursor area P1 times up\. |
+| 1Bh \[ P1 ; P2 r | DECSTBM | Define cursor area as from P1 line to P2 line, move cursor to be within cursor area\. |
+| 1Bh \[ P1 ; P2 s | DECSLRM | Define left and right margin\. |
+| 1Bh \[ P1 L \- **ANSIDOS=0** | IL | Scroll cursor area P1 times up\. |
+| 1Bh \[ P1 L \- **ANSIDOS=1** |   | Ignore\. |
+| 1Bh \[ P1 M \- **ANSIDOS=0** | DL | Scroll cursor area P1 times down\. |
+| 1Bh \[ P1 M \- **ANSIDOS=1** |   | Enter to music state, ignore following characters\. |
+| 1Bh \[ \.\.\. m | SGR | Set attributes, number of parameters can vary\. |
+| 1Bh \[ P1 @ | ICH | Insert space and move text being right to be cursor P1 times\. |
+| 1Bh \[ P1 P | DCH | Delete character and move text being right to be cursor P1 times\. |
+| 1Bh \[ P1 X | ECH | Delete P1 characters right to be cursor without text movement\. |
+| 1Bh \[ 0 g | TBC | Remove current column from tabulator list\. |
+| 1Bh \[ 3 g | TBC | Clear tabulator list\. |
+| 1Bh \[ P1 I | CHT | Forward tabulation P1 times\. |
+| 1Bh \[ P1 Z | CBT | Backward tabulation P1 times\. |
+| 1Bh \[ P1 b | REP | Repeat last printed character P1 times\. |
+| 1Bh \[ P1 Space @ | SL | Move left P1 columns\. |
+| 1Bh \[ P1 Space A | SR | Move right P1 columns\. |
 
 ## The request\-response sequences
 
 Some sequences does not changing the terminal working, but received from server in **WorkMode=2**, induces response to server:
 
-| Request | Response |
-| --- | --- |
-| 1Bh \[ 0 c | 1Bh \[ ? 6 c |
-| 1Bh \[ 5 n | 1Bh \[ 0 n |
-| 1Bh \[ 6 n | 1Bh \[ YY ; XX R where YY and XX are current cursor position |
-| 1Bh \[ > 0 c | 1Bh \[ > 0 ; 1 0 ; 0 c |
-| 1Bh \[ = 0 c | 1Bh P \! &#124; 0 0 0 0 0 0 0 0 1Bh \\ |
-| 1Bh \[ 0 x | 1Bh \[ 2 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
-| 1Bh \[ 1 x | 1Bh \[ 3 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
+| Request | XTERM name | Response |
+| --- | --- | --- |
+| 1Bh \[ 0 c | Primary DA | 1Bh \[ ? 6 c |
+| 1Bh \[ 5 n | DSR | 1Bh \[ 0 n |
+| 1Bh \[ 6 n | DSR / CPR | 1Bh \[ YY ; XX R where YY and XX are current cursor position |
+| 1Bh \[ > 0 c | Secondary DA | 1Bh \[ > 0 ; 1 0 ; 0 c |
+| 1Bh \[ = 0 c | Tertiary DA | 1Bh P \! &#124; 0 0 0 0 0 0 0 0 1Bh \\ |
+| 1Bh \[ 0 x | DECREQTPARM | 1Bh \[ 2 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
+| 1Bh \[ 1 x | DECREQTPARM | 1Bh \[ 3 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
 
 ## The same\-meaning escape sequences
 
@@ -425,7 +441,6 @@ There are other supported escape sequences, which are the same meaining as stand
 | Sequence | Equivalent |
 | --- | --- |
 | 1Bh \[ H | 1Bh \[ 1 ; 1 H |
-| 1Bh \[ P1 ; P2 f | 1Bh \[ P1 ; P2 H |
 | 1Bh \[ J | 1Bh \[ 0 J |
 | 1Bh \[ K | 1Bh \[ 0 K |
 | 1Bh \[ c | 1Bh \[ 0 c |
@@ -435,12 +450,28 @@ There are other supported escape sequences, which are the same meaining as stand
 
 ## The TextPaint escape sequences
 
-There is escape sequences usable in TextPaint only and should be ignoren in other software terminals:
+There is escape sequences usable in TextPaint only and should be ignored in other software terminals:
 
 | Sequence | Meaning |
 | --- | --- |
 | 1Bh \[ 0; P1; P2 V | Set font width to P1 and font height to P2, the P1 and P2 are not explicity font size, it encodes the font size and character part number\. |
 | 1Bh \[ 1; P1 V | Wait \(process some dummy steps\) to be processed P1 multiplied by defined constant\. It can be treated as time marker\. Used for terminal recording and playing\. |
+
+The font size dimension \(width or height\) defines simultaneiusly character size \(number of modules\) and displayed character part \(horizontally and vertically\):
+
+
+* **0** \- size 1, whole character\.
+* **1** \- size 2, first part\.
+* **2** \- size 2, second part\.
+* **3** \- size 3, first part\.
+* **4** \- size 3, second part\.
+* **5** \- size 3, third part\.
+* **6** \- size 4, first part\.
+* **7** \- size 4, second part\.
+* **8** \- size 4, third part\.
+* **9** \- size 4, fourth part\.
+
+The maximum supported font size is 16, so the maximum possible number is 135, which means font size 16 and displayed 16th part\. Currently, **TextPaint** can read and write file with various font sizes, but adjusting font size in editor is not implemented yet\.
 
 ## Text attributes 
 

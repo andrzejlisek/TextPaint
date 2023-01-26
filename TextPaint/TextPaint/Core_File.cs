@@ -80,7 +80,7 @@ namespace TextPaint
             ToggleDrawText = true;
             TextBuffer.Clear();
             TextColBuf.Clear();
-            if (FileName == "")
+            if ("".Equals(FileName))
             {
                 return;
             }
@@ -89,13 +89,13 @@ namespace TextPaint
                 TextCipher_.Reset();
                 FileStream FS = new FileStream(FileName, FileMode.Open, FileAccess.Read);
                 StreamReader SR;
-                if (FileREnc != "")
+                if ("".Equals(FileREnc))
                 {
-                    SR = new StreamReader(FS, TextWork.EncodingFromName(FileREnc));
+                    SR = new StreamReader(FS);
                 }
                 else
                 {
-                    SR = new StreamReader(FS);
+                    SR = new StreamReader(FS, TextWork.EncodingFromName(FileREnc));
                 }
 
                 AnsiProcessReset(true);
@@ -179,8 +179,6 @@ namespace TextPaint
                         TextBuffer.Add(TextBufferLine);
                         TextColBuf.Add(TextColBufLine);
                     }
-
-                    TextBufferTrim();
                 }
                 else
                 {
@@ -211,7 +209,7 @@ namespace TextPaint
 
         public void FileSave(string FileName)
         {
-            if (FileName == "")
+            if ("".Equals(FileName))
             {
                 return;
             }
@@ -224,13 +222,13 @@ namespace TextPaint
                 TextCipher_.Reset();
                 FileStream FS = new FileStream(FileName, FileMode.Create, FileAccess.Write);
                 StreamWriter SW;
-                if (FileWEnc != "")
+                if ("".Equals(FileWEnc))
                 {
-                    SW = new StreamWriter(FS, TextWork.EncodingFromName(FileWEnc));
+                    SW = new StreamWriter(FS);
                 }
                 else
                 {
-                    SW = new StreamWriter(FS);
+                    SW = new StreamWriter(FS, TextWork.EncodingFromName(FileWEnc));
                 }
                 AnsiFile AnsiFile_ = new AnsiFile();
                 AnsiFile_.Reset();

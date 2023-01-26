@@ -117,7 +117,7 @@ namespace TextPaint
                     int ChrF = TextNormalFore;
                     int FontW = 0;
                     int FontH = 0;
-                    for (int i = ((AnsiMaxX / 2) - 1); i >= 0; i--)
+                    for (int i = (AnsiMaxX - 1); i >= 0; i--)
                     {
                         AnsiGet(i, N, out ChrC, out ChrB, out ChrF, out FontW, out FontH);
                         AnsiChar(i * 2 + 0, N, ChrC, ChrB, ChrF, 1, FontH_);
@@ -134,14 +134,10 @@ namespace TextPaint
                     int ChrF = TextNormalFore;
                     int FontW = 0;
                     int FontH = 0;
-                    for (int i = 0; i < (AnsiMaxX / 2); i++)
+                    for (int i = 0; i < AnsiMaxX; i++)
                     {
                         AnsiGet(i * 2, N, out ChrC, out ChrB, out ChrF, out FontW, out FontH);
                         AnsiChar(i, N, ChrC, ChrB, ChrF, 0, FontH_);
-                    }
-                    for (int i = (AnsiMaxX / 2); i < AnsiMaxX; i++)
-                    {
-                        AnsiChar(i, N, 32, ChrB, ChrF, 0, FontH_);
                     }
                     AnsiRepaintLine(N);
                 }

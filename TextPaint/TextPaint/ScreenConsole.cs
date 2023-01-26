@@ -326,11 +326,11 @@ namespace TextPaint
 
         public override void StartApp()
         {
-            if (ConIEnc != "")
+            if (!("".Equals(ConIEnc)))
             {
                 Console.InputEncoding = TextWork.EncodingFromName(ConIEnc);
             }
-            if (ConOEnc != "")
+            if (!("".Equals(ConOEnc)))
             {
                 Console.OutputEncoding = TextWork.EncodingFromName(ConOEnc);
             }

@@ -14,7 +14,7 @@ namespace TextPaint
 
         public void CoreEvent_Client(string KeyName, char KeyChar, int KeyCharI)
         {
-            if (KeyName == "WindowClose")
+            if ("WindowClose".Equals(KeyName))
             {
                 TelnetClose(true);
             }
@@ -25,7 +25,7 @@ namespace TextPaint
                 {
                     case 0:
                         {
-                            if (KeyName != "")
+                            if (!("".Equals(KeyName)))
                             {
                                 EscapeKey = KeyName;
                             }
@@ -33,7 +33,7 @@ namespace TextPaint
                         break;
                     case 1:
                         {
-                            if (KeyName == EscapeKey)
+                            if (KeyName.Equals(EscapeKey))
                             {
                                 WorkState = 2;
                             }
@@ -272,12 +272,7 @@ namespace TextPaint
                             case '|':
                                 {
                                     WorkState = 1;
-                                    string WinSizeMsg = "";
-                                    if ((Core_.AnsiMaxX > 0) && (Core_.AnsiMaxY > 0))
-                                    {
-                                        WinSizeMsg = "FFFA1F" + Core_.AnsiMaxX.ToString("X").PadLeft(4, '0') + Core_.AnsiMaxY.ToString("X").PadLeft(4, '0') + "FFF0";
-                                        Send(WinSizeMsg);
-                                    }
+                                    TelnetSendWindowSize();
                                 }
                                 break;
                         }
@@ -287,6 +282,21 @@ namespace TextPaint
                 Monitor.Enter(FuncKeyBuf);
             }
             Monitor.Exit(FuncKeyBuf);
+        }
+
+        bool TelnetSendWindowSize()
+        {
+            string WinSizeMsg = "";
+            if ((Core_.AnsiMaxX > 0) && (Core_.AnsiMaxY > 0))
+            {
+                WinSizeMsg = "FFFA1F" + Core_.AnsiMaxX.ToString("X").PadLeft(4, '0') + Core_.AnsiMaxY.ToString("X").PadLeft(4, '0') + "FFF0";
+                Send(WinSizeMsg);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public string CommandDesc(string Cmd)
@@ -465,7 +475,7 @@ namespace TextPaint
                 return;
             }
             Monitor.Enter(TCPCMon);
-            if (STR == "")
+            if ("".Equals(STR))
             {
                 return;
             }
@@ -502,7 +512,7 @@ namespace TextPaint
 
         string TelnetCommand = "";
 
-        public void ProcessBuf(long TimeStamp)
+        public void ProcessBuf(Stopwatch TelnetTimer)
         {
             int TelnetBufL = TelnetBuf.Count;
             for (int TelnetBufI = 0; TelnetBufI < TelnetBufL; TelnetBufI++)
@@ -529,13 +539,13 @@ namespace TextPaint
 
                             bool StdCmd = true;
 
-                            if (TelnetCommand == "FFFF")
+                            if ("FFFF".Equals(TelnetCommand))
                             {
                                 ByteStr.Add(255);
                                 ProcessState = 0;
                                 StdCmd = false;
                             }
-                            if (TelnetCommand == "FFF9")
+                            if ("FFF9".Equals(TelnetCommand))
                             {
                                 ProcessState = 0;
                                 StdCmd = false;
@@ -557,7 +567,7 @@ namespace TextPaint
                                         }
                                     }
 
-                                    if (CommandAnswer == "")
+                                    if ("".Equals(CommandAnswer))
                                     {
                                         for (int i = 0; i < NegoAnswers.Count; i++)
                                         {
@@ -572,7 +582,7 @@ namespace TextPaint
                                         }
                                     }
 
-                                    if (CommandAnswer != "")
+                                    if (!("".Equals(CommandAnswer)))
                                     {
                                         if (CommandTest) Console.WriteLine(CommandDesc(TelnetCommand) + " -> " + CommandDesc(CommandAnswer));
                                         Send(CommandAnswer.Replace("|", ""));
@@ -655,7 +665,7 @@ namespace TextPaint
                 if (TelnetFileUse)
                 {
                     TelnetFileW.Write(Encoding.UTF8.GetString(TextWork.TelnetTimerBegin));
-                    TelnetFileW.Write((TimeStamp / TelnetTimerResolution).ToString());
+                    TelnetFileW.Write((TelnetTimer.ElapsedMilliseconds / TelnetTimerResolution).ToString());
                     TelnetFileW.Write(Encoding.UTF8.GetString(TextWork.TelnetTimerEnd));
                     TelnetFileW.Write(TempStr);
                 }
@@ -713,9 +723,14 @@ namespace TextPaint
         string ConError = "";
 
         bool OpenCloseRepaint = false;
+        bool TerminalAutoSendWindowFlag = false;
+        Stopwatch TerminalAutoSendWindowSW = new Stopwatch();
 
         public void TelnetOpen()
         {
+            TerminalAutoSendWindowFlag = false;
+            TerminalAutoSendWindowSW.Stop();
+            TerminalAutoSendWindowSW.Reset();
             TCPC = new TcpClient();
             string[] AddrPort = Core_.CurrentFileName.Split(':');
             try
@@ -730,6 +745,11 @@ namespace TextPaint
                 }
                 NSX = TCPC.GetStream();
                 ConError = "";
+                if (TelnetAutoSendWindowSize > 0)
+                {
+                    TerminalAutoSendWindowFlag = true;
+                    TerminalAutoSendWindowSW.Start();
+                }
             }
             catch (Exception e)
             {
@@ -765,7 +785,7 @@ namespace TextPaint
             Screen_.Refresh();
             WorkState = 0;
             EscapeKey = "";
-            while (Screen_.AppWorking && (EscapeKey == ""))
+            while (Screen_.AppWorking && ("".Equals(EscapeKey)))
             {
                 Thread.Sleep(100);
             }
@@ -789,7 +809,7 @@ namespace TextPaint
             bool ConnStatusX = TcpConnected(TCPC);
 
             TelnetFileUse = false;
-            if (TelnetFileName != "")
+            if (!("".Equals(TelnetFileName)))
             {
                 try
                 {
@@ -816,7 +836,22 @@ namespace TextPaint
             {
                 while (Screen_.AppWorking)
                 {
-                    TelnetTimerNext = ((TelnetTimer.ElapsedMilliseconds / TelnetTimerResolution) * TelnetTimerResolution) + TelnetTimerResolution;
+                    if (TerminalAutoSendWindowFlag)
+                    {
+                        if (TerminalAutoSendWindowSW.ElapsedMilliseconds > TelnetAutoSendWindowSize)
+                        {
+                            if (TelnetSendWindowSize())
+                            {
+                                TerminalAutoSendWindowSW.Stop();
+                                TerminalAutoSendWindowFlag = false;
+                            }
+                        }
+                    }
+                    while (TelnetTimer.ElapsedMilliseconds > TelnetTimerNext)
+                    {
+                        TelnetTimerNext += TelnetTimerResolution;
+                    }
+                    //TelnetTimerNext = ((TelnetTimer.ElapsedMilliseconds / TelnetTimerResolution) * TelnetTimerResolution) + TelnetTimerResolution;
                     while (TelnetTimer.ElapsedMilliseconds <= TelnetTimerNext)
                     {
                         Thread.Sleep(TelnetTimerWait);
@@ -830,7 +865,7 @@ namespace TextPaint
                         ConnStatusX = TcpConnected(TCPC);
                     }
                     Receive(false);
-                    ProcessBuf(TelnetTimerNext);
+                    ProcessBuf(TelnetTimer);
                     bool WasAnsiProcess = false;
 
                     Core_.AnsiProcessSupply(FileCtX);
@@ -956,7 +991,7 @@ namespace TextPaint
                     case 2: TelnetKeyboardConf_ = " " + TelnetKeyboardConf[0] + " " + TelnetKeyboardConf[1] + "[" + TelnetKeyboardConf[2] + "]" + TelnetKeyboardConf[3] + " "; break;
                     case 3: TelnetKeyboardConf_ = " " + TelnetKeyboardConf[0] + " " + TelnetKeyboardConf[1] + " " + TelnetKeyboardConf[2] + "[" + TelnetKeyboardConf[3] + "]"; break;
                 }
-                InfoMsg.Add(" +=, -* - Layout: " + TelnetKeyboardConf_ + " ");
+                InfoMsg.Add(" +=, -* - Key codes: " + TelnetKeyboardConf_ + " ");
             }
             if (WorkState == 4)
             {

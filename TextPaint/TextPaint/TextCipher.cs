@@ -351,7 +351,7 @@ namespace TextPaint
                 case "Backspace":
                 case "Back":
                 case "Delete":
-                    if (KeyName == "Delete")
+                    if ("Delete".Equals(KeyName))
                     {
                         PasswordCursor++;
                     }
@@ -384,7 +384,7 @@ namespace TextPaint
                     }
                     else
                     {
-                        if (KeyName == "Delete")
+                        if ("Delete".Equals(KeyName))
                         {
                             PasswordCursor--;
                         }

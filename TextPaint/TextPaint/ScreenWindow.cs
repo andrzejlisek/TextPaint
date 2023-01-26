@@ -655,6 +655,10 @@ namespace TextPaint
         int[,] FormCtrlC;
         int[,] FormCtrlFontW;
         int[,] FormCtrlFontH;
+        int[] LineOffset;
+        int[] LineOffsetBack;
+        int[] LineOffsetFore;
+        bool[] LineOffsetBlank;
         RectangleF[,] FormCtrlR;
         int[] FormCtrlR_Trans;
         Font WinFont;
@@ -684,6 +688,10 @@ namespace TextPaint
             FormCtrlC = new int[WinW, WinH];
             FormCtrlFontW = new int[WinW, WinH];
             FormCtrlFontH = new int[WinW, WinH];
+            LineOffset = new int[WinH];
+            LineOffsetBlank = new bool[WinH];
+            LineOffsetBack = new int[WinH];
+            LineOffsetFore = new int[WinH];
             SetTextRectangles();
 
             CursorBmp = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
@@ -699,6 +707,7 @@ namespace TextPaint
                     FormCtrlFontW[X, Y] = 0;
                     FormCtrlFontH[X, Y] = 0;
                 }
+                LineOffset[Y] = 0;
             }
             CursorB = -1;
             CursorF = -1;
@@ -777,7 +786,7 @@ namespace TextPaint
             Bitmap BmpExp = new Bitmap(Bitmap_.Width, Bitmap_.Height, PixelFormat.Format24bppRgb);
             Graphics BmpExpG = Graphics.FromImage(BmpExp);
             BmpExpG.DrawImageUnscaled(Bitmap_, 0, 0);
-            if (DrawCursor)
+            if (DrawCursor && (LineOffset[CursorY] == 0))
             {
                 RepaintCursor();
                 BmpExpG.DrawImageUnscaled(CursorBmp, CursorX * CellW, CursorY * CellH);
@@ -797,8 +806,15 @@ namespace TextPaint
                 InternalW = Form_.Width;
                 InternalH = Form_.Height;
 
-                WinW = Form_.ClientSize.Width / CellW;
-                WinH = Form_.ClientSize.Height / CellH;
+                //Console.WriteLine(WinW + "+" + WinH);
+                //if (WinFixed && (WinW > 0) && (WinH > 0))
+                //{
+                //}
+                //else
+                {
+                    WinW = Form_.ClientSize.Width / CellW;
+                    WinH = Form_.ClientSize.Height / CellH;
+                }
 
                 Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, PixelFormat.Format24bppRgb);
                 Bitmap_G = Graphics.FromImage(Bitmap_);
@@ -808,13 +824,27 @@ namespace TextPaint
                 FormCtrlC = new int[WinW, WinH];
                 FormCtrlFontW = new int[WinW, WinH];
                 FormCtrlFontH = new int[WinW, WinH];
+                LineOffset = new int[WinH];
+                LineOffsetBlank = new bool[WinH];
+                LineOffsetBack = new int[WinH];
+                LineOffsetFore = new int[WinH];
                 SetTextRectangles();
                 Form_.Controls.Clear();
                 PictureBox_ = new PictureBoxEx(WinPicturePanel ? 2 : 1);
-                PictureBox_.Ctrl.Left = (Form_.ClientSize.Width - Bitmap_.Width) / 2;
-                PictureBox_.Ctrl.Top = (Form_.ClientSize.Height - Bitmap_.Height) / 2;
-                PictureBox_.Ctrl.Width = Bitmap_.Width;
-                PictureBox_.Ctrl.Height = Bitmap_.Height;
+                /*if (WinFixed)
+                {
+                    PictureBox_.Ctrl.Left = 0;
+                    PictureBox_.Ctrl.Top = 0;
+                    PictureBox_.Ctrl.Width = Form_.ClientSize.Width;
+                    PictureBox_.Ctrl.Height = Form_.ClientSize.Height;
+                }
+                else*/
+                {
+                    PictureBox_.Ctrl.Left = (Form_.ClientSize.Width - Bitmap_.Width) / 2;
+                    PictureBox_.Ctrl.Top = (Form_.ClientSize.Height - Bitmap_.Height) / 2;
+                    PictureBox_.Ctrl.Width = Bitmap_.Width;
+                    PictureBox_.Ctrl.Height = Bitmap_.Height;
+                }
                 PictureBox_.Image = Bitmap_;
 
 
@@ -848,6 +878,7 @@ namespace TextPaint
                         FormCtrlFontW[X, Y] = 0;
                         FormCtrlFontH[X, Y] = 0;
                     }
+                    LineOffset[Y] = 0;
                 }
                 CursorB = -1;
                 CursorF = -1;
@@ -961,11 +992,51 @@ namespace TextPaint
             }
         }
 
+        public override void SetLineOffset(int Y, int Offset, bool Blank, int ColorBack, int ColorFore)
+        {
+            int OldOffset = LineOffset[Y];
+            switch (CellH)
+            {
+                case 8:
+                    LineOffset[Y] = Offset;
+                    break;
+                case 16:
+                    LineOffset[Y] = Offset << 1;
+                    break;
+                case 24:
+                    LineOffset[Y] = Offset + Offset + Offset;
+                    break;
+                case 32:
+                    LineOffset[Y] = Offset << 2;
+                    break;
+                default:
+                    LineOffset[Y] = (Offset * CellH) / 8;
+                    break;
+            }
+            LineOffsetBlank[Y] = Blank;
+            LineOffsetBack[Y] = ColorBack;
+            LineOffsetFore[Y] = ColorFore;
+            if (OldOffset != LineOffset[Y])
+            {
+                for (int X = 0; X < WinW; X++)
+                {
+                    CharRepaint(X, Y);
+                }
+            }
+        }
+
         protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
         {
             Monitor.Enter(GraphMutex);
             PutChar_Work(X, Y, C, ColorBack, ColorFore, FontW, FontH);
             Monitor.Exit(GraphMutex);
+        }
+
+        public override void CharRepaint(int X, int Y)
+        {
+            int C = FormCtrlC[X, Y];
+            FormCtrlC[X, Y] = C + 1;
+            PutChar_Work(X, Y, C, FormCtrlB[X, Y], FormCtrlF[X, Y], FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]);
         }
 
         private void PutChar_Work(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
@@ -998,227 +1069,318 @@ namespace TextPaint
             }
             if (Diff)
             {
-                Color DrawBack = DrawColor[ColorBack];
-                Color DrawFore = DrawColor[ColorFore];
-                Brush DrawBackB = DrawColorB[ColorBack];
-                Brush DrawForeB = DrawColorB[ColorFore];
-                if (ColorBlending)
+                Bitmap TempGlyph = PutChar_GetGlyph(ColorBack, ColorFore, C, FontW, FontH);
+
+                int OffsetMode = 0;
+                bool OffsetOtherHalf = false;
+                bool OffsetOtherLine = false;
+                if (LineOffset[Y] > 0)
                 {
-                    switch (C)
+                    OffsetMode = 1;
+                    if ((Y < (WinH - 1)) && (!LineOffsetBlank[Y]))
                     {
-                        case 0x2591:
-                            {
-                                C = 0x2588;
-                                ColorFore += 32;
-                            }
-                            break;
-                        case 0x2592:
-                            {
-                                C = 0x2588;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x2593:
-                            {
-                                C = 0x2588;
-                                ColorFore += 48;
-                            }
-                            break;
-
-                        case 0x1FB8C:
-                            {
-                                C = 0x258C;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB8D:
-                            {
-                                C = 0x2590;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB8E:
-                            {
-                                C = 0x2580;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB8F:
-                            {
-                                C = 0x2584;
-                                ColorFore += 16;
-                            }
-                            break;
-
-                        case 0x1FB9C:
-                            {
-                                C = 0x25E4;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB9D:
-                            {
-                                C = 0x25E5;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB9E:
-                            {
-                                C = 0x25E2;
-                                ColorFore += 16;
-                            }
-                            break;
-                        case 0x1FB9F:
-                            {
-                                C = 0x25E3;
-                                ColorFore += 16;
-                            }
-                            break;
-
-
-
-                        case 0x1FB90:
-                            {
-                                C = 0x0020;
-                                ColorFore += 64;
-                            }
-                            break;
-
-                        case 0x1FB91:
-                            {
-                                C = 0x2580;
-                                ColorFore += 64;
-                            }
-                            break;
-                        case 0x1FB92:
-                            {
-                                C = 0x2584;
-                                ColorFore += 64;
-                            }
-                            break;
-                        case 0x1FB93:
-                            {
-                                C = 0x258C;
-                                ColorFore += 64;
-                            }
-                            break;
-                        case 0x1FB94:
-                            {
-                                C = 0x2590;
-                                ColorFore += 64;
-                            }
-                            break;
-                    }
-                }
-                int FontWH = ((FontW < 3) && (FontH < 3)) ? (FontH * 3 + FontW) : -1;
-                Bitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C, FontWH);
-                if (TempGlyph == null)
-                {
-                    TempGlyph = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
-                    if (ColorFore >= 16)
-                    {
-                        switch (ColorFore >> 4)
+                        if ((FormCtrlB[X, Y + 1] >= 0) && (FormCtrlF[X, Y + 1] >= 0))
                         {
-                            case 1:
-                                CalcBlend(ColorBack, ColorFore - 16, 1, 1, out DrawFore, out DrawForeB);
-                                break;
-                            case 2:
-                                CalcBlend(ColorBack, ColorFore - 32, 3, 1, out DrawFore, out DrawForeB);
-                                break;
-                            case 3:
-                                CalcBlend(ColorBack, ColorFore - 48, 1, 3, out DrawFore, out DrawForeB);
-                                break;
-                            case 4:
-                                CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawBack, out DrawBackB);
-                                break;
+                            OffsetOtherHalf = true;
                         }
                     }
-                    if (WinIsBitmapFont)
+                    if (Y > 0)
                     {
-                        int X__ = X * CellW;
-                        int Y__ = Y * CellH;
-                        int C__ = C;
-                        int CP_ = C__ >> 8;
-                        C__ = C__ & 255;
-                        C__ = C__ * CellW;
-                        int CPI = 0;
-                        if (WinBitmapPage.ContainsKey(CP_))
+                        OffsetOtherLine = true;
+                    }
+                }
+                if (LineOffset[Y] < 0)
+                {
+                    OffsetMode = 2;
+                    if ((Y > 0) && (!LineOffsetBlank[Y]))
+                    {
+                        if ((FormCtrlB[X, Y - 1] >= 0) && (FormCtrlF[X, Y - 1] >= 0))
                         {
-                            CPI = WinBitmapPage[CP_] * CellH;
+                            OffsetOtherHalf = true;
+                        }
+                    }
+                    if (Y < (WinH - 1))
+                    {
+                        OffsetOtherLine = true;
+                    }
+                }
+
+                if (MultiThread) Monitor.Enter(Bitmap_);
+
+                if (OffsetMode == 0)
+                {
+                    Bitmap_G.DrawImageUnscaled(TempGlyph, X * CellW, Y * CellH);
+                }
+                else
+                {
+                    if (OffsetMode == 1)
+                    {
+                        int Offset = LineOffset[Y];
+
+                        // Current line - upper half
+                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
+                        if (OffsetOtherLine)
+                        {
+                            // Previous line - lower half
+                            Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
+                        }
+                        if (OffsetOtherHalf)
+                        {
+                            TempGlyph = PutChar_GetGlyph(FormCtrlB[X, Y + 1], FormCtrlF[X, Y + 1], FormCtrlC[X, Y + 1], FormCtrlFontW[X, Y + 1], FormCtrlFontH[X, Y + 1]);
                         }
                         else
                         {
-                            C__ = 32 * CellW;
+                            TempGlyph = PutChar_GetGlyph(LineOffsetBack[Y], LineOffsetFore[Y], 32, FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]);
                         }
-                        int FontDivW = 1;
-                        int FontDivH = 1;
-                        int FontOffW = 0;
-                        int FontOffH = 0;
-                        if (FontW > 0)
-                        {
-                            for (int i = 1; i < FontW_Num_Min.Length; i++)
-                            {
-                                if ((FontW >= FontW_Num_Min[i]) && (FontW <= FontW_Num_Max[i]))
-                                {
-                                    FontDivW = i;
-                                    FontOffW = (FontW - FontW_Num_Min[i]) * CellW;
-                                    break;
-                                }
-                            }
-                        }
-                        if (FontH >= 0)
-                        {
-                            for (int i = 1; i < FontW_Num_Min.Length; i++)
-                            {
-                                if ((FontH >= FontW_Num_Min[i]) && (FontH <= FontW_Num_Max[i]))
-                                {
-                                    FontDivH = i;
-                                    FontOffH = (FontH - FontW_Num_Min[i]) * CellH;
-                                    break;
-                                }
-                            }
-                        }
-
-                        for (int Y_ = 0; Y_ < CellH; Y_++)
-                        {
-                            for (int X_ = 0; X_ < CellW; X_++)
-                            {
-                                if (WinBitmapGlyph[CPI + ((Y_ + FontOffH) / FontDivH), C__ + ((X_ + FontOffW) / FontDivW)])
-                                {
-                                    TempGlyph.SetPixel(X_, Y_, DrawFore);
-                                }
-                                else
-                                {
-                                    TempGlyph.SetPixel(X_, Y_, DrawBack);
-                                }
-                            }
-                        }
+                        // Current line - lower half
+                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
                     }
-                    else
+                    if (OffsetMode == 2)
                     {
-                        try
-                        {
-                            Graphics TempGlyphG = Graphics.FromImage(TempGlyph);
-                            TempGlyphG.FillRectangle(DrawBackB, 0, 0, CellW, CellH);
-                            if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
-                            {
-                                TempGlyphG.ScaleTransform(FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH]);
-                                TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, DrawForeB, FormCtrlR[FontW, FontH], WinStrFormat);
-                            }
-                        }
-                        catch
-                        {
+                        int Offset = CellH - (0 - LineOffset[Y]);
 
+                        // Current line - lower half
+                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
+                        if (OffsetOtherLine)
+                        {
+                            // Next line - upper half
+                            Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
                         }
+                        if (OffsetOtherHalf)
+                        {
+                            TempGlyph = PutChar_GetGlyph(FormCtrlB[X, Y - 1], FormCtrlF[X, Y - 1], FormCtrlC[X, Y - 1], FormCtrlFontW[X, Y - 1], FormCtrlFontH[X, Y - 1]);
+                        }
+                        else
+                        {
+                            TempGlyph = PutChar_GetGlyph(LineOffsetBack[Y], LineOffsetFore[Y], 32, FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]);
+                        }
+                        // Current line - upper half
+                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
                     }
-                    GlyphBankSet(ColorBack, ColorFore, C, TempGlyph, FontWH);
                 }
-                if (MultiThread) Monitor.Enter(Bitmap_);
-                Bitmap_G.DrawImageUnscaled(TempGlyph, X * CellW, Y * CellH);
+
                 if (MultiThread) Monitor.Exit(Bitmap_);
 
 
             }
+        }
+
+        private Bitmap PutChar_GetGlyph(int ColorBack, int ColorFore, int C, int FontW, int FontH)
+        {
+            Color DrawBack = DrawColor[ColorBack];
+            Color DrawFore = DrawColor[ColorFore];
+            Brush DrawBackB = DrawColorB[ColorBack];
+            Brush DrawForeB = DrawColorB[ColorFore];
+            if (ColorBlending)
+            {
+                switch (C)
+                {
+                    case 0x2591:
+                        {
+                            C = 0x2588;
+                            ColorFore += 32;
+                        }
+                        break;
+                    case 0x2592:
+                        {
+                            C = 0x2588;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x2593:
+                        {
+                            C = 0x2588;
+                            ColorFore += 48;
+                        }
+                        break;
+
+                    case 0x1FB8C:
+                        {
+                            C = 0x258C;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB8D:
+                        {
+                            C = 0x2590;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB8E:
+                        {
+                            C = 0x2580;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB8F:
+                        {
+                            C = 0x2584;
+                            ColorFore += 16;
+                        }
+                        break;
+
+                    case 0x1FB9C:
+                        {
+                            C = 0x25E4;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB9D:
+                        {
+                            C = 0x25E5;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB9E:
+                        {
+                            C = 0x25E2;
+                            ColorFore += 16;
+                        }
+                        break;
+                    case 0x1FB9F:
+                        {
+                            C = 0x25E3;
+                            ColorFore += 16;
+                        }
+                        break;
+
+
+
+                    case 0x1FB90:
+                        {
+                            C = 0x0020;
+                            ColorFore += 64;
+                        }
+                        break;
+
+                    case 0x1FB91:
+                        {
+                            C = 0x2580;
+                            ColorFore += 64;
+                        }
+                        break;
+                    case 0x1FB92:
+                        {
+                            C = 0x2584;
+                            ColorFore += 64;
+                        }
+                        break;
+                    case 0x1FB93:
+                        {
+                            C = 0x258C;
+                            ColorFore += 64;
+                        }
+                        break;
+                    case 0x1FB94:
+                        {
+                            C = 0x2590;
+                            ColorFore += 64;
+                        }
+                        break;
+                }
+            }
+            int FontWH = ((FontW < 3) && (FontH < 3)) ? (FontH * 3 + FontW) : -1;
+            Bitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C, FontWH);
+            if (TempGlyph == null)
+            {
+                TempGlyph = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
+                if (ColorFore >= 16)
+                {
+                    switch (ColorFore >> 4)
+                    {
+                        case 1:
+                            CalcBlend(ColorBack, ColorFore - 16, 1, 1, out DrawFore, out DrawForeB);
+                            break;
+                        case 2:
+                            CalcBlend(ColorBack, ColorFore - 32, 3, 1, out DrawFore, out DrawForeB);
+                            break;
+                        case 3:
+                            CalcBlend(ColorBack, ColorFore - 48, 1, 3, out DrawFore, out DrawForeB);
+                            break;
+                        case 4:
+                            CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawBack, out DrawBackB);
+                            break;
+                    }
+                }
+                if (WinIsBitmapFont)
+                {
+                    int C__ = C;
+                    int CP_ = C__ >> 8;
+                    C__ = C__ & 255;
+                    C__ = C__ * CellW;
+                    int CPI = 0;
+                    if (WinBitmapPage.ContainsKey(CP_))
+                    {
+                        CPI = WinBitmapPage[CP_] * CellH;
+                    }
+                    else
+                    {
+                        C__ = 32 * CellW;
+                    }
+                    int FontDivW = 1;
+                    int FontDivH = 1;
+                    int FontOffW = 0;
+                    int FontOffH = 0;
+                    if (FontW > 0)
+                    {
+                        for (int i = 1; i < FontW_Num_Min.Length; i++)
+                        {
+                            if ((FontW >= FontW_Num_Min[i]) && (FontW <= FontW_Num_Max[i]))
+                            {
+                                FontDivW = i;
+                                FontOffW = (FontW - FontW_Num_Min[i]) * CellW;
+                                break;
+                            }
+                        }
+                    }
+                    if (FontH >= 0)
+                    {
+                        for (int i = 1; i < FontW_Num_Min.Length; i++)
+                        {
+                            if ((FontH >= FontW_Num_Min[i]) && (FontH <= FontW_Num_Max[i]))
+                            {
+                                FontDivH = i;
+                                FontOffH = (FontH - FontW_Num_Min[i]) * CellH;
+                                break;
+                            }
+                        }
+                    }
+
+                    for (int Y_ = 0; Y_ < CellH; Y_++)
+                    {
+                        for (int X_ = 0; X_ < CellW; X_++)
+                        {
+                            if (WinBitmapGlyph[CPI + ((Y_ + FontOffH) / FontDivH), C__ + ((X_ + FontOffW) / FontDivW)])
+                            {
+                                TempGlyph.SetPixel(X_, Y_, DrawFore);
+                            }
+                            else
+                            {
+                                TempGlyph.SetPixel(X_, Y_, DrawBack);
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    try
+                    {
+                        Graphics TempGlyphG = Graphics.FromImage(TempGlyph);
+                        TempGlyphG.FillRectangle(DrawBackB, 0, 0, CellW, CellH);
+                        if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
+                        {
+                            TempGlyphG.ScaleTransform(FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH]);
+                            TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, DrawForeB, FormCtrlR[FontW, FontH], WinStrFormat);
+                        }
+                    }
+                    catch
+                    {
+
+                    }
+                }
+                GlyphBankSet(ColorBack, ColorFore, C, TempGlyph, FontWH);
+            }
+            return TempGlyph;
         }
 
         public override void Move(int SrcX, int SrcY, int DstX, int DstY, int W, int H)
@@ -1244,8 +1406,20 @@ namespace TextPaint
                 H--;
             }
             Monitor.Enter(GraphMutex);
-            Bitmap Bitmap_Temp = Bitmap_.Clone(new Rectangle(SrcX * CellW, SrcY * CellH, W * CellW, H * CellH), PixelFormat.Format24bppRgb);
-            Bitmap_G.DrawImage(Bitmap_Temp, DstX * CellW, DstY * CellH);
+            bool NotDone = true;
+            while (NotDone)
+            {
+                try
+                {
+                    Bitmap Bitmap_Temp = Bitmap_.Clone(new Rectangle(SrcX * CellW, SrcY * CellH, W * CellW, H * CellH), PixelFormat.Format24bppRgb);
+                    Bitmap_G.DrawImage(Bitmap_Temp, DstX * CellW, DstY * CellH);
+                    NotDone = false;
+                }
+                catch
+                {
+
+                }
+            }
             int X_D, Y_D, X_S, Y_S;
             if (SrcY > DstY)
             {
@@ -1317,6 +1491,19 @@ namespace TextPaint
                             FormCtrlFontH[X_D, Y_D] = FormCtrlFontH[X_S, Y_S];
                         }
                     }
+                }
+            }
+            if ((LineOffset[SrcY] != 0) || (LineOffset[DstY] != 0) || (LineOffset[SrcY + H - 1] != 0) || (LineOffset[DstY + H - 1] != 0))
+            {
+                int RepaintX1 = Math.Min(SrcX, DstX);
+                int RepaintX2 = Math.Max(SrcX, DstX) + W;
+                for (int X = RepaintX1; X < RepaintX2; X++)
+                {
+                    int Y = SrcY;
+                    CharRepaint(X, SrcY);
+                    CharRepaint(X, DstY);
+                    CharRepaint(X, SrcY + H - 1);
+                    CharRepaint(X, DstY + H - 1);
                 }
             }
             Monitor.Exit(GraphMutex);
@@ -1399,6 +1586,10 @@ namespace TextPaint
                     CursorNeedRepaint = true;
                     CursorFontH = FormCtrlFontH[CursorX, CursorY];
                 }
+                if (LineOffset[CursorY] != 0)
+                {
+                    CursorNeedRepaint = true;
+                }
                 if (MultiThread)
                 {
                     try
@@ -1468,26 +1659,29 @@ namespace TextPaint
         {
             if (Monitor.TryEnter(GraphMutex))
             {
-                if (!CursorBox.Ctrl.Visible)
+                if (LineOffset[CursorY] == 0)
                 {
-                    if (CursorNeedRepaint)
+                    if (!CursorBox.Ctrl.Visible)
                     {
-                        RepaintCursor();
-
-                        try
+                        if (CursorNeedRepaint)
                         {
-                            CursorBox.Ctrl.Refresh();
-                            CursorNeedRepaint = false;
-                            CursorBox.Ctrl.Left = PictureBox_.Ctrl.Left + (CursorX * CellW);
-                            CursorBox.Ctrl.Top = PictureBox_.Ctrl.Top + (CursorY * CellH);
-                        }
-                        catch
-                        {
+                            RepaintCursor();
 
+                            try
+                            {
+                                CursorBox.Ctrl.Refresh();
+                                CursorNeedRepaint = false;
+                                CursorBox.Ctrl.Left = PictureBox_.Ctrl.Left + (CursorX * CellW);
+                                CursorBox.Ctrl.Top = PictureBox_.Ctrl.Top + (CursorY * CellH);
+                            }
+                            catch
+                            {
+
+                            }
                         }
                     }
+                    CursorBox.Ctrl.Visible = !CursorBox.Ctrl.Visible;
                 }
-                CursorBox.Ctrl.Visible = !CursorBox.Ctrl.Visible;
                 Monitor.Exit(GraphMutex);
             }
 

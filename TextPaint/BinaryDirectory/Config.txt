@@ -1,6 +1,6 @@
 WorkMode=0
 
-WinUse=2
+WinUse=0
 
 CursorDisplay=1
 
@@ -105,12 +105,15 @@ ANSIDOS=0
 ANSIIgnoreBlink=0
 ANSIIgnoreBold=0
 ANSIReverseMode=0
+ANSIIgnoreConcealed=0
+ANSIPrintBackspace=0
 ANSIWrite=0
 ANSIWriteBlink=0
 ANSIWriteBold=0
 ANSIColorScheme=0
-ANSIScrollChars1=200
-ANSIScrollChars2=200
+ANSIScrollChars=500
+ANSIScrollSmooth=4
+ANSIScrollBuffer=0
 ANSIBufferAbove=1
 ANSIBufferBelow=1
 

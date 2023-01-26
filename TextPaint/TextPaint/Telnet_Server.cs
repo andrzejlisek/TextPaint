@@ -271,19 +271,19 @@ namespace TextPaint
                             DispBuffer.Clear();
                             DisplayStatus_ = -1;
                             string NewFileNameS = Core_.PrepareFileName(NewFileName);
-                            if (NewFileNameS != "")
+                            if (!("".Equals(NewFileNameS)))
                             {
                                 Core_.CurrentFileName = NewFileNameS;
                             }
                             FileStream FS = new FileStream(Core_.CurrentFileName, FileMode.Open, FileAccess.Read);
                             StreamReader SR;
-                            if (Core_.FileREnc != "")
+                            if ("".Equals(Core_.FileREnc))
                             {
-                                SR = new StreamReader(FS, TextWork.EncodingFromName(Core_.FileREnc));
+                                SR = new StreamReader(FS);
                             }
                             else
                             {
-                                SR = new StreamReader(FS);
+                                SR = new StreamReader(FS, TextWork.EncodingFromName(Core_.FileREnc));
                             }
                             FileCtX = TextWork.StrToInt(SR.ReadToEnd());
                             SR.Close();

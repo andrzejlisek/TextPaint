@@ -48,7 +48,7 @@ namespace TextPaint
 
         public void RenderStart(string RenderFile_, int RenderStep_, int RenderOffset_, int RenderFrame_, bool RenderCursor_, string RenderType_)
         {
-            if (CurrentFileName.ToUpperInvariant() == "?ENCODING?")
+            if ("?ENCODING?".Equals(CurrentFileName.ToUpperInvariant()))
             {
                 Console.WriteLine("Creating encoding files...");
                 if (!Directory.Exists(RenderFile_))
@@ -144,7 +144,7 @@ namespace TextPaint
 
             if ((RenderType == RenderTypeDef.XBIN) || (RenderType == RenderTypeDef.BIN))
             {
-                XBIN XBIN_ = new XBIN(ANSIIgnoreBlink, ANSIIgnoreBold);
+                XBIN XBIN_ = new XBIN();
                 XBIN_.RenderXBIN(CurrentFileName, RenderFile_, (RenderType == RenderTypeDef.XBIN), FileREnc, FileWEnc);
                 return;
             }
@@ -176,13 +176,13 @@ namespace TextPaint
             TextCipher_.Reset();
             FileStream FS = new FileStream(CurrentFileName, FileMode.Open, FileAccess.Read);
             StreamReader SR;
-            if (FileREnc != "")
+            if ("".Equals(FileREnc))
             {
-                SR = new StreamReader(FS, TextWork.EncodingFromName(FileREnc));
+                SR = new StreamReader(FS);
             }
             else
             {
-                SR = new StreamReader(FS);
+                SR = new StreamReader(FS, TextWork.EncodingFromName(FileREnc));
             }
 
             AnsiProcessReset(true);
@@ -319,9 +319,12 @@ namespace TextPaint
         void RenderSave(string FileName)
         {
             string FileNameD = Path.GetDirectoryName(FileName);
-            if (!Directory.Exists(FileNameD))
+            if (!("".Equals(FileNameD)))
             {
-                Directory.CreateDirectory(FileNameD);
+                if (!Directory.Exists(FileNameD))
+                {
+                    Directory.CreateDirectory(FileNameD);
+                }
             }
             Screen_.SetCursorPositionNoRefresh(__AnsiX, __AnsiY + RenderBufOffset);
             switch (RenderType)

@@ -6,12 +6,12 @@ namespace TextPaint
     public class OneByteEncoding : Encoding
     {
         private char[] conversionArray;
-        public string EncodingName = "";
+        public string EncodingName_ = "";
 
         public OneByteEncoding()
         {
             conversionArray = new char[256];
-            EncodingName = "";
+            EncodingName_ = "";
             for (int i = 0; i < 256; i++)
             {
                 conversionArray[i] = (char)i;
@@ -24,7 +24,7 @@ namespace TextPaint
             {
                 return false;
             }
-            EncodingName = EncX.CodePage.ToString();
+            EncodingName_ = EncX.CodePage.ToString();
             byte[] Raw = new byte[1];
             for (int i = 0; i < 0x110000; i++)
             {
@@ -38,7 +38,7 @@ namespace TextPaint
                 Raw[0] = (byte)i;
                 if (EncX.GetChars(Raw).Length != 1)
                 {
-                    EncodingName = "";
+                    EncodingName_ = "";
                     for (int ii = 0; ii < 256; ii++)
                     {
                         conversionArray[ii] = (char)ii;
@@ -52,7 +52,7 @@ namespace TextPaint
 
         public bool DefImport(ConfigFile CF)
         {
-            EncodingName = CF.ParamGetS("Name");
+            EncodingName_ = CF.ParamGetS("Name");
             for (int i = 0; i < 256; i++)
             {
                 conversionArray[i] = (char)i;

@@ -8,16 +8,12 @@ namespace TextPaint
 {
     public class XBIN
     {
-        public XBIN(bool B, bool F)
+        public XBIN()
         {
-            DarkBackground = B;
-            DarkForeground = F;
         }
 
         Encoding BinEncI;
         Encoding BinEncO;
-        bool DarkBackground = false;
-        bool DarkForeground = false;
 
         int ByteToNum(byte B)
         {
@@ -299,76 +295,129 @@ namespace TextPaint
 
             FileStream FileText = new FileStream(DstFile + ".ans", FileMode.Create, FileAccess.Write);
             StreamWriter FileTextW;
-            if (EncodingW != "")
-            {
-                FileTextW = new StreamWriter(FileText, BinEncO);
-            }
-            else
+            if ("".Equals(EncodingW))
             {
                 FileTextW = new StreamWriter(FileText);
             }
+            else
+            {
+                FileTextW = new StreamWriter(FileText, BinEncO);
+            }
 
+            char ESC = (char)27;
+            FileTextW.Write(ESC + "[0m");
             int LastB = -1;
             int LastF = -1;
+            bool LastBI = false;
+            bool LastFI = false;
             for (int i = 0; i < DataLength; i += 2)
             {
                 if (DataRaw.Length <= (i + 1))
                 {
                     break;
                 }
-                int NewB = DataRaw[i + 1] & 0xF0;
-                int NewF = DataRaw[i + 1] & 0x0F;
-                if (DarkBackground) { NewB = NewB & 0x70; }
-                if (DarkForeground) { NewB = NewB & 0x07; }
+                int NewB = DataRaw[i + 1] & 0x70;
+                int NewF = DataRaw[i + 1] & 0x07;
+                bool NewBI = ((DataRaw[i + 1] & 0x80) != 0);
+                bool NewFI = ((DataRaw[i + 1] & 0x08) != 0);
 
-                if (NewB != LastB)
+                if ((NewB != LastB) || (NewF != LastF) || (NewBI != LastBI) || (NewFI != LastFI))
                 {
-                    FileTextW.Write((char)27);
-                    switch (NewB)
-                    {
-                        case 0x00: FileTextW.Write("[40m"); break;
-                        case 0x40: FileTextW.Write("[41m"); break;
-                        case 0x20: FileTextW.Write("[42m"); break;
-                        case 0x60: FileTextW.Write("[43m"); break;
-                        case 0x10: FileTextW.Write("[44m"); break;
-                        case 0x50: FileTextW.Write("[45m"); break;
-                        case 0x30: FileTextW.Write("[46m"); break;
-                        case 0x70: FileTextW.Write("[47m"); break;
-                        case 0x80: FileTextW.Write("[100m"); break;
-                        case 0xC0: FileTextW.Write("[101m"); break;
-                        case 0xA0: FileTextW.Write("[102m"); break;
-                        case 0xE0: FileTextW.Write("[103m"); break;
-                        case 0x90: FileTextW.Write("[104m"); break;
-                        case 0xD0: FileTextW.Write("[105m"); break;
-                        case 0xB0: FileTextW.Write("[106m"); break;
-                        case 0xF0: FileTextW.Write("[107m"); break;
-                    }
-                    LastB = NewB;
-                }
+                    bool AttrNum = false;
+                    FileTextW.Write(ESC + "[");
 
-                if (NewF != LastF)
-                {
-                    FileTextW.Write((char)27);
-                    switch (NewF)
+                    if (LastBI != NewBI)
                     {
-                        case 0x00: FileTextW.Write("[30m"); break;
-                        case 0x04: FileTextW.Write("[31m"); break;
-                        case 0x02: FileTextW.Write("[32m"); break;
-                        case 0x06: FileTextW.Write("[33m"); break;
-                        case 0x01: FileTextW.Write("[34m"); break;
-                        case 0x05: FileTextW.Write("[35m"); break;
-                        case 0x03: FileTextW.Write("[36m"); break;
-                        case 0x07: FileTextW.Write("[37m"); break;
-                        case 0x08: FileTextW.Write("[90m"); break;
-                        case 0x0C: FileTextW.Write("[91m"); break;
-                        case 0x0A: FileTextW.Write("[92m"); break;
-                        case 0x0E: FileTextW.Write("[93m"); break;
-                        case 0x09: FileTextW.Write("[94m"); break;
-                        case 0x0D: FileTextW.Write("[95m"); break;
-                        case 0x0B: FileTextW.Write("[96m"); break;
-                        case 0x0F: FileTextW.Write("[97m"); break;
+                        if (AttrNum) FileTextW.Write(";");
+
+                        if (NewBI)
+                        {
+                            FileTextW.Write("5");
+                        }
+                        else
+                        {
+                            FileTextW.Write("25");
+                        }
+
+                        LastBI = NewBI;
+                        AttrNum = true;
                     }
-                    LastF = NewF;
+
+                    if (LastB != NewB)
+                    {
+                        if (AttrNum) FileTextW.Write(";");
+
+                        switch (NewB)
+                        {
+                            case 0x00: FileTextW.Write("40"); break;
+                            case 0x40: FileTextW.Write("41"); break;
+                            case 0x20: FileTextW.Write("42"); break;
+                            case 0x60: FileTextW.Write("43"); break;
+                            case 0x10: FileTextW.Write("44"); break;
+                            case 0x50: FileTextW.Write("45"); break;
+                            case 0x30: FileTextW.Write("46"); break;
+                            case 0x70: FileTextW.Write("47"); break;
+                            case 0x80: FileTextW.Write("100"); break;
+                            case 0xC0: FileTextW.Write("101"); break;
+                            case 0xA0: FileTextW.Write("102"); break;
+                            case 0xE0: FileTextW.Write("103"); break;
+                            case 0x90: FileTextW.Write("104"); break;
+                            case 0xD0: FileTextW.Write("105"); break;
+                            case 0xB0: FileTextW.Write("106"); break;
+                            case 0xF0: FileTextW.Write("107"); break;
+                        }
+
+                        LastB = NewB;
+                        AttrNum = true;
+                    }
+
+
+                    if (LastFI != NewFI)
+                    {
+                        if (AttrNum) FileTextW.Write(";");
+
+                        if (NewFI)
+                        {
+                            FileTextW.Write("1");
+                        }
+                        else
+                        {
+                            FileTextW.Write("22");
+                        }
+
+                        LastFI = NewFI;
+                        AttrNum = true;
+                    }
+
+                    if (LastF != NewF)
+                    {
+                        if (AttrNum) FileTextW.Write(";");
+
+                        switch (NewF)
+                        {
+                            case 0x00: FileTextW.Write("30"); break;
+                            case 0x04: FileTextW.Write("31"); break;
+                            case 0x02: FileTextW.Write("32"); break;
+                            case 0x06: FileTextW.Write("33"); break;
+                            case 0x01: FileTextW.Write("34"); break;
+                            case 0x05: FileTextW.Write("35"); break;
+                            case 0x03: FileTextW.Write("36"); break;
+                            case 0x07: FileTextW.Write("37"); break;
+                            case 0x08: FileTextW.Write("90"); break;
+                            case 0x0C: FileTextW.Write("91"); break;
+                            case 0x0A: FileTextW.Write("92"); break;
+                            case 0x0E: FileTextW.Write("93"); break;
+                            case 0x09: FileTextW.Write("94"); break;
+                            case 0x0D: FileTextW.Write("95"); break;
+                            case 0x0B: FileTextW.Write("96"); break;
+                            case 0x0F: FileTextW.Write("97"); break;
+                        }
+
+                        LastF = NewF;
+                        AttrNum = true;
+                    }
+
+                    FileTextW.Write("m");
                 }
 
                 if ((ByteToNum(DataRaw[i]) < 32))
@@ -380,6 +429,7 @@ namespace TextPaint
                     FileTextW.Write((char)ByteToNum(DataRaw[i]));
                 }
             }
+            FileTextW.Write(ESC + "[0m");
 
             FileTextW.Close();
             FileText.Close();

@@ -38,7 +38,7 @@ namespace TextPaint
 
         public static Encoding EncodingFromName(string Name)
         {
-            if (Name == "")
+            if ("".Equals(Name))
             {
                 return Encoding.Default;
             }
@@ -83,7 +83,7 @@ namespace TextPaint
         public static int CodeChar(string C)
         {
             C = C.Trim();
-            if (C == "")
+            if ("".Equals(C))
             {
                 return -1;
             }
@@ -166,7 +166,7 @@ namespace TextPaint
                     }
                     else
                     {
-                        L.Add(' ');
+                        L.Add(32);
                     }
                     i++;
                 }

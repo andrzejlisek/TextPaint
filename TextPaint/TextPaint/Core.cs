@@ -70,9 +70,9 @@ namespace TextPaint
                 string EncName = "";
                 if (ParEnc is OneByteEncoding)
                 {
-                    if (((OneByteEncoding)ParEnc).EncodingName != "")
+                    if (!(((OneByteEncoding)ParEnc).EncodingName_.Equals("")))
                     {
-                        EncName = DisplayName + ": " + ((OneByteEncoding)ParEnc).EncodingName;
+                        EncName = DisplayName + ": " + ((OneByteEncoding)ParEnc).EncodingName_;
                     }
                     else
                     {
@@ -991,7 +991,7 @@ namespace TextPaint
 
             CurrentFileName_ = PrepareFileNameStr(CurrentFileName_);
 
-            if (CurrentFileName_ == "")
+            if ("".Equals(CurrentFileName_))
             {
                 CurrentFileName_ = AppDir() + "Config.txt";
             }
@@ -1047,7 +1047,7 @@ namespace TextPaint
             SubstituteKey = CF.ParamGetS("SunstituteKey");
             string SubO = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "O");
             string SubR = CF.ParamGetS("SunstituteKey" + SubI.ToString() + "R");
-            while ((SubO != "") && (SubR != ""))
+            while ((!("".Equals(SubO))) && (!("".Equals(SubR))))
             {
                 SubstituteMap.Add(SubR, SubO);
                 SubI++;
@@ -1101,8 +1101,34 @@ namespace TextPaint
                     AnsiMaxY = 24;
                 }
             }
-            ANSIScrollDist1 = CF.ParamGetI("ANSIScrollChars1");
-            ANSIScrollDist2 = CF.ParamGetI("ANSIScrollChars2");
+            ANSIScrollChars = CF.ParamGetI("ANSIScrollChars");
+            ANSIScrollBuffer = CF.ParamGetB("ANSIScrollBuffer");
+            ANSIScrollSmooth = CF.ParamGetI("ANSIScrollSmooth");
+
+            if (WorkMode == 2)
+            {
+                if (CF.ParamGetL("TerminalTimeResolution") <= 0)
+                {
+                    ANSIScrollChars = 0;
+                    ANSIScrollBuffer = false;
+                    ANSIScrollSmooth = 0;
+                }
+                if (CF.ParamGetI("TerminalStep") <= 0)
+                {
+                    ANSIScrollChars = 0;
+                    ANSIScrollBuffer = false;
+                    ANSIScrollSmooth = 0;
+                }
+            }
+
+            if (ANSIScrollChars <= 0)
+            {
+                ANSIScrollSmooth = 0;
+            }
+            if (ANSIScrollSmooth > 4)
+            {
+                ANSIScrollSmooth = 0;
+            }
 
             ReadColor(CF.ParamGetS("ColorNormal"), ref TextNormalBack, ref TextNormalFore);
             ReadColor(CF.ParamGetS("ColorBeyondLine"), ref TextBeyondLineBack, ref TextBeyondLineFore);
@@ -1610,7 +1636,7 @@ namespace TextPaint
                 {
                     WindowResize();
 
-                    if ((KeyCounter >= 3) || (KeyName == "WindowClose"))
+                    if ((KeyCounter >= 3) || ("WindowClose".Equals(KeyName)))
                     {
                         Screen_.CloseApp(TextNormalBack, TextNormalFore);
                     }
@@ -2709,7 +2735,7 @@ namespace TextPaint
         {
             if (TextCipher_.CipherEnabled)
             {
-                if (TextCipher_.CipherConfPassword != "")
+                if (!("".Equals(TextCipher_.CipherConfPassword)))
                 {
                     TextCipher_.SetPassword(TextCipher_.CipherConfPassword);
                     FileSave0_();
@@ -2836,7 +2862,7 @@ namespace TextPaint
 
             string NewFile = PrepareFileName(NewFile_);
 
-            if (NewFile != "")
+            if (!("".Equals(NewFile)))
             {
                 CurrentFileName = NewFile;
                 CursorX = 0;
@@ -2847,14 +2873,14 @@ namespace TextPaint
 
             if (TextCipher_.CipherEnabled)
             {
-                if (TextCipher_.CipherConfPassword != "")
+                if ("".Equals(TextCipher_.CipherConfPassword))
                 {
-                    TextCipher_.SetPassword(TextCipher_.CipherConfPassword);
-                    FileLoad0_();
+                    TextCipher_.PasswordInput(2);
                 }
                 else
                 {
-                    TextCipher_.PasswordInput(2);
+                    TextCipher_.SetPassword(TextCipher_.CipherConfPassword);
+                    FileLoad0_();
                 }
             }
             else
@@ -2908,7 +2934,7 @@ namespace TextPaint
                     {
                         if (TextBuffer.Count > i)
                         {
-                            if (TextWork.TrimEndLength(TextBuffer[i]) > X)
+                            if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X))
                             {
                                 OpExist = true;
                                 if (ToggleDrawText)
@@ -3002,7 +3028,7 @@ namespace TextPaint
                 case 12:
                     for (int i = 0; i < TextBuffer.Count; i++)
                     {
-                        if (TextWork.TrimEndLength(TextBuffer[i]) > X)
+                        if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X))
                         {
                             OpExist = true;
                             if (ToggleDrawText)
@@ -3395,6 +3421,10 @@ namespace TextPaint
 
         void TextBufferTrim()
         {
+            for (int i = 0; i < TextBuffer.Count; i++)
+            {
+                TextBufferTrimLine(i);
+            }
             while ((TextBuffer.Count > 0) && (TextBuffer[TextBuffer.Count - 1].Count == 0))
             {
                 TextBuffer.RemoveAt(TextBuffer.Count - 1);

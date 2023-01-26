@@ -43,21 +43,11 @@ The following parameters are usable in other work modes, but also affects the re
 * **ANSIWidth** \- Define width of ANSI virtual screen\. If **ANSIWidth=0**, the default screen width will be used\.
 * **ANSIHeight** \- Define height of ANSI virtual screen\. If **ANSIHeight=0**, the default screen height will be used\.
 
-The parameter works only if **ANSIRead=1**:
-
-
-* **ANSIReadCR** \- Reaction by the CR character while reading ANSI file\.
-* **ANSIReadLF** \- Reaction by the LF character while reading ANSI file\.
-* **ANSIDOS** \- Use DOS behavior instead of standard VT100/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
-* **ANSIIgnoreBlink** \- Ignore blink attribute while interpreting ANSI data or use only low background colors while converting BIN/XBIN file to ANSI file \(ignore secondary font attribute\)\.
-* **ANSIIgnoreBold** \- Ignore bold attribute while interpreting ANSI data or use only low foreground colors while converting BIN/XBIN file to ANSI file \(ignore blink attribute\)\.
-* **ANSIReverseMode** \- Use reverse after applying Blink or Bold attribute instead of before\.
-
-Other parameter provided both in command line or in **Config\.txt** file, are ignored in **WorkMode=4**\.
+If **ANSIRead=1**, the ANSI\-related parameters works as described in **Readme\_ANSI\.md** file\. Parameters unusable in **WorkMode=4**\. provided both in command line or in **Config\.txt** file, are ignored\.
 
 ## Creating text frames
 
-If you specify **RenderType=TEXT** or **RenderType=ANSI**, the rendering behavior will be the sabe, but there will be generate TXT/ANS files containing text instead of PNG files\. Such TXT/ANS file can be opened in TextPaint or other text viewer/editor\. This feature is usable for creating art based on specified animation file\.
+If you specify **RenderType=TEXT** or **RenderType=ANSI**, the rendering behavior will be the same, but there will be generate TXT/ANS files containing text instead of PNG files\. Such TXT/ANS file can be opened in **TextPaint** or other text viewer/editor\. This feature is usable for creating some art based on specified animation file\.
 
 # Conversion XBIN file to ANSI file
 

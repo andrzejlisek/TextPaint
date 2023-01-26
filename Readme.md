@@ -737,6 +737,7 @@ The example fonts are generated based on three sources, disinguished by font fil
 * **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added **1FB93h** glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
 * **Small** \- [https://opengameart\.org/content/4x4\-px\-bitmap\-font](https://opengameart.org/content/4x4-px-bitmap-font "https://opengameart.org/content/4x4-px-bitmap-font") \- Small font, which is manually extended with many semigraphical glyphs and can be used to view large ASCII/ANSI arts\. The readibility of letters and digits is poor due to small character size\.
 * **Amiga** \- [https://github\.com/rewtnull/amigafonts](https://github.com/rewtnull/amigafonts "https://github.com/rewtnull/amigafonts") \- Fonts suitable for some ASCII\-art or ANSI\-art files, which was created on Amiga computers\.
+* **VT** \- [https://www\.masswerk\.at/nowgobang/2019/dec\-crt\-typography](https://www.masswerk.at/nowgobang/2019/dec-crt-typography "https://www.masswerk.at/nowgobang/2019/dec-crt-typography") \- The font, which is used in real DEC VT220 terminal, extended with some semigraphic characters\.
 
 # Other supplied files
 

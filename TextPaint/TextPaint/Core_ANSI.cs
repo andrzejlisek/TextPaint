@@ -68,6 +68,9 @@ namespace TextPaint
         int __AnsiScrollFirst = 0;
         int __AnsiScrollLast = 0;
         bool __AnsiOrigin = false;
+        bool __AnsiMarginLeftRight = false;
+        int __AnsiMarginLeft = 0;
+        int __AnsiMarginRight = 0;
 
         int __AnsiLineOccupyFactor = 5;
 
@@ -112,6 +115,8 @@ namespace TextPaint
         public long __AnsiProcessDelayFactor = 0;
         public long __AnsiProcessDelayMin = 1;
         public long __AnsiProcessDelayMax = -1;
+
+        long __AnsiAdditionalChars = 0;
 
         public int ReportCursorX()
         {
@@ -165,6 +170,7 @@ namespace TextPaint
             __AnsiFontBlink_ = false;
             __AnsiFontInvisible_ = false;
             __AnsiOrigin = false;
+            __AnsiMarginLeftRight = false;
             __AnsiNewLineKey = false;
             __AnsiInsertMode = false;
             __AnsiFontSizeW = 0;
@@ -191,6 +197,8 @@ namespace TextPaint
 
             __AnsiScrollFirst = 0;
             __AnsiScrollLast = AnsiMaxY - 1;
+            __AnsiMarginLeft = 0;
+            __AnsiMarginRight = AnsiMaxX - 1;
             __AnsiMusic = false;
             __AnsiNoWrap = false;
 
@@ -200,6 +208,8 @@ namespace TextPaint
             {
                 AnsiRepaint(false);
             }
+
+            __AnsiAdditionalChars = 0;
         }
 
         public void AnsiProcessReset(bool __AnsiUseEOF_)
@@ -234,6 +244,7 @@ namespace TextPaint
                 return 0;
             }
             bool StdProc = true;
+            bool ProcAdditionalChars = false;
             while (ProcessCount > 0)
             {
                 __AnsiProcessStep++;
@@ -252,11 +263,11 @@ namespace TextPaint
                     {
                         AnsiCharPrintLast = -1;
                     }
+                    ProcAdditionalChars = true;
                 }
                 if (__AnsiProcessStep <= __AnsiProcessDelay)
                 {
                     StdProc = false;
-
                 }
                 if (AnsiScrollCounter > 0)
                 {
@@ -264,11 +275,13 @@ namespace TextPaint
                     if (AnsiScrollProcess())
                     {
                     }
+                    ProcAdditionalChars = true;
                 }
                 if (StdProc)
                 {
                     if (AnsiBufferI >= AnsiBuffer.Count)
                     {
+                        __AnsiAdditionalChars = 0;
                         return Processed;
                     }
 
@@ -360,11 +373,25 @@ namespace TextPaint
                     }
                     Processed++;
                     AnsiBufferI++;
+                    if (__AnsiAdditionalChars == 0)
+                    {
+                        ProcessCount--;
+                        __AnsiCounter++;
+                    }
+                    else
+                    {
+                        __AnsiAdditionalChars--;
+                    }
                 }
-
-
-                ProcessCount--;
-                __AnsiCounter++;
+                else
+                {
+                    if (ProcAdditionalChars && ANSIScrollBuffer)
+                    {
+                        __AnsiAdditionalChars++;
+                    }
+                    ProcessCount--;
+                    __AnsiCounter++;
+                }
             }
             if (Processed == 0)
             {
@@ -490,9 +517,9 @@ namespace TextPaint
                 }
                 for (int Y = 0; Y < __AnsiLineOccupyX.Count; Y++)
                 {
+                    int Y__ = Y + Bufoffset;
                     for (int X = 0; X < (__AnsiLineOccupyX[Y].Count / __AnsiLineOccupyFactor); X++)
                     {
-                        int Y__ = Y + Bufoffset;
                         if (__ScreenMinX > X) { __ScreenMinX = X; }
                         if (__ScreenMinY > Y__) { __ScreenMinY = Y__; }
                         if (__ScreenMaxX < X) { __ScreenMaxX = X; }
@@ -504,6 +531,14 @@ namespace TextPaint
                         if (ColorF < 0) ColorF = TextNormalFore;
                         Screen_.PutChar(X, Y__, __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 0], ColorB, ColorF, __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 3], __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 4]);
                     }
+                }
+                if (BufI == 1)
+                {
+                    __AnsiScrollFirst += Bufoffset;
+                    __AnsiScrollLast += Bufoffset;
+                    AnsiScrollSetOffset(ScrollLastOffset);
+                    __AnsiScrollFirst -= Bufoffset;
+                    __AnsiScrollLast -= Bufoffset;
                 }
                 Bufoffset = Bufoffset + __AnsiLineOccupyX.Count;
             }

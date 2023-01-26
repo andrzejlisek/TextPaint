@@ -47,6 +47,7 @@ namespace TextPaint
         int TerminalStep = 0;
 
         bool TelnetClient = false;
+        int TelnetAutoSendWindowSize = 200;
         string TelnetKeyboardConf;
         string TelnetKeyboardConfMax = "1112";
         int TelnetKeyboardConfI = 0;

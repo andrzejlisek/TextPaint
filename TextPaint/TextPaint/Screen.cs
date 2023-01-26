@@ -16,18 +16,6 @@ namespace TextPaint
     /// </summary>
     public class Screen
     {
-        struct DummyCharItemDef
-        {
-            public int X;
-            public int Y;
-            public int C;
-            public int B;
-            public int F;
-            public int FontW;
-            public int FontH;
-        }
-        List<DummyCharItemDef> DummyCharList = new List<DummyCharItemDef>();
-
         protected object GraphMutex = new object();
 
         public bool MultiThread = false;
@@ -37,6 +25,7 @@ namespace TextPaint
         public int WinW;
         public int WinH;
         public bool RawKeyName = false;
+        public bool WinFixed = false;
 
         public int UseMemo;
         protected int[,] ScrChrC;
@@ -45,6 +34,11 @@ namespace TextPaint
         protected int[,] ScrChrFontW;
         protected int[,] ScrChrFontH;
 
+
+        public virtual void SetLineOffset(int Y, int Offset, bool Blank, int ColorBack, int ColorFore)
+        {
+
+        }
 
         public void MemoPrepare()
         {
@@ -63,6 +57,11 @@ namespace TextPaint
                     }
                 }
             }
+        }
+
+        public virtual void CharRepaint(int X, int Y)
+        {
+
         }
 
         protected virtual void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)

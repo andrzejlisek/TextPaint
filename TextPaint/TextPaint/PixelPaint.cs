@@ -80,7 +80,7 @@ namespace TextPaint
             C = C_;
             int I = 1;
             string PaintDef = CF.ParamGetS("Pixel_" + I.ToString());
-            while (PaintDef != "")
+            while (!("".Equals(PaintDef)))
             {
                 PaintModeNew = new PaintMode();
                 PaintModeNew.Name = PaintDef.Split(',')[0];
@@ -89,7 +89,7 @@ namespace TextPaint
                 int II = 0;
                 string[] CharVals = CF.ParamGetS("Pixel_" + I.ToString() + "_" + II).Split(',');
                 int CharValN = 0;
-                while ((CharVals.Length > 0) && (CharVals[0] != ""))
+                while ((CharVals.Length > 0) && (!("".Equals(CharVals[0]))))
                 {
                     for (int III = 0; III < CharVals.Length; III++)
                     {
