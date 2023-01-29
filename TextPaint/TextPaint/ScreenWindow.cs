@@ -1049,7 +1049,7 @@ namespace TextPaint
                             CalcBlend(ColorBack, ColorFore - 48, 1, 3, out DrawFore_R, out DrawFore_G, out DrawFore_B);
                             break;
                         case 4:
-                            CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawFore_R, out DrawFore_G, out DrawFore_B);
+                            CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawBack_R, out DrawBack_G, out DrawBack_B);
                             break;
                     }
                 }
