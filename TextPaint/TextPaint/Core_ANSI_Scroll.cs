@@ -217,35 +217,21 @@ namespace TextPaint
             ScrollLastOffset = Offset;
             if (Offset < 0)
             {
-                Screen_.SetLineOffset(__AnsiScrollLast, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
+                Screen_.SetLineOffset(__AnsiScrollLast, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
                 for (int Y = __AnsiScrollLast - 1; Y > __AnsiScrollFirst; Y--)
                 {
                     Screen_.SetLineOffset(Y, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
                 }
                 Screen_.SetLineOffset(__AnsiScrollFirst, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
-                if (__AnsiScrollLast < (WinH - 1))
-                {
-                    for (int X = 0; X < WinW; X++)
-                    {
-                        Screen_.CharRepaint(X, __AnsiScrollLast + 1);
-                    }
-                }
             }
             else
             {
-                Screen_.SetLineOffset(__AnsiScrollFirst, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
+                Screen_.SetLineOffset(__AnsiScrollFirst, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
                 for (int Y = __AnsiScrollFirst + 1; Y < __AnsiScrollLast; Y++)
                 {
                     Screen_.SetLineOffset(Y, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
                 }
                 Screen_.SetLineOffset(__AnsiScrollLast, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
-                if (__AnsiScrollFirst > 0)
-                {
-                    for (int X = 0; X < WinW; X++)
-                    {
-                        Screen_.CharRepaint(X, __AnsiScrollFirst - 1);
-                    }
-                }
             }
         }
 

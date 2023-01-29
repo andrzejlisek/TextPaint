@@ -40,6 +40,11 @@ namespace TextPaint
 
         }
 
+        public virtual void RepaintOffset(int Y)
+        {
+
+        }
+
         public void MemoPrepare()
         {
             if (UseMemo != 0)
@@ -101,6 +106,7 @@ namespace TextPaint
         {
             for (int Y = 0; Y < WinH; Y++)
             {
+                SetLineOffset(Y, 0, false, ColorB, ColorF);
                 for (int X = 0; X < WinW; X++)
                 {
                     PutChar_(X, Y, 32, ColorB, ColorF, 0, 0);

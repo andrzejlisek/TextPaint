@@ -1059,18 +1059,40 @@ namespace TextPaint
 
         void TelnetReport(string ReportRequest)
         {
+            int TerminalType = 1;
+            // 0 - VT100
+            // 1 - VT102
+            // 2 - VT220
+            // 3 - VT320
+            // 4 - VT420
+            // 5 - VT520
+
             switch (ReportRequest)
             {
                 case "[0c":
-                    Send("1B_[_?_6_c");
-                    /*
-⇒  CSI ? 1 ; 2 c  ("VT100 with Advanced Video Option")
-⇒  CSI ? 1 ; 0 c  ("VT101 with No Options") **********
-⇒  CSI ? 4 ; 6 c  ("VT132 with Advanced Video and Graphics")
-⇒  CSI ? 6 c  ("VT102") ********
-⇒  CSI ? 7 c  ("VT131")
-                    */
-
+                    {
+                        switch (TerminalType)
+                        {
+                            case 0:
+                                Send("1B_[_?_1_;_2_c");
+                                break;
+                            case 1:
+                                Send("1B_[_?_6_c");
+                                break;
+                            case 2:
+                                Send("1B_[_?_6_2_;_1_;_2_;_6_;_7_;_8_;_9_c");
+                                break;
+                            case 3:
+                                Send("1B_[_?_6_3_;_1_;_2_;_6_;_7_;_8_;_9_c");
+                                break;
+                            case 4:
+                                Send("1B_[_?_6_4_;_1_;_2_;_6_;_7_;_8_;_9_;_1_5_;_1_8_;_2_1_c");
+                                break;
+                            case 5:
+                                Send("1B_[_?_6_5_;_1_;_2_;_6_;_7_;_8_;_9_;_1_5_;_1_8_;_2_1_c");
+                                break;
+                        }
+                    }
                     break;
                 case "VT52:Z":
                     Send("1B_/_Z");
@@ -1098,7 +1120,29 @@ namespace TextPaint
                     break;
                 case "[>c":
                 case "[>0c":
-                    Send("1B_[_>_0_;_1_0_;_0_c");
+                    {
+                        switch (TerminalType)
+                        {
+                            case 0:
+                                Send("1B_[_>_0_;_1_0_;_0_c");
+                                break;
+                            case 1:
+                                Send("1B_[_>_0_;_1_0_;_0_c");
+                                break;
+                            case 2:
+                                Send("1B_[_>_1_;_1_0_;_0_c");
+                                break;
+                            case 3:
+                                Send("1B_[_>_2_4_;_1_0_;_0_c");
+                                break;
+                            case 4:
+                                Send("1B_[_>_4_1_;_1_0_;_0_c");
+                                break;
+                            case 5:
+                                Send("1B_[_>_6_4_;_1_0_;_0_c");
+                                break;
+                        }
+                    }
                     break;
                 case "[=c":
                 case "[=0c":

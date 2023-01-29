@@ -81,6 +81,10 @@
     <Compile Include="Core_ANSI_Scroll.cs" />
     <Compile Include="Core_ANSI_FontSize.cs" />
     <Compile Include="AnsiFile.cs" />
+    <Compile Include="LowLevelBitmap.cs" />
+    <Compile Include="Window_PictureBoxEx.cs" />
+    <Compile Include="Window_PictureBoxMonitor.cs" />
+    <Compile Include="Window_PictureBoxExPanel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

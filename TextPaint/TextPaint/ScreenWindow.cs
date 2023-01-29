@@ -8,8 +8,6 @@
 using System;
 using System.Collections.Generic;
 using System.Drawing;
-using System.Drawing.Drawing2D;
-using System.Drawing.Imaging;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -23,8 +21,7 @@ namespace TextPaint
     public class ScreenWindow : Screen
     {
         Form Form_;
-        Bitmap Bitmap_;
-        Graphics Bitmap_G;
+        LowLevelBitmap BitmapX_;
 
 
         int InternalW;
@@ -34,30 +31,28 @@ namespace TextPaint
         Dictionary<int, int> WinBitmapPage;
         bool ColorBlending = false;
 
-        void CalcBlend(int C1, int C2, double Prop1, double Prop2, out Color C3, out Brush C3B)
+        void CalcBlend(int C1, int C2, double Prop1, double Prop2, out byte C_R, out byte C_G, out byte C_B)
         {
-            double C1_R = Math.Pow(((double)DrawColor[C1].R) / 255.0, 2.2) * Prop1;
-            double C1_G = Math.Pow(((double)DrawColor[C1].G) / 255.0, 2.2) * Prop1;
-            double C1_B = Math.Pow(((double)DrawColor[C1].B) / 255.0, 2.2) * Prop1;
-            double C2_R = Math.Pow(((double)DrawColor[C2].R) / 255.0, 2.2) * Prop2;
-            double C2_G = Math.Pow(((double)DrawColor[C2].G) / 255.0, 2.2) * Prop2;
-            double C2_B = Math.Pow(((double)DrawColor[C2].B) / 255.0, 2.2) * Prop2;
+            double C1_R = Math.Pow(((double)DrawColor_R[C1]) / 255.0, 2.2) * Prop1;
+            double C1_G = Math.Pow(((double)DrawColor_G[C1]) / 255.0, 2.2) * Prop1;
+            double C1_B = Math.Pow(((double)DrawColor_B[C1]) / 255.0, 2.2) * Prop1;
+            double C2_R = Math.Pow(((double)DrawColor_R[C2]) / 255.0, 2.2) * Prop2;
+            double C2_G = Math.Pow(((double)DrawColor_G[C2]) / 255.0, 2.2) * Prop2;
+            double C2_B = Math.Pow(((double)DrawColor_B[C2]) / 255.0, 2.2) * Prop2;
             double C3_R = Math.Pow((C1_R + C2_R) / (Prop1 + Prop2), 1 / 2.2);
             double C3_G = Math.Pow((C1_G + C2_G) / (Prop1 + Prop2), 1 / 2.2);
             double C3_B = Math.Pow((C1_B + C2_B) / (Prop1 + Prop2), 1 / 2.2);
-            int C_R = (int)(C3_R * 255.0);
-            int C_G = (int)(C3_G * 255.0);
-            int C_B = (int)(C3_B * 255.0);
-            C3 = Color.FromArgb(C_R, C_G, C_B);
-            C3B = new SolidBrush(C3);
+            C_R = (byte)(C3_R * 255.0);
+            C_G = (byte)(C3_G * 255.0);
+            C_B = (byte)(C3_B * 255.0);
         }
 
         /// <summary>
         /// Glybh bank used to drawing characters on the screen
         /// </summary>
-        Dictionary<long, Bitmap>[] GlyphBank;
+        Dictionary<long, LowLevelBitmap>[] GlyphBankX;
 
-        Bitmap GlyphBankGet(int ColorB, int ColorF, int Char, int FontWH)
+        LowLevelBitmap GlyphBankGet(int ColorB, int ColorF, int Char, int FontWH)
         {
             if (FontWH < 0)
             {
@@ -71,9 +66,9 @@ namespace TextPaint
                 return null;
             }
             long Idx = Char + (ColorB << 20) + (ColorF << 24);
-            if (GlyphBank[FontWH].ContainsKey(Idx))
+            if (GlyphBankX[FontWH].ContainsKey(Idx))
             {
-                return GlyphBank[FontWH][Idx];
+                return GlyphBankX[FontWH][Idx];
             }
             else
             {
@@ -81,7 +76,7 @@ namespace TextPaint
             }
         }
 
-        void GlyphBankSet(int ColorB, int ColorF, int Char, Bitmap Glyph, int FontWH)
+        void GlyphBankSet(int ColorB, int ColorF, int Char, LowLevelBitmap Glyph, int FontWH)
         {
             if (FontWH < 0)
             {
@@ -95,243 +90,12 @@ namespace TextPaint
                 return;
             }
             long Idx = Char + (ColorB << 20) + (ColorF << 24);
-            GlyphBank[FontWH].Add(Idx, Glyph);
+            GlyphBankX[FontWH].Add(Idx, Glyph);
         }
 
-        class PictureBoxEx
-        {
-            public PictureBoxEx(int Custom)
-            {
-                switch (Custom)
-                {
-                    case 0:
-                        Ctrl = new PictureBox();
-                        break;
-                    case 1:
-                        Ctrl = new PictureBoxMonitor();
-                        break;
-                    case 2:
-                        Ctrl = new PictureBoxExPanel();
-                        break;
-                }
-            }
-
-            public Control Ctrl;
-            public Bitmap Image
-            {
-                set
-                {
-                    if (Ctrl is PictureBox)
-                    {
-                        ((PictureBox)Ctrl).Image = value;
-                    }
-                    if (Ctrl is PictureBoxMonitor)
-                    {
-                        ((PictureBoxMonitor)Ctrl).Image = value;
-                    }
-                    if (Ctrl is PictureBoxExPanel)
-                    {
-                        ((PictureBoxExPanel)Ctrl).Image__ = value;
-                    }
-                }
-            }
-        }
-
-        class PictureBoxMonitor : PictureBox
-        {
-            Bitmap Image_;
-            public Bitmap Image__
-            {
-                set
-                {
-                    Monitor.Enter(value);
-                    Image_ = value;
-                    Image = value;
-                    Monitor.Exit(value);
-                }
-            }
-
-            bool Mon = false;
-
-            bool Monitor_Enter()
-            {
-                if (Image_ != null)
-                {
-                    Monitor.Enter(Image_);
-                    Mon = true;
-                }
-                else
-                {
-                    Mon = false;
-                }
-                return Mon;
-            }
-
-            void Monitor_Exit()
-            {
-                if (Mon)
-                {
-                    Monitor.Exit(Image_);
-                }
-            }
-
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                Monitor_Enter();
-                try
-                {
-                    base.OnPaint(e);
-                }
-                catch
-                {
-
-                }
-                Monitor_Exit();
-            }
-
-            protected override void OnPaintBackground(PaintEventArgs e)
-            {
-                Monitor_Enter();
-                try
-                {
-                    base.OnPaintBackground(e);
-                }
-                catch
-                {
-
-                }
-                Monitor_Exit();
-            }
-
-            public override void Refresh()
-            {
-                Monitor_Enter();
-                try
-                {
-                    base.Refresh();
-                }
-                catch
-                {
-
-                }
-                Monitor_Exit();
-            }
-
-            protected override void OnSizeChanged(EventArgs e)
-            {
-                Monitor_Enter();
-                base.OnSizeChanged(e);
-                Monitor_Exit();
-            }
-
-            protected override void OnAutoSizeChanged(EventArgs e)
-            {
-                Monitor_Enter();
-                base.OnAutoSizeChanged(e);
-                Monitor_Exit();
-            }
-
-            protected override void OnClientSizeChanged(EventArgs e)
-            {
-                Monitor_Enter();
-                base.OnClientSizeChanged(e);
-                Monitor_Exit();
-            }
-        }
-
-        class PictureBoxExPanel : Panel
-        {
-            Bitmap Image_;
-            Graphics ImageG_;
-
-            public Bitmap Image__
-            {
-                set
-                {
-                    Image_ = value;
-                    Repaint();
-                }
-            }
-
-            public PictureBoxExPanel()
-            {
-                Image_ = null;
-                ImageG_ = this.CreateGraphics();
-            }
-
-            void RepaintS()
-            {
-                ImageG_ = this.CreateGraphics();
-                Repaint();
-            }
-
-            void Repaint()
-            {
-                if (Image_ != null)
-                {
-                    Monitor.Enter(Image_);
-                    try
-                    {
-                        ImageG_.DrawImageUnscaledAndClipped(Image_, new Rectangle(0, 0, this.Width, this.Height));
-                    }
-                    catch
-                    {
-                    }
-                    Monitor.Exit(Image_);
-                }
-                else
-                {
-                }
-            }
-
-            protected override void OnPaint(PaintEventArgs e)
-            {
-                //base.OnPaint(e);
-                Repaint();
-            }
-
-            protected override void OnPaintBackground(PaintEventArgs e)
-            {
-                //base.OnPaintBackground(e);
-                Repaint();
-            }
-
-            public override void Refresh()
-            {
-                //base.Refresh();
-                Repaint();
-            }
-
-            protected override void OnSizeChanged(EventArgs e)
-            {
-                base.OnSizeChanged(e);
-                RepaintS();
-            }
-
-            protected override void OnAutoSizeChanged(EventArgs e)
-            {
-                base.OnAutoSizeChanged(e);
-                RepaintS();
-            }
-
-            protected override void OnClientSizeChanged(EventArgs e)
-            {
-                base.OnClientSizeChanged(e);
-                RepaintS();
-            }
-        }
-
-        bool BmpGetPixel(Bitmap Bmp, int X, int Y)
-        {
-            Color C = Bmp.GetPixel(X, Y);
-            int R = C.R;
-            int G = C.G;
-            int B = C.B;
-            return ((R + G + B) >= 383);
-        }
-
-        Brush[] DrawColorB;
-        Color[] DrawColor;
+        byte[] DrawColor_R;
+        byte[] DrawColor_G;
+        byte[] DrawColor_B;
 
         int[] FontW_Num_Min;
         int[] FontW_Num_Max;
@@ -425,10 +189,10 @@ namespace TextPaint
 
         public ScreenWindow(Core Core__, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, bool DummyScreen)
         {
-            GlyphBank = new Dictionary<long, Bitmap>[9];
-            for (int i = 0; i < GlyphBank.Length; i++)
+            GlyphBankX = new Dictionary<long, LowLevelBitmap>[9];
+            for (int i = 0; i < GlyphBankX.Length; i++)
             {
-                GlyphBank[i] = new Dictionary<long, Bitmap>();
+                GlyphBankX[i] = new Dictionary<long, LowLevelBitmap>();
             }
 
             UseMemo = 0;
@@ -440,23 +204,25 @@ namespace TextPaint
                 CursorTimer.Tick += CursorTimer_Tick;
             }
 
-            DrawColor = new Color[16];
-            DrawColor[0] = Color.FromArgb(0, 0, 0);
-            DrawColor[1] = Color.FromArgb(170, 0, 0);
-            DrawColor[2] = Color.FromArgb(0, 170, 0);
-            DrawColor[3] = Color.FromArgb(170, 170, 0);
-            DrawColor[4] = Color.FromArgb(0, 0, 170);
-            DrawColor[5] = Color.FromArgb(170, 0, 170);
-            DrawColor[6] = Color.FromArgb(0, 170, 170);
-            DrawColor[7] = Color.FromArgb(170, 170, 170);
-            DrawColor[8] = Color.FromArgb(85, 85, 85);
-            DrawColor[9] = Color.FromArgb(255, 85, 85);
-            DrawColor[10] = Color.FromArgb(85, 255, 85);
-            DrawColor[11] = Color.FromArgb(255, 255, 85);
-            DrawColor[12] = Color.FromArgb(85, 85, 255);
-            DrawColor[13] = Color.FromArgb(255, 85, 255);
-            DrawColor[14] = Color.FromArgb(85, 255, 255);
-            DrawColor[15] = Color.FromArgb(255, 255, 255);
+            DrawColor_R = new byte[16];
+            DrawColor_G = new byte[16];
+            DrawColor_B = new byte[16];
+            DrawColor_R[0] = 0; DrawColor_R[0] = 0; DrawColor_R[0] = 0;
+            DrawColor_R[1] = 170; DrawColor_R[1] = 0; DrawColor_R[1] = 0;
+            DrawColor_R[2] = 0; DrawColor_R[2] = 170; DrawColor_R[2] = 0;
+            DrawColor_R[3] = 170; DrawColor_R[3] = 170; DrawColor_R[3] = 0;
+            DrawColor_R[4] = 0; DrawColor_R[4] = 0; DrawColor_R[4] = 170;
+            DrawColor_R[5] = 170; DrawColor_R[5] = 0; DrawColor_R[5] = 170;
+            DrawColor_R[6] = 0; DrawColor_R[6] = 170; DrawColor_R[6] = 170;
+            DrawColor_R[7] = 170; DrawColor_R[7] = 170; DrawColor_R[7] = 170;
+            DrawColor_R[8] = 85; DrawColor_R[8] = 85; DrawColor_R[8] = 85;
+            DrawColor_R[9] = 255; DrawColor_R[9] = 85; DrawColor_R[9] = 85;
+            DrawColor_R[10] = 85; DrawColor_R[10] = 255; DrawColor_R[10] = 85;
+            DrawColor_R[11] = 255; DrawColor_R[11] = 255; DrawColor_R[11] = 85;
+            DrawColor_R[12] = 85; DrawColor_R[12] = 85; DrawColor_R[12] = 255;
+            DrawColor_R[13] = 255; DrawColor_R[13] = 85; DrawColor_R[13] = 255;
+            DrawColor_R[14] = 85; DrawColor_R[14] = 255; DrawColor_R[14] = 255;
+            DrawColor_R[15] = 255; DrawColor_R[15] = 255; DrawColor_R[15] = 255;
 
             string PalR = CF.ParamGetS("WinPaletteR");
             string PalG = CF.ParamGetS("WinPaletteG");
@@ -474,19 +240,11 @@ namespace TextPaint
             {
                 for (int i = 0; i < 16; i++)
                 {
-                    int ValR = int.Parse(PalR.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
-                    int ValG = int.Parse(PalG.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
-                    int ValB = int.Parse(PalB.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
-                    DrawColor[i] = Color.FromArgb(ValR, ValG, ValB);
+                    DrawColor_R[i] = (byte)int.Parse(PalR.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                    DrawColor_G[i] = (byte)int.Parse(PalG.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
+                    DrawColor_B[i] = (byte)int.Parse(PalB.Substring(i * 2, 2), System.Globalization.NumberStyles.HexNumber);
                 }
             }
-
-            DrawColorB = new Brush[16];
-            for (int i = 0; i < 16; i++)
-            {
-                DrawColorB[i] = new SolidBrush(DrawColor[i]);
-            }
-
 
             CellW = CF.ParamGetI("WinCellW");
             CellH = CF.ParamGetI("WinCellH");
@@ -497,7 +255,7 @@ namespace TextPaint
             if (File.Exists(Core.FullPath(WinFontName)))
             {
                 WinIsBitmapFont = true;
-                Bitmap FontTempBmp = new Bitmap(Core.FullPath(WinFontName));
+                LowLevelBitmap FontTempBmp = new LowLevelBitmap(Core.FullPath(WinFontName));
                 int CellW_ = (int)Math.Floor((FontTempBmp.Width - 16.0) / 256.0);
                 List<int> WinBitmapPage_ = new List<int>();
                 int Idx = 0;
@@ -506,22 +264,22 @@ namespace TextPaint
                 for (int i = 0; i < FontTempBmp.Height; i++)
                 {
                     int Val = 0;
-                    if (BmpGetPixel(FontTempBmp, 0, i)) { Val += 32768; }
-                    if (BmpGetPixel(FontTempBmp, 1, i)) { Val += 16384; }
-                    if (BmpGetPixel(FontTempBmp, 2, i)) { Val += 8192; }
-                    if (BmpGetPixel(FontTempBmp, 3, i)) { Val += 4096; }
-                    if (BmpGetPixel(FontTempBmp, 4, i)) { Val += 2048; }
-                    if (BmpGetPixel(FontTempBmp, 5, i)) { Val += 1024; }
-                    if (BmpGetPixel(FontTempBmp, 6, i)) { Val += 512; }
-                    if (BmpGetPixel(FontTempBmp, 7, i)) { Val += 256; }
-                    if (BmpGetPixel(FontTempBmp, 8, i)) { Val += 128; }
-                    if (BmpGetPixel(FontTempBmp, 9, i)) { Val += 64; }
-                    if (BmpGetPixel(FontTempBmp, 10, i)) { Val += 32; }
-                    if (BmpGetPixel(FontTempBmp, 11, i)) { Val += 16; }
-                    if (BmpGetPixel(FontTempBmp, 12, i)) { Val += 8; }
-                    if (BmpGetPixel(FontTempBmp, 13, i)) { Val += 4; }
-                    if (BmpGetPixel(FontTempBmp, 14, i)) { Val += 2; }
-                    if (BmpGetPixel(FontTempBmp, 15, i)) { Val += 1; }
+                    if (FontTempBmp.GetPixelBinary(0, i)) { Val += 32768; }
+                    if (FontTempBmp.GetPixelBinary(1, i)) { Val += 16384; }
+                    if (FontTempBmp.GetPixelBinary(2, i)) { Val += 8192; }
+                    if (FontTempBmp.GetPixelBinary(3, i)) { Val += 4096; }
+                    if (FontTempBmp.GetPixelBinary(4, i)) { Val += 2048; }
+                    if (FontTempBmp.GetPixelBinary(5, i)) { Val += 1024; }
+                    if (FontTempBmp.GetPixelBinary(6, i)) { Val += 512; }
+                    if (FontTempBmp.GetPixelBinary(7, i)) { Val += 256; }
+                    if (FontTempBmp.GetPixelBinary(8, i)) { Val += 128; }
+                    if (FontTempBmp.GetPixelBinary(9, i)) { Val += 64; }
+                    if (FontTempBmp.GetPixelBinary(10, i)) { Val += 32; }
+                    if (FontTempBmp.GetPixelBinary(11, i)) { Val += 16; }
+                    if (FontTempBmp.GetPixelBinary(12, i)) { Val += 8; }
+                    if (FontTempBmp.GetPixelBinary(13, i)) { Val += 4; }
+                    if (FontTempBmp.GetPixelBinary(14, i)) { Val += 2; }
+                    if (FontTempBmp.GetPixelBinary(15, i)) { Val += 1; }
                     if (Val0 != Val)
                     {
                         WinBitmapPage_.Add(ValPlane + Val);
@@ -547,7 +305,7 @@ namespace TextPaint
                         {
                             for (int X_ = 0; X_ < CellW_; X_++)
                             {
-                                bool PxlState = (BmpGetPixel(FontTempBmp, CellW_ * ii + 16 + X_, CellH_ * i + Y_));
+                                bool PxlState = (FontTempBmp.GetPixelBinary(CellW_ * ii + 16 + X_, CellH_ * i + Y_));
                                 for (int Y_F = 0; Y_F < CellH_F; Y_F++)
                                 {
                                     for (int X_F = 0; X_F < CellW_F; X_F++)
@@ -655,19 +413,18 @@ namespace TextPaint
         int[,] FormCtrlC;
         int[,] FormCtrlFontW;
         int[,] FormCtrlFontH;
-        int[] LineOffset;
+        public int[] LineOffset;
         int[] LineOffsetBack;
         int[] LineOffsetFore;
-        bool[] LineOffsetBlank;
+        public bool[] LineOffsetBlank;
         RectangleF[,] FormCtrlR;
         int[] FormCtrlR_Trans;
         Font WinFont;
         StringFormat WinStrFormat;
-        PictureBoxEx PictureBox_;
+        Window_PictureBoxEx PictureBox_;
         bool WinPicturePanel = false;
-        PictureBoxEx CursorBox;
-        Bitmap CursorBmp;
-        Graphics CursorBmp_G;
+        Window_PictureBoxEx CursorBox;
+        LowLevelBitmap CursorBmpX;
         System.Windows.Forms.Timer CursorTimer;
 
         /// <summary>
@@ -680,8 +437,7 @@ namespace TextPaint
             WinW = W;
             WinH = H;
 
-            Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, PixelFormat.Format24bppRgb);
-            Bitmap_G = Graphics.FromImage(Bitmap_);
+            BitmapX_ = new LowLevelBitmap(WinW * CellW, WinH * CellH);
 
             FormCtrlB = new int[WinW, WinH];
             FormCtrlF = new int[WinW, WinH];
@@ -694,8 +450,7 @@ namespace TextPaint
             LineOffsetFore = new int[WinH];
             SetTextRectangles();
 
-            CursorBmp = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
-            CursorBmp_G = Graphics.FromImage(CursorBmp);
+            CursorBmpX = new LowLevelBitmap(CellW, CellH);
 
             for (int Y = 0; Y < WinH; Y++)
             {
@@ -783,13 +538,12 @@ namespace TextPaint
 
         public Bitmap DummyGetScreenBitmap(bool DrawCursor)
         {
-            Bitmap BmpExp = new Bitmap(Bitmap_.Width, Bitmap_.Height, PixelFormat.Format24bppRgb);
+            Bitmap BmpExp = BitmapX_.ToBitmap();
             Graphics BmpExpG = Graphics.FromImage(BmpExp);
-            BmpExpG.DrawImageUnscaled(Bitmap_, 0, 0);
             if (DrawCursor && (LineOffset[CursorY] == 0))
             {
                 RepaintCursor();
-                BmpExpG.DrawImageUnscaled(CursorBmp, CursorX * CellW, CursorY * CellH);
+                BmpExpG.DrawImageUnscaled(CursorBmpX.ToBitmap(), CursorX * CellW, CursorY * CellH);
             }
             return BmpExp;
         }
@@ -816,8 +570,7 @@ namespace TextPaint
                     WinH = Form_.ClientSize.Height / CellH;
                 }
 
-                Bitmap_ = new Bitmap(WinW * CellW, WinH * CellH, PixelFormat.Format24bppRgb);
-                Bitmap_G = Graphics.FromImage(Bitmap_);
+                BitmapX_ = new LowLevelBitmap(WinW * CellW, WinH * CellH);
 
                 FormCtrlB = new int[WinW, WinH];
                 FormCtrlF = new int[WinW, WinH];
@@ -830,7 +583,7 @@ namespace TextPaint
                 LineOffsetFore = new int[WinH];
                 SetTextRectangles();
                 Form_.Controls.Clear();
-                PictureBox_ = new PictureBoxEx(WinPicturePanel ? 2 : 1);
+                PictureBox_ = new Window_PictureBoxEx(WinPicturePanel ? 2 : 1);
                 /*if (WinFixed)
                 {
                     PictureBox_.Ctrl.Left = 0;
@@ -840,22 +593,23 @@ namespace TextPaint
                 }
                 else*/
                 {
-                    PictureBox_.Ctrl.Left = (Form_.ClientSize.Width - Bitmap_.Width) / 2;
-                    PictureBox_.Ctrl.Top = (Form_.ClientSize.Height - Bitmap_.Height) / 2;
-                    PictureBox_.Ctrl.Width = Bitmap_.Width;
-                    PictureBox_.Ctrl.Height = Bitmap_.Height;
+                    PictureBox_.Ctrl.Left = (Form_.ClientSize.Width - BitmapX_.Width) / 2;
+                    PictureBox_.Ctrl.Top = (Form_.ClientSize.Height - BitmapX_.Height) / 2;
+                    PictureBox_.Ctrl.Width = BitmapX_.Width;
+                    PictureBox_.Ctrl.Height = BitmapX_.Height;
                 }
-                PictureBox_.Image = Bitmap_;
+                PictureBox_.UseMonitor = true;
+                PictureBox_.Image = BitmapX_;
 
 
-                CursorBmp = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
-                CursorBmp_G = Graphics.FromImage(CursorBmp);
-                CursorBox = new PictureBoxEx(WinPicturePanel ? 2 : 0);
+                CursorBmpX = new LowLevelBitmap(CellW, CellH);
+                CursorBox = new Window_PictureBoxEx(WinPicturePanel ? 2 : 1);
                 CursorBox.Ctrl.Left = 0 - CellW - CellW;
                 CursorBox.Ctrl.Top = 0 - CellH - CellH;
                 CursorBox.Ctrl.Width = CellW;
                 CursorBox.Ctrl.Height = CellH;
-                CursorBox.Image = CursorBmp;
+                CursorBox.UseMonitor = false;
+                CursorBox.Image = CursorBmpX;
                 Form_.Controls.Add(CursorBox.Ctrl);
                 PictureBox_.Ctrl.Refresh();
 
@@ -994,6 +748,10 @@ namespace TextPaint
 
         public override void SetLineOffset(int Y, int Offset, bool Blank, int ColorBack, int ColorFore)
         {
+            if ((Y < 0) || (Y >= WinH))
+            {
+                return;
+            }
             int OldOffset = LineOffset[Y];
             switch (CellH)
             {
@@ -1017,6 +775,17 @@ namespace TextPaint
             LineOffsetBack[Y] = ColorBack;
             LineOffsetFore[Y] = ColorFore;
             if (OldOffset != LineOffset[Y])
+            {
+                for (int X = 0; X < WinW; X++)
+                {
+                    CharRepaint(X, Y);
+                }
+            }
+        }
+
+        public override void RepaintOffset(int Y)
+        {
+            if (LineOffset[Y] != 0)
             {
                 for (int X = 0; X < WinW; X++)
                 {
@@ -1069,11 +838,11 @@ namespace TextPaint
             }
             if (Diff)
             {
-                Bitmap TempGlyph = PutChar_GetGlyph(ColorBack, ColorFore, C, FontW, FontH);
+                LowLevelBitmap TempGlyph = PutChar_GetGlyph(ColorBack, ColorFore, C, FontW, FontH);
 
                 int OffsetMode = 0;
                 bool OffsetOtherHalf = false;
-                bool OffsetOtherLine = false;
+
                 if (LineOffset[Y] > 0)
                 {
                     OffsetMode = 1;
@@ -1083,10 +852,6 @@ namespace TextPaint
                         {
                             OffsetOtherHalf = true;
                         }
-                    }
-                    if (Y > 0)
-                    {
-                        OffsetOtherLine = true;
                     }
                 }
                 if (LineOffset[Y] < 0)
@@ -1099,17 +864,13 @@ namespace TextPaint
                             OffsetOtherHalf = true;
                         }
                     }
-                    if (Y < (WinH - 1))
-                    {
-                        OffsetOtherLine = true;
-                    }
                 }
 
-                if (MultiThread) Monitor.Enter(Bitmap_);
+                if (MultiThread) Monitor.Enter(BitmapX_);
 
                 if (OffsetMode == 0)
                 {
-                    Bitmap_G.DrawImageUnscaled(TempGlyph, X * CellW, Y * CellH);
+                    BitmapX_.DrawImage(TempGlyph, 0, 0, X * CellW, Y * CellH, TempGlyph.Width, TempGlyph.Height);
                 }
                 else
                 {
@@ -1118,12 +879,7 @@ namespace TextPaint
                         int Offset = LineOffset[Y];
 
                         // Current line - upper half
-                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
-                        if (OffsetOtherLine)
-                        {
-                            // Previous line - lower half
-                            Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
-                        }
+                        BitmapX_.DrawImage(TempGlyph, 0, Offset, X * CellW, Y * CellH, CellW, CellH - Offset);
                         if (OffsetOtherHalf)
                         {
                             TempGlyph = PutChar_GetGlyph(FormCtrlB[X, Y + 1], FormCtrlF[X, Y + 1], FormCtrlC[X, Y + 1], FormCtrlFontW[X, Y + 1], FormCtrlFontH[X, Y + 1]);
@@ -1133,19 +889,14 @@ namespace TextPaint
                             TempGlyph = PutChar_GetGlyph(LineOffsetBack[Y], LineOffsetFore[Y], 32, FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]);
                         }
                         // Current line - lower half
-                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
+                        BitmapX_.DrawImage(TempGlyph, 0, 0, X * CellW, Y * CellH + CellH - Offset, CellW, Offset);
                     }
                     if (OffsetMode == 2)
                     {
                         int Offset = CellH - (0 - LineOffset[Y]);
 
                         // Current line - lower half
-                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH - Offset, CellW, Offset), new Rectangle(0, 0, CellW, Offset), GraphicsUnit.Pixel);
-                        if (OffsetOtherLine)
-                        {
-                            // Next line - upper half
-                            Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH + CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
-                        }
+                        BitmapX_.DrawImage(TempGlyph, 0, 0, X * CellW, Y * CellH + CellH - Offset, CellW, Offset);
                         if (OffsetOtherHalf)
                         {
                             TempGlyph = PutChar_GetGlyph(FormCtrlB[X, Y - 1], FormCtrlF[X, Y - 1], FormCtrlC[X, Y - 1], FormCtrlFontW[X, Y - 1], FormCtrlFontH[X, Y - 1]);
@@ -1155,22 +906,22 @@ namespace TextPaint
                             TempGlyph = PutChar_GetGlyph(LineOffsetBack[Y], LineOffsetFore[Y], 32, FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]);
                         }
                         // Current line - upper half
-                        Bitmap_G.DrawImage(TempGlyph, new Rectangle(X * CellW, Y * CellH, CellW, CellH - Offset), new Rectangle(0, Offset, CellW, CellH - Offset), GraphicsUnit.Pixel);
+                        BitmapX_.DrawImage(TempGlyph, 0, Offset, X * CellW, Y * CellH, CellW, CellH - Offset);
                     }
                 }
 
-                if (MultiThread) Monitor.Exit(Bitmap_);
-
-
+                if (MultiThread) Monitor.Exit(BitmapX_);
             }
         }
 
-        private Bitmap PutChar_GetGlyph(int ColorBack, int ColorFore, int C, int FontW, int FontH)
+        private LowLevelBitmap PutChar_GetGlyph(int ColorBack, int ColorFore, int C, int FontW, int FontH)
         {
-            Color DrawBack = DrawColor[ColorBack];
-            Color DrawFore = DrawColor[ColorFore];
-            Brush DrawBackB = DrawColorB[ColorBack];
-            Brush DrawForeB = DrawColorB[ColorFore];
+            byte DrawBack_R = DrawColor_R[ColorBack];
+            byte DrawBack_G = DrawColor_G[ColorBack];
+            byte DrawBack_B = DrawColor_B[ColorBack];
+            byte DrawFore_R = DrawColor_R[ColorFore];
+            byte DrawFore_G = DrawColor_G[ColorFore];
+            byte DrawFore_B = DrawColor_B[ColorFore];
             if (ColorBlending)
             {
                 switch (C)
@@ -1280,25 +1031,25 @@ namespace TextPaint
                 }
             }
             int FontWH = ((FontW < 3) && (FontH < 3)) ? (FontH * 3 + FontW) : -1;
-            Bitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C, FontWH);
+            LowLevelBitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C, FontWH);
             if (TempGlyph == null)
             {
-                TempGlyph = new Bitmap(CellW, CellH, PixelFormat.Format24bppRgb);
+                TempGlyph = new LowLevelBitmap(CellW, CellH);
                 if (ColorFore >= 16)
                 {
                     switch (ColorFore >> 4)
                     {
                         case 1:
-                            CalcBlend(ColorBack, ColorFore - 16, 1, 1, out DrawFore, out DrawForeB);
+                            CalcBlend(ColorBack, ColorFore - 16, 1, 1, out DrawFore_R, out DrawFore_G, out DrawFore_B);
                             break;
                         case 2:
-                            CalcBlend(ColorBack, ColorFore - 32, 3, 1, out DrawFore, out DrawForeB);
+                            CalcBlend(ColorBack, ColorFore - 32, 3, 1, out DrawFore_R, out DrawFore_G, out DrawFore_B);
                             break;
                         case 3:
-                            CalcBlend(ColorBack, ColorFore - 48, 1, 3, out DrawFore, out DrawForeB);
+                            CalcBlend(ColorBack, ColorFore - 48, 1, 3, out DrawFore_R, out DrawFore_G, out DrawFore_B);
                             break;
                         case 4:
-                            CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawBack, out DrawBackB);
+                            CalcBlend(ColorBack, ColorFore - 64, 1, 1, out DrawFore_R, out DrawFore_G, out DrawFore_B);
                             break;
                     }
                 }
@@ -1352,11 +1103,11 @@ namespace TextPaint
                         {
                             if (WinBitmapGlyph[CPI + ((Y_ + FontOffH) / FontDivH), C__ + ((X_ + FontOffW) / FontDivW)])
                             {
-                                TempGlyph.SetPixel(X_, Y_, DrawFore);
+                                TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                             }
                             else
                             {
-                                TempGlyph.SetPixel(X_, Y_, DrawBack);
+                                TempGlyph.SetPixel(X_, Y_, DrawBack_R, DrawBack_G, DrawBack_B);
                             }
                         }
                     }
@@ -1365,13 +1116,15 @@ namespace TextPaint
                 {
                     try
                     {
-                        Graphics TempGlyphG = Graphics.FromImage(TempGlyph);
-                        TempGlyphG.FillRectangle(DrawBackB, 0, 0, CellW, CellH);
+                        Bitmap TempGlyphB = TempGlyph.ToBitmap();
+                        Graphics TempGlyphG = Graphics.FromImage(TempGlyphB);
+                        TempGlyphG.FillRectangle(LowLevelBitmap.GetBrush(DrawBack_R, DrawBack_G, DrawBack_B), 0, 0, CellW, CellH);
                         if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
                         {
                             TempGlyphG.ScaleTransform(FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH]);
-                            TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, DrawForeB, FormCtrlR[FontW, FontH], WinStrFormat);
+                            TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, LowLevelBitmap.GetBrush(DrawFore_R, DrawFore_G, DrawFore_B), FormCtrlR[FontW, FontH], WinStrFormat);
                         }
+                        TempGlyph = new LowLevelBitmap(TempGlyphB);
                     }
                     catch
                     {
@@ -1406,20 +1159,7 @@ namespace TextPaint
                 H--;
             }
             Monitor.Enter(GraphMutex);
-            bool NotDone = true;
-            while (NotDone)
-            {
-                try
-                {
-                    Bitmap Bitmap_Temp = Bitmap_.Clone(new Rectangle(SrcX * CellW, SrcY * CellH, W * CellW, H * CellH), PixelFormat.Format24bppRgb);
-                    Bitmap_G.DrawImage(Bitmap_Temp, DstX * CellW, DstY * CellH);
-                    NotDone = false;
-                }
-                catch
-                {
-
-                }
-            }
+            BitmapX_.DrawImage(BitmapX_, SrcX * CellW, SrcY * CellH, DstX * CellW, DstY * CellH, W * CellW, H * CellH);
             int X_D, Y_D, X_S, Y_S;
             if (SrcY > DstY)
             {
@@ -1623,14 +1363,12 @@ namespace TextPaint
                 CursorBox.Ctrl.Left = PictureBox_.Ctrl.Left + (CursorX * CellW);
                 CursorBox.Ctrl.Top = PictureBox_.Ctrl.Top + (CursorY * CellH);
             }
-            Monitor.Enter(Bitmap_);
             PictureBox_.Ctrl.Refresh();
-            Monitor.Exit(Bitmap_);
         }
 
         void RepaintCursor()
         {
-            CursorBmp_G.DrawImage(Bitmap_, 0 - (CursorX * CellW), 0 - (CursorY * CellH));
+            CursorBmpX.DrawImage(BitmapX_, (CursorX * CellW), (CursorY * CellH), 0, 0, CellW, CellH);
 
             int CursorThick = (((CellH + 7) / 8));
             if (WinIsBitmapFont)
@@ -1640,12 +1378,14 @@ namespace TextPaint
 
             try
             {
-                Color CurC = DrawColor[FormCtrlF[CursorX, CursorY]];
+                byte CurC_R = DrawColor_R[FormCtrlF[CursorX, CursorY]];
+                byte CurC_G = DrawColor_G[FormCtrlF[CursorX, CursorY]];
+                byte CurC_B = DrawColor_B[FormCtrlF[CursorX, CursorY]];
                 for (int Y0 = CellH - CursorThick; Y0 < CellH; Y0++)
                 {
                     for (int X0 = 0; X0 < CellW; X0++)
                     {
-                        CursorBmp.SetPixel(X0, Y0, CurC);
+                        CursorBmpX.SetPixel(X0, Y0, CurC_R, CurC_G, CurC_B);
                     }
                 }
             }

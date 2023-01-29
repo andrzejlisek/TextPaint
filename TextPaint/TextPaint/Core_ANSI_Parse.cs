@@ -327,9 +327,10 @@ namespace TextPaint
                     }
                     __AnsiCommand = false;
                     break;
-                case '\\':
-                case '=':
-                case '>':
+                case 'P': // DCS
+                case '\\': // ST
+                case '=': // DECKPAM
+                case '>': // DECKPNM
                     __AnsiCommand = false;
                     break;
                 case 'c': // RIS
