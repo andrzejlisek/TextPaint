@@ -3,7 +3,23 @@ namespace TextPaint
 {
     public partial class Core
     {
+        void SetProcessDelay(long TimeStamp)
+        {
+            __AnsiProcessDelay = TimeStamp * __AnsiProcessDelayFactor;
 
+            long DelayDiff = __AnsiProcessDelay - __AnsiProcessStep;
+
+            if (__AnsiProcessDelayMin > __AnsiProcessDelayMax)
+            {
+                __AnsiProcessDelayMin = DelayDiff;
+                __AnsiProcessDelayMax = DelayDiff;
+            }
+            else
+            {
+                __AnsiProcessDelayMin = Math.Min(__AnsiProcessDelayMin, DelayDiff);
+                __AnsiProcessDelayMax = Math.Max(__AnsiProcessDelayMax, DelayDiff);
+            }
+        }
 
         void AnsiProcess_VT52()
         {
@@ -148,6 +164,47 @@ namespace TextPaint
                     if (__AnsiCmd.Count == 2)
                     {
                         __AnsiCommand = false;
+                    }
+                    break;
+                case '[':
+                    {
+                        switch (__AnsiCmd[__AnsiCmd.Count - 1])
+                        {
+                            case '0':
+                            case '1':
+                            case '2':
+                            case '3':
+                            case '4':
+                            case '5':
+                            case '6':
+                            case '7':
+                            case '8':
+                            case '9':
+                            case ';':
+                            case '[':
+                                break;
+                            case 'V':
+                                {
+                                    string AnsiCmd_ = TextWork.IntToStr(__AnsiCmd);
+                                    string[] AnsiParams = AnsiCmd_.Substring(1, AnsiCmd_.Length - 2).Split(';');
+                                    if (AnsiCmd_.Length >= 2)
+                                    {
+                                        switch (AnsiParams[0])
+                                        {
+                                            case "1":
+                                                {
+                                                    SetProcessDelay(AnsiProcess_Int(AnsiParams[1], AnsiCmd_));
+                                                }
+                                                break;
+                                        }
+                                    }
+                                }
+                                __AnsiCommand = false;
+                                break;
+                            default:
+                                __AnsiCommand = false;
+                                break;
+                        }
                     }
                     break;
                 default:
@@ -804,22 +861,7 @@ namespace TextPaint
                             break;
                         case "1":
                             {
-                                long TimeStamp = AnsiProcess_Int(AnsiParams[1], AnsiCmd_);
-                                __AnsiProcessDelay = TimeStamp * __AnsiProcessDelayFactor;
-
-                                long DelayDiff = __AnsiProcessDelay - __AnsiProcessStep;
-
-                                if (__AnsiProcessDelayMin > __AnsiProcessDelayMax)
-                                {
-                                    __AnsiProcessDelayMin = DelayDiff;
-                                    __AnsiProcessDelayMax = DelayDiff;
-                                }
-                                else
-                                {
-                                    __AnsiProcessDelayMin = Math.Min(__AnsiProcessDelayMin, DelayDiff);
-                                    __AnsiProcessDelayMax = Math.Max(__AnsiProcessDelayMax, DelayDiff);
-                                }
-
+                                SetProcessDelay(AnsiProcess_Int(AnsiParams[1], AnsiCmd_));
                             }
                             break;
                     }
