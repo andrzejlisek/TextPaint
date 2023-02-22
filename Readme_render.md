@@ -22,6 +22,7 @@ The following parameters are used only for rendering\. Like other parameters, th
   * **ANS** or **ANSI** \- Render to ANSI file\(s\) containing text with used color and font size\.
   * **XB** or **XBIN** \- Convert XBIN file to ANSI file instead of rendering, extract font and palette if contains\.
   * **BIN** \- Convert raw binary file to ANSI file instead of rendering\.
+  * **CONV** or **CONVERT** \- Convert any text file from one encoding to other encoding, without text parsing and analyzing\.
 
 # Graphic parameters
 
@@ -98,44 +99,125 @@ Conversion BIN to ANSI has the same rules as conversion XBIN to ANSI with follow
 
 The conversion wil generate the **\*\.ans** file only\.
 
-# Examples
+# Conversion between encodings
+
+TextPaint allows to convert text files between encoding by **RenderType=CONVERT**\. The **ANSIRead** and **ANSIWrite** parameters will be ignored\. You have to specify the following parameters:
+
+
+* **RenderFile** \- Destination text file\.
+* **FileReadEncoding** \- Encoding of source file \(code page number or encoding name or encoding file\)\.
+* **FileWriteEncoding** \- Encoding of destination file \(code page number or encoding name or encoding file\)\.
+
+The text content will not be parsed or analyzed\. You can use this command for any text file\.
+
+# Command examples
 
 There is examples with parameters can be invoked in command line, but the parameters can also be in **Config\.txt** file\.
 
 Create single image of plan text file using black characters on white backgrounf with size 80x25:
 
 ```
-TextPaint.exe /Path/File.txt RenderFile=/Path/Image.png ANSIRead=0 ANSIWidth=80 ANSIHeight=25 ColorNormal=F0
+TextPaint /Path/File.txt RenderFile=/Path/Image.png ANSIRead=0 ANSIWidth=80 ANSIHeight=25 ColorNormal=F0
 ```
 
 Create single image of ANSI file with default screen size:
 
 ```
-TextPaint.exe /Path/File.txt RenderFile=/Path/Image.png ANSIRead=1 ANSIWidth=0 ANSIHeight=0
+TextPaint /Path/File.txt RenderFile=/Path/Image.png ANSIRead=1 ANSIWidth=0 ANSIHeight=0
 ```
 
 Create movie from ANSI animation by creating frame on 5th character, 20th character, 35th character and so on:
 
 ```
-TextPaint.exe /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=15 RenderOffset=5
+TextPaint /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=15 RenderOffset=5
 ```
 
 Create movie from ANSI animation recorded by TextPaint using 1000 characters per rendered frame and 100 characters per one time marker unit:
 
 ```
-TextPaint.exe /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=1000 RenderOffset=0 RenderFrame=100
+TextPaint /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=1000 RenderOffset=0 RenderFrame=100
 ```
 
 Convert XBIN \(which contains font and color palette\) file to ANSI file using encoding from file and open generated ANSI in editor:
 
 ```
-TextPaint.exe /Path/File.bin RenderFile=/Path/FileANSI RenderType=XBIN WorkMode=4 FileReadEncoding="Encodings/BIN_ISO.txt"
-TextPaint.exe /Path/FileANSI.ans WorkMode=0 WinFontName=/Path/FileANSI.png WinPaletteFile=/Path/FileANSI.txt
+TextPaint /Path/File.bin RenderFile=/Path/FileANSI RenderType=XBIN WorkMode=4 FileReadEncoding="Encodings/BIN_ISO.txt"
+TextPaint /Path/FileANSI.ans WorkMode=0 WinFontName=/Path/FileANSI.png WinPaletteFile=/Path/FileANSI.txt
 ```
+
+Convert text file from standard DOS 437 code page to UTF\-8:
+
+```
+TextPaint /Path/Text437.txt RenderFile=/Path/TextUTF8.txt RenderType=CONVERT FileReadEncoding="437" FileWriteEncoding="utf-8"
+```
+
+# Terminal recording and rendering examples
+
+Assume, that desired display speed is 2500 characters per second\. There are example commands for record, view and render terminal session at the speed\.
+
+To get this speed, you can use following command for telnet session with session recording:
+
+```
+TextPaint "localhost" WorkMode=2 TerminalFile=Example.ans **TerminalStep=100** **TerminalTimeResolution=40**
+```
+
+The speed meets the following formula:
+
+```
+Speed in characters by second: (1000 / TerminalTimeResolution) * TerminalStep
+```
+
+The file will contain timing markers, where single marker has value equals to session time millisecond divided by **TerminalTimeResolution**\. In this example, one second contains 25 timing units\. This is only timing of data portions received only, its not affect the text display smooth, but you have to remember the **TerminalTimeResolution** value used for recording the file for correct playing\. To create ledd resource\-demanding, but less accurate recording \(12\.5 timing units per second\) at the same speed, you should execute this command:
+
+```
+TextPaint "localhost" WorkMode=2 TerminalFile=Example.ans **TerminalStep=200** **TerminalTimeResolution=80**
+```
+
+For display and play the file, which is saved terminal session, you can use the following command:
+
+```
+TextPaint Example.ans WorkMode=1 **FileDelayTime=40** **FileDelayStep=100** **FileDelayFrame=100**
+```
+
+```
+Speed in characters by second: (1000 / FileDelayTime) * FileDelayStep
+```
+
+The **FileDelayFrame** value should be the same as **TerminalStep** value used for recording session\. Otherwise, the pauses between data portions, which occurred while waiting for user reactions, will be too short or too long\. If the file is not a terminal session record created in **TextPaint**, the **FileDelayFrame** value does not affect the result\.
+
+For smoother playing at the same speed \(but is more resource demanding\) you can execute the following command:
+
+```
+TextPaint Example.ans WorkMode=1 **FileDelayTime=20** **FileDelayStep=50** **FileDelayFrame=100**
+```
+
+For render the file, you can execute this command:
+
+```
+TextPaint Example.ans WorkMode=4 RenderFile=ExampleRender **RenderStep=100 RenderFrame=100**
+```
+
+This command will generate serie of frames\. The original frame rate for playing the sequence, you can calculate the frame rate:
+
+```
+Frames per second: [Characters per second] / RenderStep
+```
+
+To get the same movie rendered in 50 frames per second, you should execute:
+
+```
+TextPaint Example.ans WorkMode=4 RenderFile=ExampleRender **RenderStep=50 RenderFrame=100**
+```
+
+The **RenderFrame** means the speed of timing units\. It should be the same as **TerminalStep** used in terminal session\. If the file is not a terminal session record created in **TextPaint**, the **RenderFrame** value does not affect the result\.
 
 # Create files of 8\-bit encodings
 
 Using **WorkMode=4**, you can generate files of all 8\-bit encodings supported by your system\. In order to do this, you have to provide **?ENCODING?** as text/ANSI file name and use **RenderFile** parameter to provide folder\. Other parameters does not affect creating the files in this case and will be ignored\.
+
+```
+TextPaint ?ENCODING? WorkMode=4 RenderFile=DotNetEncodingFolder
+```
 
 Every file will have codepage numer as name with **\.txt** extension\. inside the file, there will be following parameters:
 

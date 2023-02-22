@@ -17,42 +17,66 @@ There are available following work modes, choosen by **WorkMode** parameter:
 
 * **WorkMode=0** \- Text editor, the main purpose of **TestPaint**, which is described in **Readme\.md** file\.
 * **WorkMode=1** \- ANSI viewer with progressive printing and server\. This mode can be used to view animation created by progressive placing characters and is described in **Readme\_ANSI\.md** file\.
-* **WorkMode=2** \- Telnet client, which is parially compatible with VT100, ANSI and derivative terminal emulators\. Details about this mode are described in **Readme\_ANSI\.md** file\.
+* **WorkMode=2** \- Telnet or SSH client, which is parially compatible with VT100, ANSI and derivative terminal emulators\. Details about this mode are described in **Readme\_ANSI\.md** file\.
 * **WorkMode=3** \- Encoding list display and keycode test\. The only purpose is displaying supported encoding list and code/name of every pressed key, which is needed to implement additional functions and test the **TextPaint** in various platforms\. This mode is described in **Readme\_keys\.md** file\.
 * **WorkMode=4** \- Non\-interactive simple command line application, without any interface:
   * Render text into bitmap image detailed in **Readme\_render\.md** file\.
   * Convert XBIN or BIN file to ANSI text file\.
   * Save to files all available 1\-byte encodings\.
 
+## Two editions
+
+TextPaint exists in two editions:
+
+
+* \.NET Framework \- compatible with \.NET 4\.5, uses Windows Forms as graphical user interface\.
+* \.NET Core \- compatible with \.NET 6\.0, uses Avalonia as graphical user interface\.
+
+Both editions have identical functionality, but can have some subtle differences like following:
+
+
+* Available \.NET built\-in text encodings\.
+* Bell sound availability\.
+* Interaction with system clipboard\.
+* Fullscreen window display\.
+
 # Application running
 
-Input file name as command line parameter\. If you not give parameter or give blank file name, the **Config\.txt** file will be opened to allow editing the configuration file\.
+For the \.NET Framework edition, input file name as command line parameter\. If you not give parameter or give blank file name, the **Config\.txt** file will be opened to allow editing the configuration file\.
 
 ```
-TextPaint.exe FileNameWithPath.txt
+TextPaint.exe FileNameWithPath.txt [parameters]
 ```
 
 If you use **Mono** project \(required in Linux\), you can run application with this command:
 
 ```
-mono TextPaint.exe FileNameWithPath.txt
+mono TextPaint.exe FileNameWithPath.txt [parameters]
 ```
+
+The \.NET Core edition can be run on Windows and Linux by the command:
+
+```
+dotnet TextPaint.dll FileNameWithPath.txt [parameters]
+```
+
+In the further document text, there will be uset the `TextPaint` as application file name\.
 
 You can also override configuration options, which can be used in **Config\.txt** file\. From second parameter, application accepts configuration parameters profided with **=** character\. For example, to force running in 40x15 window, run this command:
 
 ```
-TextPaint.exe FileNameWithPath.txt WinUse=2 WinW=40 WinH=15
+TextPaint FileNameWithPath.txt WinUse=2 WinW=40 WinH=15
 ```
 
 In work mode 3, in place of file name, you have to provide server address with port\. if the port equals to 23, it can be ommited\.
 
 ```
-TextPaint.exe 192.168.1.100:23 WorkMode=3
+TextPaint 192.168.1.100:23 WorkMode=3
 ```
 
 All options are described in **Configuration file** chapter\.
 
-## Application files
+## Application files and directories
 
 **TextPaint** is supplied with the following files and directories:
 
@@ -62,16 +86,19 @@ All options are described in **Configuration file** chapter\.
 * **Config\.txt** \- Main configuration file\.
 * **Fav\.txt** \- Favorite character definitions\.
 * **Info\.txt** \- Context information\.
-* **TextPaint\.exe** \- Application binary executable\.
+* **TextPaint\.exe** or **TextPaint\.dll** \- Application binary executable\.
+* Libraries needed to run the **TextPaint**\.
 
 # Functionality and interface
+
+![](Readme/1_01.png "")
 
 TextPaint can work in one of the 4 states\. The default state is **state 1**\. In all states, you can use these keys:
 
 
 * **Arrows** \- Move cursor horizontally or vertically\.
 * **Home, End, PageUp**, **PageDown** \- Move cursor diagonally\.
-* **Tab** \- Change cursor visualization type, one of four modes\. This function may help to find, where is the text cursor in **state 3** or **state 4**\.
+* **Tab** \- Change cursor visualization type, one of four modes\. This function may help to match writing/drawing to other objects\.
 * **F1** \- Switch to **state 1** \(edit text\) or show information about **state 1**\.
 * **F2** \- Switch to **state 2** \(edit characters\) or show information about **state 2**\.
 * **F3** \- Switch to **state 3** \(character paint\) or show information about **state 3**\.
@@ -104,6 +131,8 @@ The colors are following:
 
 When you press the **F1**, **F2**, **F3**, **F4** key one more time, after switchint to the state, there will be displayed short information about selected state\. Use arrow keys to scroll the text\.
 
+![](Readme/1_14.png "")
+
 To close information, press **Esc** or any **F** key \(**F1**\-**F12**\)\. The informations are read from the **Info\.txt** file\.
 
 ## Status bar
@@ -111,13 +140,14 @@ To close information, press **Esc** or any **F** key \(**F1**\-**F12**\)\. The i
 At the bottom of console window, there is the status bar, with black text on white background\. The status bar in **state 1**, **state 2** and **state 3** has the following informations from left to right:
 
 
-1. Cursor position \(row and column\)\. The character between numbers indicated current text area:
-   * **Colon** \- Cursor inside text line\.
-   * **Semicolon** \- Cursor beyond end of text line, but not below the last line\.
-   * **Comma** \- Cursor below the last line of text\.
-2. Character number and glyph under the cursor\.
-3. Number of background and foreground color under the cursor, the hyphen indicates, that color is not defined \(used default\)\.
-4. State indicator:
+1. Font and cursor size \(width and height\)\.
+2. Cursor position \(row and column\)\. The character between numbers indicated current text area:
+   * **Colon** \- All cells of the cursor are inside some text line\.
+   * **Semicolon** \- At least one cursor cell is beyond end of text line, but all cursor cells are not below the last line\.
+   * **Comma** \- At least one cell of the cursor is below the last line of text\.
+3. Character number and glyph under the most cursor cells\.
+4. Number of background and foreground color under the most cursor cells, the hyphen indicates, that color is not defined \(used default\)\.
+5. State indicator:
    * **Text** \- Write text \(**state 1**\), followed by direction indicator:
      * **R** \- **Right** \- From left to right\.
      * **RD** \- **Right/Down** \- From up\-left to down\-right\.
@@ -130,16 +160,18 @@ At the bottom of console window, there is the status bar, with black text on whi
    * **Char** \- Write character \(**state 2**\), followed by direction indicator the same as in the **state 1**\.
    * **Rect** \- Character drawing \(**state 3**\), rectangle shape\.
    * **Dia** \- Character drawing \(**state 3**\), diamond shape\.
-5. Elements in **state 3** only:
+6. Elements in **state 3** only:
    1. Shape size\.
    2. Character set used to draw figure in **state 3**:
       * Single character: Character code and glyph\.
       * Character set: Name defined in **Config\.txt** file\.
-6. Insert/delete mode:
+7. Insert/delete mode:
    1. **H\-block** \- Insert or delete text inside one line, at right from the cursor \- moves text horizontally\.
    2. **V\-block** \- Insert or delete text inside one column, below the cursor \- moves text vertically\.
    3. **H\-line** \- Insert or delete columns \- moves text horizontally\.
    4. **V\-line** \- Insert or delete rows \- moves text vertically\.
+   5. **H\-roll** \- Roll the text horizontally \- combine of insertion and deletion by font width, works on the **state 3** only and when the rectangle width is greater than 1\.
+   6. **V\-roll** \- Roll the text vertically \- combine of insertion and deletion by font height, works on the **state 3** only and when the rectangle height is greater than 1\.
 
 The status bar in **state 4** has different layout, which is described in subchapter about **state 4**\.
 
@@ -151,12 +183,16 @@ The status bar in **state 4** has different layout, which is described in subcha
 
 In the **state 3** and **state 4**, you can draw using selected character\. The current drawing character and character code is shown on the status bar when the character is used to draw\. In the **state 1**, **state 2** and **state 3**, if you insert space \(in mode **H\-block** and **V\-block** only\), the selected character will be inserted\. You can invoke the character selector in every state by pressing the **F9** key\.
 
+![](Readme/1_04.png "")
+
 At the top of character table there will be display the character hexadecimal code and character glyph\. The code consists of 4 or 5 digits\. The plane 16 forces code length to be 6 digits, but is used very rarely, so the leading **10** digits for plane 16 is replaced by **G** to get 5\-digital code\. The **G** digit is outside of hexadecimal digit set and means 16\. For example, the **G1234** has the same meaning as **101234**\.
 
 The character selector can work in two states:
 
 
-* **Ordinary** \- Browse all characters\.
+* **Ordinary** \- Browse all characters\. By default, browsing the pages is limited, but the limit can be enabled and disabled by pressing **F4** key\. The limit depends on work conditions:
+  * When window is used \(**WinUse=1** or **WinUse=2**\) and there is used bitmap font: The pages, which are drawn in font graphics file\.
+  * Otherwise: The pages with characters outside of range from **D800** to **DF00**\. The characters within this range are not regular characters and can not be rendered in most cases\.
 * **Favorite** \- The 256 places of favorite characters, 95 of them can be assigned to alphanumeric keys\.
 
 You can use the following keys while the character table is shown:
@@ -167,6 +203,7 @@ You can use the following keys while the character table is shown:
 * **Home**, **End** \- Flip 16 pages up or down \(go ahead 4096 characters\)\.
 * **F1**, **F2** \- Switch the plane \(go ahead 65536 characters\)\.
 * **F3** \- Switch to **color selector**\.
+* **F4** \- Browsing all pages, including invisible \(character selector state\)\. This function allows to browse through all pages even, when you loaded bitmap font and the font does not include characters for all pages\.
 * **Insert** \- Switch between ordinary and favorite state:
   * **Ordinary**: If the pinted character exists in favorite set, there will be pointed\.
   * **Favorite**: There will be pointed the same character, which is pointed in favorite state\.
@@ -184,6 +221,8 @@ You can use the following keys while the character table is shown:
 ## Color selector
 
 You can turn character selector into color selector or turn color selector into character chelector by pressing **F3**\. In color selector, you can select the color and input text mode\. The text and colors are treated as two independed layers, which can be modifed simultaneously or separately\.
+
+![](Readme/1_05.png "")
 
 While the color selector is showm, you can use the following keys:
 
@@ -217,6 +256,8 @@ You can change text without changing colors or colors without changing the text\
 Many ANSI files are prepared for specified number of columns, in most cases for 80 columns and unlimited number of rows\. If you set other number of columns or use unlimited number of columns \(**ANSIWidth=0**\), the file may be loaded incorrectly\. To correct this, enter into color selector, change number of columns or rows using **Page up**, **Page down**, **Home** or **End** keys and press **Enter** key\. Then, you have to reload file using **F8** keys\.
 
 Sometimes, the number of rows can also be specified for particular file and the file can be loaded incorrectly, when number of rows are unlimited\. The most popular numbers of rows in such case are **24** and **25**\.
+
+![](Readme/1_02.png "")
 
 If there file loaded with **ANSIRead=1** is actually plain text file, the file can contain different end\-of\-line character\. If the file is loaded incorrectly, you can change parsing of CR \(**0Dh**\) and LF \(**0Ah**\) character in color selector\. You can press **F1** or **F2** during color selector to change way of the character processing, the current state is diaplayed as two digits on the top of character selector\. Example settings:
 
@@ -258,10 +299,14 @@ By pressing **Enter**, you can choose between four insert/delete modes:
 * **V\-block** \- Insert or delete text inside one column, below the cursor \- moves text vertically\.
 * **H\-line** \- Insert or delete columns \- moves text horizontally\.
 * **V\-line** \- Insert or delete rows \- moves text vertically\.
+* **H\-roll** \- Roll the text horizontally \- combine of insertion and deletion by font width, works on the **state 3** only and when the rectangle width is greater than 1\.
+* **V\-roll** \- Roll the text vertically \- combine of insertion and deletion by font height, works on the **state 3** only and when the rectangle height is greater than 1\.
 
 ## State 2 \- Write characters
 
 **State 2** works exactly by the same way as **state 1** with one difference: If you press alphanumeric key, there will be written favorite characters assignet to the keys instead of ordinary characters\. You can view and change the assigment in character selector\.
+
+![](Readme/1_10.png "")
 
 The state is most usable when you frequently write specified characters, because you can write the character just by pressing assigned key\.
 
@@ -276,6 +321,9 @@ The state is most usable when you frequently write specified characters, because
 * Copy and paste text\.
 * Manually write frame elements\.
 * Insert or delete larger portion of spaces\.
+* Change font size\.
+
+![](Readme/1_06.png "")
 
 In the **state 3**, you have the following functions available:
 
@@ -289,6 +337,8 @@ In the **state 3**, you have the following functions available:
 * **3** \- Draw hollow frame\.
 * **4** \- Draw filled frame\.
 * **5** \- Start or stop drawing line by moving cursor\.
+* **6,7** \- Font width\.
+* **8,9** \- Font height\.
 * **C** \- Copy the text being inside the figure\.
 * **V** \- Paste the text into the area inside the figure\.
 * **Insert** \- Insert line or character \(works on rectangle shape only\)\.
@@ -322,10 +372,21 @@ The insert and delete function works by the same way as in **state 1** and **sta
 
 
 * This function works only, when rectangle shape is selected
-* In **H\-block** and **H\-line** modes, the figure width determines number of inserted or deleted columns once\.
-* In **V\-block** and **V\-line** modes, the figure height determines number of inserted or deleted columns once\.
-* In **H\-block** mode, there can be modified few rows according to figure height\.
-* In **V\-block** mode, there can be modified few columns according to figure width\.
+* In **H\-block** and **H\-line** modes, the rectangle width determines number of inserted or deleted columns once\.
+* In **V\-block** and **V\-line** modes, the rectangle height determines number of inserted or deleted columns once\.
+* In **H\-block** mode, there can be modified few rows according to rectangle height\.
+* In **V\-block** mode, there can be modified few columns according to rectangle width\.
+* The **H\-roll** and **V\-roll** modes works in the **state 3** only and while the rectangle width \(for **H\-roll**\) or the rectangle height \(for **V\-roll**\) is greater then 1\.
+
+### Font size
+
+**State 3** is the only state, which allows to change font and cursor size, which will be applied for all states\. The font width and height can be adjusted separately, between 1 and 32 cells\. The cursor size represents the current font size and the size is indicated on the status bar\. The move step is the same as current font width or height\. To move cursor over another distance, change the font size\.
+
+If you change font size whice the cursor is not at the first line and the first column, it is possible, it is possible, that the cursor distance from begining does not equal to multiply font width or height\. In such case, when you move the cursor left or up, the first column or the first row will not reachable, because the remaining distance is less than font size\. Cursor position above the first row or before the first column is not possible\.
+
+While the font width or height is greater than 1, the current character or color indicated on the status bar and used in some operation is determined be the most number of cells containing such character or color\. If there are several characters in the same number of cells within the cursor, the first occurence will be used\.
+
+You can copy and paste the text preserving the font size only when the font size is 1x1 while both copying and pasting\. When you copy or paste with other font size, the text and color will be preserved\. Otherwise, you can copy the text written with the bigger font into the other software or paste the text from the other software using desired font size\.
 
 ## State 4 \- Pixel drawing
 
@@ -334,6 +395,8 @@ The **state 4** is purposed to draw pictures using semigraphical characters spli
 
 * **Main cursor** \- The cursor, which is moved by **Arrow** keys and **Home**/**End**/**PageUp**/**PageDown** keys\. Pressing these keys causes movement of both cursors\.
 * **Size cursor** \- The second cursor, which is connected with main cursor\. This cursor determines figure size for drawing lines, rectangles, ellipses, and copying/pasting picture\.
+
+![](Readme/1_08.png "")
 
 During **state 4**, there are following functions by keys:
 
@@ -378,23 +441,24 @@ During **state 4**, there are following functions by keys:
 In **state 4**, the status bar has different layout, described from left to right:
 
 
-1. Main cursor position and size in pixels \(not in characters\)\. The size sign \(plus or minus\) indicates direction from main cursor to size cursor\.
-2. The **state 4** indicator with default color and pencil state:
+1. Font and cursor size \(width and height\)\.
+2. Canvas cursor position and size in pixels\. The size sign \(plus or minus\) indicates direction from main cursor to size cursor\.
+3. The **state 4** indicator with default color and pencil state:
    * **Pxl\-B** \- The default color is background, pencil is off\.
    * **Pxl\-F** \- The default color is foreground, pencil is off\.
    * **Pxl\-B\*** \- The default color is background, pencil is on\.
-   * **Pxl\-F**\* \- The default color is foreground, pencil is on\.
-3. The paint configuration:
+   * **Pxl\-F\*** \- The default color is foreground, pencil is on\.
+4. The paint configuration:
    * The first configuration \(one pixel per character\) is indicated by codes of used characters, separated by slash\.
    * The other configurations are indicated by configuration name defined in **Config\.txt**\.
-4. Drawing color and fill mode:
+5. Drawing color and fill mode:
    1. **Fore\-H** \- Foreground color, hollow\.
    2. **Back\-H** \- Background color, hollow\.
    3. **Nega\-H** \- Negative color, hollow\.
    4. **Fore\-F** \- Foreground color, fill\.
    5. **Back\-F** \- Background color, fill\.
    6. **Nega\-F** \- Negative color, fill\.
-5. Picture move mode:
+6. Picture move mode:
    1. **Repeat** \- The edge of moved picture will be repeated\.
    2. **Roll** \- The edge will be fillled with edge from the other side of moved picture\.
    3. **Back** \- The edge will be filled with background color\.
@@ -413,15 +477,19 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 
 
 * **WinUse** \- Use window instead of console\. In certain systems and console configurations, some of unicode characters are not correctly rendered in the console\. If **WinUse** is set to **1** or **2**, the TextPain will work in the graphical window and all unicode characters should be rendered correctly\. The application usage is the same as in the console\. There are allowed the following values:
-  * **0** \- Use console\.
-  * **1** \- Use window with standard image rendering control\.
-  * **2** \- Use window with non\-standard image rendering control\. Use this setting only if interface picture is not displayed or crashed when you use **WinUse=1**\.
+  * **0** \- Use console, not recommended in cases, while there is possible to use **WinUse=1** or **WinUse=2**\.
+  * **1** \- Use window with standard image rendering control, recommended value\.
+  * **2** \- Use window with non\-standard image rendering control \(only \.NET Framework version, on \.NET Core edition is the same as **WinUse=1**\)\. Use this setting only if interface picture is not displayed or crashed when you use **WinUse=1**\.
 * **WorkMode** \- Work mode of TextPaint:
   * **0** \- Text editor \- the fundamental mode and purpose of **TextPaint**\.
   * **1** \- ANSI viewer and file server \- described in **Readme\_ANSI\.md** file\.
-  * **2** \- Telnet client \- described in **Readme\_ANSI\.md** file\.
+  * **2** \- Telnet/SSH client \- described in **Readme\_ANSI\.md** file\.
   * **3** \- Encoding list and keycode test \- described in **Readme\_keys\.md** file\.
   * **4** \- Render text file or ANSI file into image or movie \- described in **Readme\_render\.md** file\.
+* **Bell** \- Bell sound type \(working may depend on operating system and console visibility, regardless of **WinUse** value\), usable in **WorkMode=1** and **WorkMode=2**:
+  * **0** \- No bell\.
+  * **1** \- Use console beep function\.
+  * **2** \- Sound by writing bell character into console\.
 * **Space** \- Characters \(hexadecimal numbers\), which will be treated as space\. The first character in the list is used as character being outside actual text\.
 * **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **FileReadEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
 * **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **FileWriteEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
@@ -443,7 +511,6 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 The settings affect the appearance of interface:
 
 
-* **CursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **CursorDisplay=1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **CursorDisplay=0** to not draw cursor character and may help in cursor visibility\.
 * **ColorNormal** \- Color of default background and foreground in all work modes\.
 * **ColorBeyondLine** \- Color of background indicating area beyond end of line, but not below the last line\.
 * **ColorBeyondEnd** \- Color of background indicatin area below the last line\.
@@ -459,6 +526,7 @@ Settings related to console, affects when **WinUse=0** only\.
 
 * **ConInputEncoding** \- Set encoding name or codepage for writing characters\. Use it to solve problems in entering characters, especially diacritic characters using keyboard\. Affects only when you use **WinUse=0**\.
 * **ConOutputEncoding** \- Set encoding name or codepage for printing characters\. Use it to solve problems in displaying characters\. Affects only when you use **WinUse=0**\.
+* **ConCursorDisplay** \- Display cursor character at cursor position\. In most cases, the value should be **CursorDisplay=1**\. Sometimes, the cursor can be invisible while moving due to inverting background and text colors in some console implementations\. Use **ConCursorDisplay=0** to not draw cursor character and may help in cursor visibility\.
 * **ConUseMemo** \- Use additional text memory in console \(not affects when **WinUse=1** or **WinUse=2**\)\. The application uses the console buffer move from the system API while scrolling the text\. You can set one of the following values:
   * **0** \- Use console buffer moving\. This setting is recommended, while all characters are displayed correctly while text scrolling\.
   * **1** \- Use console buffer moving with rewriting non\-ASCII characters\. Use this setting if some characters are displayed incorrectly during text scrolling although the same characters are displayed correctly during writing/painting using Textpaint functions\. This may slightly slow down the text rendering during scrolling\. 
@@ -481,6 +549,8 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 * **WinFontSize** \- Font size in window\. This setting not affects the cell size\.
 * **WinW** \- Number of columns\. To display whole status bar, it should be at least **WinW=40**\.
 * **WinH** \- Number of rows\.
+* **WinFixed** \- Fided number of rows and columns regardless current window size\.
+* **WinSteadyCursor** \- Steady cursor display instead of blinking\.
 * **WinColorBlending** \- Enables color blending for some block characters\. This parameter affects to this characters:
   * **2591h**, **2592h**, **2593h**\.
   * From **1FB8Ch** to **1FB94h**\.
@@ -490,26 +560,18 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 * **WinPaletteB** \- The blue component of all 16 colors\.
 * **WinPaletteFile** \- If provided, there is external file containing the palette\. If the file does not exist or is unreadable, the parameter will be ignored\. The structure of file are the same as **Config\.txt**, but it contains only three parameters: **WinPaletteR**, **WinPaletteG**, **WinPaletteB**\.
 
-The **WinColorBlending** uses other character and mixed foreground color with background color as in table below:
+The **WinColorBlending** can be configured with the **WinColorBlending\_X** parameters, where **X** means the number from 1\. Every entry consists of 5 numbers:
 
-| Original character | Replacement character | Remarks |
-| --- | --- | --- |
-| 2591h | 2588h | Changed foreground color, mixed 1:3 |
-| 2592h | 2588h | Changed foreground color |
-| 2593h | 2588h | Changed foreground color, mixed 3:1 |
-| 1FB8Ch | 258Ch | Changed foreground color |
-| 1FB8Dh | 2590h | Changed foreground color |
-| 1FB8Eh | 2580h | Changed foreground color |
-| 1FB8Fh | 2584h | Changed foreground color |
-| 1FB9Ch | 25E4h | Changed foreground color |
-| 1FB9Dh | 25E5h | Changed foreground color |
-| 1FB9Eh | 25E2h | Changed foreground color |
-| 1FB9Fh | 25E3h | Changed foreground color |
-| 1FB90h | 20h | Changed background color |
-| 1FB91h | 2580h | Changed background color |
-| 1FB92h | 2584h | Changed background color |
-| 1FB93h | 258Ch | Changed background color |
-| 1FB94h | 2590h | Changed background color |
+
+1. Original character hexadecimal number\.
+2. Replacement character hexadecimal number\.
+3. Number of parts of background color\.
+4. Number of parts of foreground color\.
+5. Modified color type:
+   * **0** \- Background\.
+   * **1** \- Foreground\.
+
+![](Readme/1_09.png "")
 
 The **WinPaletteR**, **WinPaletteG** and **WinPaletteB** defines the palette, which will be used to display 16 colors in window\. You can define arbitraty colors\. Each of the parameters must consist of 32 hexadecimal digits\. Each 2 digits defines value for one channer of single color\. Below, there are some examples\.
 
@@ -688,6 +750,18 @@ You can cipher some text fragment using the first password and the another text 
 
 At the time, if you load file using the first password, the first information will be shown as plain text and the second information will be unreadable\. If you open the file using the second password, the first information will be unreadable and the second information will be shown as plain text\.
 
+There is sample file read without password:
+
+![](Readme/1_11.png "")
+
+The same file read with password "QwE34RtY":
+
+![](Readme/1_12.png "")
+
+The same file read with password "z1X23C4v":
+
+![](Readme/1_13.png "")
+
 # Bitmap fonts
 
 The **TextPaint** application supports the bitmap fonts in windows mode\. Such font is saved as bitmap file, which is provided as **WinFontName** parameter in **Config\.txt** file\. Using bitmap fonts instead of system font or console mode, has following advantages:
@@ -737,7 +811,7 @@ The example fonts are generated based on three sources, disinguished by font fil
 * **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added **1FB93h** glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
 * **Small** \- [https://opengameart\.org/content/4x4\-px\-bitmap\-font](https://opengameart.org/content/4x4-px-bitmap-font "https://opengameart.org/content/4x4-px-bitmap-font") \- Small font, which is manually extended with many semigraphical glyphs and can be used to view large ASCII/ANSI arts\. The readibility of letters and digits is poor due to small character size\.
 * **Amiga** \- [https://github\.com/rewtnull/amigafonts](https://github.com/rewtnull/amigafonts "https://github.com/rewtnull/amigafonts") \- Fonts suitable for some ASCII\-art or ANSI\-art files, which was created on Amiga computers\.
-* **VT** \- [https://www\.masswerk\.at/nowgobang/2019/dec\-crt\-typography](https://www.masswerk.at/nowgobang/2019/dec-crt-typography "https://www.masswerk.at/nowgobang/2019/dec-crt-typography") \- The font, which is used in real DEC VT220 terminal, extended with some semigraphic characters\.
+* **VT** \- [https://www\.masswerk\.at/nowgobang/2019/dec\-crt\-typography](https://www.masswerk.at/nowgobang/2019/dec-crt-typography "https://www.masswerk.at/nowgobang/2019/dec-crt-typography") \- The font, which is used in real DEC VT220 terminal, extended with some semigraphical glyphs\.
 
 # Other supplied files
 
@@ -750,6 +824,7 @@ TextPaint can use custom 1\-byte encoding\. In the Encodings subfolder, there ar
 
 * **ASCII\.txt** \- The base ASCII\-compatible encoding, where the character number equals to byte balue\. You can create copy of the file and use it to create own encoding\. The encoding is the same as ISO\-8859\-1\.
 * **DOS437\.txt** \- The slightly modified standard DOS code page 437\. The modification are changing few characters to match to **Dos** font\. The ambiguous characters are listed an the end of the file \(lines without **=** sign are ignored\)\. The file or standard 437 code page should be used to open most old ANSI and ASCII files\.
+* **VT220\.txt** \- Encoding very similar to ASCII \(only few characters changed\), intended to view original VT100 files from [http://artscene\.textfiles\.com/vt100/](http://artscene.textfiles.com/vt100/ "http://artscene.textfiles.com/vt100/"), which uses 8\-bit characters supported on VT220 terminal and successors\.
 
 There are another 2 encodings, which are designed for converting BIN or XBIN file to ANSI file\. The only difference are in assignment to values from **00h** to **1Fh**:
 
@@ -780,6 +855,16 @@ There are samples for demonstration and test purposes in **WorkMode=0**\. Files 
   * **CipherEnd=005D**
 * **Math\.txt** \- Demonstrates the Unicode alphabets used in mathemating notation\.
 * **Unscii\.txt** \- Demonstration art for Unscii font\. There is corrected art based on [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/")\.
+* **FontSize\.ans** \- Various font sizes\.
+* **ColorWheel\.ans** \- Demonstration of all 16 colors, uses Unicode characters\.
+* **ColorBlend\.ans** \- Color blending demonstration\.
+
+There are also samples, which are not created with **TextPaint**, but can be loaded into **TextPaint** or other terminal emulator:
+
+
+* **Colors16\.ans** \- Two ways to use all 16 standard colors\. If bold and blink is not ignored, **TextPaint** shows the same result in both ways\.
+* **Colors256\.ans** \- The 256\-color palette, **TextPaint** can read 256\-color codes, but converts such colors into standard 16 colors\.
+* **TextFormat\.ans** \- Test of all VT100 text format flags \(bold, blink, negative, underline\)\. **TextPaint** ignores underline flag, but the file can be used for test other terminals\.
 
 
 

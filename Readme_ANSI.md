@@ -12,7 +12,7 @@ The **WorkMode=2** is usable for displaying simple animations by progressive and
 
 ## Telnet client
 
-TextPaint can act as Telnet client in **WorkMode=3**\. it is usable for test various cases with existing Telnet services\. It is recommended to run Telnet server and TextPaint on the same machine, because data is sent as plain text and the Telnet protocol is obsolete\. Because TextPaint is not intented to be replacement of other terminal emulators, the TextPaint does not support and will not support other protocols such as SSH\. The true telnet data can be achievet using network sniffer\. Because some network sniffers does not work on localhost connection, you can use virtual machine or other computer in the same network to test data exchange with reading real transfered data\.
+TextPaint can act as Telnet or SSH client in **WorkMode=3**\. it is usable for test various cases with existing Telnet services\. It is recommended to run Telnet server and TextPaint on the same machine, because data is sent as plain text and the Telnet protocol is obsolete\. Because TextPaint is not intented to be replacement of other terminal emulators, the TextPaint does not support and will not support other protocols such as SSH\. The true telnet data can be achievet using network sniffer\. Because some network sniffers does not work on localhost connection, you can use virtual machine or other computer in the same network to test data exchange with reading real transfered data\.
 
 # Additional settings
 
@@ -36,17 +36,17 @@ The following parameters are especially related to creating or interpreting ANSI
   * **0** \- Process as LF character only \(recommended\)\.
   * **1** \- Process as CRLF character sequence \(recommended with **ANSIReadCR=2**\)\.
   * **2** \- Ommic LF character\.
-* **ANSIWidth** \- Width of ANSI virtual screen \(not to be confused with **WinW** parameter\)\. If not set, the default is **80**\.
-* **ANSIHeight** \- Height of ANSI virtual screen \(not to be confused with **WinH** parameter\)\. If not set, the default is **24** \(when **ANSIDOS=0**\) or **25** \(when **ANSIDOS=1**\)\.
+* **ANSIWidth** \- Width of ANSI virtual screen \(not to be confused with **WinW** parameter\) for **WorkMode=0** and **WorkMode=4**\. If not set, the default is **80**\.
+* **ANSIHeight** \- Height of ANSI virtual screen \(not to be confused with **WinH** parameter\) for **WorkMode=0** and **WorkMode=4**\. If not set, the default is **24** \(when **ANSIDOS=0**\) or **25** \(when **ANSIDOS=1**\)\.
 * **ANSIBufferAbove** \- Use extending buffer above the screen, affects in **WorkMode=0** and **WorkMode=4**\.
 * **ANSIBufferBelow** \- Use extending buffer below the screen, affects in **WorkMode=0** and **WorkMode=4**\.
-* **ANSIDOS** \- Use DOS behavior instead of standard VT100/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
+* **ANSIDOS** \- Use DOS behavior instead of standard VTxxx/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
 * **ANSIIgnoreBlink** \- Ignore blink attribute while interpreting ANSI data\. Some ANSI files was created assuming that terminal displays blinking text as steady text on bright background\. Some other ANSI files was created assuming terminal displays text as blinking and this attribute should be ignored while TextPaint does not support other attributes than colors of background and text\.
 * **ANSIIgnoreBold** \- Ignore bold attribute while interpreting ANSI data\.
 * **ANSIIgnoreConcealed** \- Ignore concealed \(hidden, invisible\) attribute while interpreting ANSI data\.
 * **ANSIReverseMode** \- Mode for reverse color:
   * **0** \- Before bold and blink \- compatible with DOS, usable in most cases\.
-  * **1** \- After bold and blink \- with **ANSIIgnoreBlink=1** is more close to original VT100 terminal\.
+  * **1** \- After bold and blink \- with **ANSIIgnoreBlink=1** is more close to original VTxxx terminal\.
 * **ANSIPrintBackspace** \- Print backspace character \(while **ANSIDOS=1**\) or ignore backspace character \(while **ANSIDOS=0**\) instead of moving cursor backward\.
 * **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
   * **0** \- Write file as plain text, ommiting colors\.
@@ -63,9 +63,7 @@ The following parameters are especially related to creating or interpreting ANSI
   * **3** \- Move text by quarter of height\.
   * **4** \- Move text by eighth of height\.
 * **ANSIScrollChars** \- Number of characters, which smooth scroll durates\. Use 0 to turn off smooth scroll\.
-* **ANSIScrollBuffer** \- Buffer arriving characters while scrolling:
-  * **0** \- Smooth scrolling pauses character loading, scrolling extens text display time by scrolling time\.
-  * **1** \- Smooth scrolling does not pause character loading, the buffered characters will be processed instantly after scrolling end\.
+* **ANSIScrollBuffer** \- Buffer length in characters, for buffering arriving characters while scrolling\. Use this settings to achieve more smooth scrolling\. Set **0** for disable this buffer\.
 
 ## File and server settings
 
@@ -84,7 +82,23 @@ The parameters affects only in **WorkMode=2** while connecting or working as Tel
 
 
 * **TerminalEncoding** \- Character encoding used to aquire characters from Telnet service\.
+* **TerminalConnection** \- Type of connection \(case insensitive\):
+  * **Loopback** \- Loopback without connection\. The provided address will be ignored\. This connection can be used for terminal test\.
+  * **Telnet** \- Telnet protocol\.
+  * **SSH** \- SSH protocol with authentication using login and password\.
+  * **ApplicationX** \- Application with standard stream redirection \(experimental\), the X indicates flags\. Input the application file name with parameters in place of address\. The application must use standard I/O streams to work\. There are following possible variants:
+    * Application0 \- Without byte replacing\.
+    * Application1 \- Every **0D** byte will be replaced with **0A** byte\. The affects the **Enter** key working\.
+    * Application2 \- Every **7F** byte will be replaced with **08** byte\. The affects the **Backspace** key working\.
+    * Application3 \- Both **Enter** and **Backspace** replace\.
 * **TerminalName** \- Terminal name sent to server, when server asks for client terminal name\. In some cases service can require certain terminal name or service behavior can vary depending on provided terminal name\.
+* **TerminalType** \- Terminal type simulated in reports depending on terminal type\. This setting does not matter the terminal emulation and ANSI processing, but may affect working with some servers, which requests information about terminal type\. There are following possible values:
+  * **0** \- VT100\.
+  * **1** \- VT102 \(default\)\.
+  * **2** \- VT220\.
+  * **3** \- VT320\.
+  * **4** \- VT420\.
+  * **5** \- VT520\.
 * **TerminalFile** \- If not blank, there is the file, to which the terminal display will be dumped with time markers\. This file can be played directly using **WorkMode=1** or rendered using **WorkMode=4**\.
 * **TerminalTimeResolution** \- The number of milliseconds between two display cycles\. Decreasing this value induces the more fluenty terminal display, but causes more CPU usage during working\.
 * **TerminalStep** \- The maximum number of processing steps within single display cycle\. The **0** value means unlimited number\. This parameter can be used to simulate low receiving transfer speed or for smooth scroll simulation\.
@@ -97,7 +111,8 @@ Older ANSI files uses features of DOS terminal, which works slightly differently
 | Feature | ANSIDOS=0 | ANSIDOS=1 |
 | --- | --- | --- |
 | Text wrapping\. | After writing character at the last column, cursor remains at the same line\. The cursor jumps into beginning of next line only after writing one more character and this character will be written at the first column\. | After writing character at the last column, cursor immediately jumps into beginning of next line\. |
-| Characters from **00h** to **1Fh**, excluding from **08h** to **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
+| Characters from **00h** to **1Fh**, excluding from **07h** to **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
+| Character **07h** \- bell | Emit the "bell" sound\. | Write character **2022h**\. |
 | Character **08h** \- backspace | Move cursor left one column\. | Write character **25D8h**\. |
 | Character **09h** \- horizontal tab | Move cursor right to the nearest multiply of 6 column\. | Write character **25CBh**\. |
 | Character **0Bh** \- vertical tab | Move cursor down one line\. | Write character **2642h**\. |
@@ -197,21 +212,37 @@ If you press the **\`** or **~** key, there will be displayed the information in
 
 Every press **Tab** key forces screen to repaint, so if screens displays glitches, press the **Tab** or **\`** or **~** key to repaint\.
 
-# Telnet client
+![](Readme/2_01.png "")
 
-TextPaint provides simple Telnet client, whis can be used to test ANSI interpreter compatibility with VT100/ANSI terminal\. Telnet client is available in **WorkMode=2** and you have to provide addres in place of file name in command line\. For example, you can provide **localhost:23** if you have working local telnet server\.
+Status bar at the top, covers the first line\.
+
+![](Readme/2_02.png "")
+
+Status bar at the bottom, covers the last line\.
+
+![](Readme/2_03.png "")
+
+# Telnet and SSH client
+
+TextPaint provides simple Telnet and SSH client, whis can be used to test ANSI interpreter compatibility with VTxxx/ANSI terminal\. Telnet client is available in **WorkMode=2** and you have to provide addres in place of file name in command line\. For example, you can provide **localhost:23** if you have working local telnet server\.
 
 In most cases, this is recommended to set **ANSIWidth** to **80** and **ANSIHeight** to **24**\. If you not specify, the default width and height will be used\.
 
-After running **TextPaint**, choose and press key, which will be used as escape key\. The escape key means the key, which provides access to functions instead of sending keystroke to server\. The escape key can be changed during the session\. After pressing the key, the session will begin\.
+After running **TextPaint**, choose and press key, which will be used as escape key\. The escape key means the key, which provides access to functions instead of sending keystroke to server\.
+
+![](Readme/2_04.png "")
+
+The escape key can be changed during the session\. After pressing the key, the session will begin and you can use the server service\.
+
+![](Readme/2_05.png "")
 
 During the session, if you press the selected escape key, the information window will popup and you will can use special keys:
 
 
-* **Esc** \- Return to terminal \(close information\)
-* **Enter** \- Change escape key
-* **Tab** \- Move information window
-* **Backspace** \- Quit from application
+* **Esc** \- Return to terminal \(close information\)\.
+* **Enter** \- Change escape key\.
+* **Tab** \- Move information window\.
+* **Backspace** \- Quit from application\.
 * **Number 1 to 9** \- Send **F1** to **F9** keys, useful, when application has problem with capturing function key\.
 * **Number 0** \- Send **F10** key\.
 * **Space** \- Send other conrol codes instead of function keys by pressing numbers\. If enabled, the numbers sends as following:
@@ -223,20 +254,28 @@ During the session, if you press the selected escape key, the information window
   * **Number 6** \- US \(1Fh\)\.
 * **\[** \- Send **F11** key\.
 * **\]** \- Send **F12** key\.
-* **Letter** \- Send letter with Ctrl modifier, like Ctrl\+X
-* / \- Connect od disconnect, depending on current state
+* **Letter** \- Send letter with Ctrl modifier, like Ctrl\+X\.
+* / \- Connect od disconnect, depending on current state\.
 * **\\** \- Send screen size to server, some servers requires such information\.
 * **\+** or **=** or **\-** or **\*** \- Change codes for function keys, arrows, and position keys\.
+* **\`** or **~** \- Enable or disablo local echo\. While enabled, all printable characters, **Enter** and **Backspace** key will be send both to server and to terminal\.
+
+![](Readme/2_06.png "")
 
 ## Telnet client limitations
 
-**TextPaint** has some limitations compared to other Telnet/SSH software:
+**TextPaint** has some limitations compared to other Telnet/SSH software due to architecture and appled approaches:
 
 
-* Screen size change on server demand \(like switching between 80 and 132 columns mode\) is not possible\.
-* If server demand some information via escape sequence, the client will not answer \(this feature is necessary very rarely\)\.
-* Limited compatibility with VT100/VT102/ANSI terminals, the compatibility is sufficient in most cases\.
-* Telnet is the only communication protocol supported\. It is recommended to use server and TextPaint on the same machine \(localhost connection\) or within your LAN\.
+* Screen size change on server demand \(like switch between 80 and 132 columns\) is not possible\.
+* If server demand some information via escape sequence, the client responds for some requests only \(this feature is necessary very rarely\)\.
+* Limited compatibility with VTxxx/ANSI terminals, the compatibility is sufficient in most cases\.
+* SSH relys on the Renci SSH\.NET library\. This library does not support terminal resize and sending screen size causes shell restart\.
+* TextPaint recognizes XTERM 256 colors, but these colors are converted to standard 16 colors\.
+* The bold, blink and underline will not be show explicity and will be displayed as following by default:
+  * **Bold** \- brighter foreground color, usable with some ANSI files\.
+  * **Blink** \- brighter background color, usable with some ANSI files\.
+  * **Underline** \- not displayed\.
 
 ## Key codes
 
@@ -282,19 +321,19 @@ During session, you can change the key assignment\. Press the escape key to show
 You can run Telnet client with session recording to Session\.ans using 100ms resolution \(10 frames per second\) with unlimited data per step:
 
 ```
-TextPaint.exe localhost WorkMode=2 TerminalStep=0 TerminalTimeResolution=100 TerminalFile=Session.ans
+TextPaint localhost WorkMode=2 TerminalStep=0 TerminalTimeResolution=100 TerminalFile=Session.ans
 ```
 
 After recording, you can play the file using the same time step and use high number of process step per frame\. The displaying tempo should be similar to original session:
 
 ```
-TextPaint.exe Session.ans WorkMode=1 FileDelayTime=100 FileDelayStep=10000 FileDelayFrame=10000
+TextPaint Session.ans WorkMode=1 FileDelayTime=100 FileDelayStep=10000 FileDelayFrame=10000
 ```
 
 You can render this session to movie \(picture sequence\), to achieve original session tempo, you have to play this 10 frames per second:
 
 ```
-TextPaint.exe Session.ans WorkMode=4 ANSIRead=1 RenderFile=MoviePath RenderStep=10000 RenderFrame=10000
+TextPaint Session.ans WorkMode=4 ANSIRead=1 RenderFile=MoviePath RenderStep=10000 RenderFrame=10000
 ```
 
 # Escape sequences
@@ -335,6 +374,12 @@ The sequences consists of constant number of character in exception by **1Bh \]*
 | 1Bh M \- **ANSIDOS=1** |   | Enter to music state, ignore following characters\. |
 | 1Bh E | NEL | Move cursor down by 1 step, scroll screen if needed and move cursor to first column\. |
 | 1Bh H | HTS | Add current column to tabulator list |
+| 1Bh P | DCS | Switch into DCS state\. Next arriving character will be buffered without printing\. |
+| 1Bh \\ | ST | If within DCS state: Exit from DCS state and request DCS report\. Normally, ignore\. |
+| 1Bh = | DECKPAM | Ignore\. |
+| 1Bh > | DECKPNM | Ignore\. |
+| 1Bh N | SS2 | Ignore\. |
+| 1Bh O | SS3 | Ignore\. |
 | 08h | BS | Move cursor one step left\. |
 | 09h \- **ANSIDOS=0** | TAB | Move cursor right to nearest multiply of 8 or defined tab stop\. |
 | 0Ah | LF | Move cursor one line down, scroll screen if needed\. |
@@ -352,7 +397,7 @@ When **ANSIDOS=0**, every character between **01h** to **1Fh** will be ignored i
 
 ## The standard sequences
 
-Every standard sequence begins with **1Bh** followed by \[ character and ends with any letter or the character **@** or **\`**:
+Every standard sequence begins with **1Bh** followed by \[ character and ends with any letter or the character **@** or **\`** or **\{**:
 
 The standard sequences with **?** charater and without parameters:
 
@@ -424,15 +469,29 @@ The standard sequences without **?** character and may contains parameters\. Whe
 
 Some sequences does not changing the terminal working, but received from server in **WorkMode=2**, induces response to server:
 
-| Request | XTERM name | Response |
+| Request | XTERM name | Response \(for VT102\) |
 | --- | --- | --- |
-| 1Bh \[ 0 c | Primary DA | 1Bh \[ ? 6 c |
+| 1Bh \[ 0 c | Primary DA \* | 1Bh \[ ? 6 c |
 | 1Bh \[ 5 n | DSR | 1Bh \[ 0 n |
 | 1Bh \[ 6 n | DSR / CPR | 1Bh \[ YY ; XX R where YY and XX are current cursor position |
-| 1Bh \[ > 0 c | Secondary DA | 1Bh \[ > 0 ; 1 0 ; 0 c |
+| 1Bh \[ > 0 c | Secondary DA \* | 1Bh \[ > 0 ; 1 0 ; 0 c |
 | 1Bh \[ = 0 c | Tertiary DA | 1Bh P \! &#124; 0 0 0 0 0 0 0 0 1Bh \\ |
 | 1Bh \[ 0 x | DECREQTPARM | 1Bh \[ 2 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
 | 1Bh \[ 1 x | DECREQTPARM | 1Bh \[ 3 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
+| 1Bh $q"p1 1Bh \\ | DCS / DECSCL \* | 1Bh P1$r61;1"p 1Bh \\ |
+
+## TerminalType\-affected request\-response sequences
+
+There are three sequences, which has response depending on **TerminalType** parameter:
+
+| TerminalType | Primary DA | Secondary DA | DCS / DECSCL |
+| --- | --- | --- | --- |
+| 0 \- VT100 | 1Bh \[ ? 1 ; 2 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P1$r61;1"p 1Bh \\ |
+| 1 \- VT102 | 1Bh \[ ? 6 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P1$r61;1"p 1Bh \\ |
+| 2 \- VT220 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 1 ; 1 0 ; 0 c | 1Bh P1$r62;1"p 1Bh \\ |
+| 3 \- VT320 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 2 4 ; 1 0 ; 0 c | 1Bh P1$r63;1"p 1Bh \\ |
+| 4 \- VT420 | 1Bh \[ ? 6 4 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 4 1 ; 1 0 ; 0 c | 1Bh P1$r64;1"p 1Bh \\ |
+| 5 \- VT520 | 1Bh \[ ? 6 5 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 6 4 ; 1 0 ; 0 c | 1Bh P1$r65;1"p 1Bh \\ |
 
 ## The same\-meaning escape sequences
 
@@ -471,7 +530,7 @@ The font size dimension \(width or height\) defines simultaneiusly character siz
 * **8** \- size 4, third part\.
 * **9** \- size 4, fourth part\.
 
-The maximum supported font size is 16, so the maximum possible number is 135, which means font size 16 and displayed 16th part\. Currently, **TextPaint** can read and write file with various font sizes, but adjusting font size in editor is not implemented yet\.
+The maximum supported font size is 32, so the maximum possible number is 527, which means font size 32 and displayed 32th part\. Currently, **TextPaint** can read and write file with various font sizes, but adjusting font size in editor is not implemented yet\.
 
 ## Text attributes 
 

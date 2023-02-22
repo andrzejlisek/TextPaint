@@ -13,6 +13,12 @@ The **WorkMode=3** has three pusposes:
 * Display characters of any 8\-bit encoding\.
 * Keyboard input test through displaying key name and character\.
 
+The simplest command for run **TextPaint** for keyboard test is following:
+
+```
+TextPaint dummy WorkMode=3
+```
+
 Afer running **TextPaint**, you have press various keys\. After every pressing key, there will be displayed one item of encoding list and name/character of pressed key\. If you press the same key 5 times, application will be quit\.
 
 # Encoding list
@@ -24,13 +30,19 @@ In encoding display context, there are three key sets on the keyboard\. pressing
 * **Set 2** \- **Backspace**, **Enter**, **Space**\.
 * **Set 3** \- Any key, which not belongs to **Set 1** or **Set 2**\.
 
-The \.NET Framework supports about 100 character encodings, the number varies depending on operating system and \.NET/Mono version\. If you press any key from **Set 3** first fime, there will be displayed encodigs, which are set as parameters\. If the provided encoding id custom 8\-bit encoding, the **FILE** word will be displayed\. After parameter, the word **Items** and actual number of supported encodings will be displayed\. Then, if you press keys from **Set 3** one more times, there will be displayed items\. After last item, there will be displayed blank line and the encoding list will be repeated\.
+The \.NET Framework supports about 100 character encodings, the number varies depending on operating system and \.NET/Mono version\. If you press any key from **Set 3** first fime, there will be displayed encodigs, which are set as parameters\. If the provided custom 8\-bit encoding, the **FILE** word will be displayed\. After parameter, the word **Items** and actual number of supported encodings will be displayed\. Then, if you press keys from **Set 3** one more times, there will be displayed items\. After last item, there will be displayed blank line and the encoding list will be repeated\.
+
+![](Readme/3_01.png "")
 
 Each encoding list item consists of codepage number followed by colon and optional encoding names separated by comma\. Every encoding name does not contain spaces\. In **Config\.txt** file or command line parameter you can use either code page number or encoding name\.
 
 If you press any key from **Set 1**, the encoding list will be iterated backward, also will be looped\.
 
-If last dispayed encoding is 8\-bit encoding, you can display character set by pressing any key from **Set 2**\. If last displayed encoding is not 8\-bit encoding or last displayed information is not encoding, pressing any key from **Set 2**, you will get the same result as pressing any key from **Set 3**, so you will be iterated to next item\.
+![](Readme/3_02.png "")
+
+If last displayed encoding is 8\-bit encoding, you can display character set by pressing any key from **Set 2**\. If last displayed encoding is not 8\-bit encoding or last displayed information is not encoding, pressing any key from **Set 2**, you will get the same result as pressing any key from **Set 3**, so you will be iterated to next item\.
+
+![](Readme/3_03.png "")
 
 While you display the character set, the action of keys will be following:
 
@@ -39,7 +51,11 @@ While you display the character set, the action of keys will be following:
 * **Set 2** \- Iterate ofer 16 items \(skip 15 items\)\.
 * **Set 3** \- Iterate over 1 item\.
 
+![](Readme/3_04.png "")
+
 The character set and character list will are displayed infinitely until you press any key from **Set 1**\. In this state, if you press the same key five timer, you will quit from application\.
+
+![](Readme/3_05.png "")
 
 # Keyboard input test
 
@@ -56,7 +72,7 @@ The key names and character numbers are \.NET standard names and can be used in 
 
 # Key name replacement
 
-There is the table, which describes key name changes to uniformity key event handling regardless **WinUse** parameter\.
+There is the table, which describes key name changes to uniformity key event handling regardless the **WinUse** parameter\.
 
 | Original name | Replacement name |
 | --- | --- |
