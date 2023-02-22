@@ -1,0 +1,23 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:TextPaint.ViewModels"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+        x:Class="TextPaint.Views.MainWindow"
+        Icon="/Assets/avalonia-logo.ico"
+        Title="TextPaint" Background="Black">
+
+    <Design.DataContext>
+        <!-- This only sets the DataContext for the previewer in an IDE,
+             to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
+        <vm:MainWindowViewModel/>
+    </Design.DataContext>
+
+    <Canvas Name="ConsoleCanvas_">
+        <TextBox Name="ConsoleKeyCapture_" Height="50" Width="50" Canvas.Left="-100" Canvas.Top="-100"/>
+        <Image Name="ConsoleScreen_" Canvas.Left="0" Canvas.Top="0"/>
+        <Rectangle Name="ConsoleCursor_" Fill="Black" Height="1" Width="1" Canvas.Left="-50" Canvas.Top="-50"/>
+    </Canvas>
+
+</Window>

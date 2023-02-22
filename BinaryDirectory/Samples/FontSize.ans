@@ -1,0 +1,66 @@
+﻿  ┌──────┬──────────┬──────────────┬──────────────────┬──────────────────────┐
+  │ abcd │ [0;1;0Vaabbccdd[0;0;0V │ [0;3;0Vaaabbbcccddd[0;0;0V │ [0;6;0Vaaaabbbbccccdddd[0;0;0V │ [0;10;0Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ efgh │ [0;1;0Veeffgghh[0;0;0V │ [0;3;0Veeefffggghhh[0;0;0V │ [0;6;0Veeeeffffgggghhhh[0;0;0V │ [0;10;0Veeeeefffffggggghhhhh[0;0;0V │
+  │ ijkl │ [0;1;0Viijjkkll[0;0;0V │ [0;3;0Viiijjjkkklll[0;0;0V │ [0;6;0Viiiijjjjkkkkllll[0;0;0V │ [0;10;0Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ mnop │ [0;1;0Vmmnnoopp[0;0;0V │ [0;3;0Vmmmnnnoooppp[0;0;0V │ [0;6;0Vmmmmnnnnoooopppp[0;0;0V │ [0;10;0Vmmmmmnnnnnoooooppppp[0;0;0V │
+  ├──────┼──────────┼──────────────┼──────────────────┼──────────────────────┤
+  │ [0;0;1Vabcd[0;0;0V │ [0;1;1Vaabbccdd[0;0;0V │ [0;3;1Vaaabbbcccddd[0;0;0V │ [0;6;1Vaaaabbbbccccdddd[0;0;0V │ [0;10;1Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;2Vabcd[0;0;0V │ [0;1;2Vaabbccdd[0;0;0V │ [0;3;2Vaaabbbcccddd[0;0;0V │ [0;6;2Vaaaabbbbccccdddd[0;0;0V │ [0;10;2Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;1Vefgh[0;0;0V │ [0;1;1Veeffgghh[0;0;0V │ [0;3;1Veeefffggghhh[0;0;0V │ [0;6;1Veeeeffffgggghhhh[0;0;0V │ [0;10;1Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;2Vefgh[0;0;0V │ [0;1;2Veeffgghh[0;0;0V │ [0;3;2Veeefffggghhh[0;0;0V │ [0;6;2Veeeeffffgggghhhh[0;0;0V │ [0;10;2Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;1Vijkl[0;0;0V │ [0;1;1Viijjkkll[0;0;0V │ [0;3;1Viiijjjkkklll[0;0;0V │ [0;6;1Viiiijjjjkkkkllll[0;0;0V │ [0;10;1Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;2Vijkl[0;0;0V │ [0;1;2Viijjkkll[0;0;0V │ [0;3;2Viiijjjkkklll[0;0;0V │ [0;6;2Viiiijjjjkkkkllll[0;0;0V │ [0;10;2Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;1Vmnop[0;0;0V │ [0;1;1Vmmnnoopp[0;0;0V │ [0;3;1Vmmmnnnoooppp[0;0;0V │ [0;6;1Vmmmmnnnnoooopppp[0;0;0V │ [0;10;1Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;2Vmnop[0;0;0V │ [0;1;2Vmmnnoopp[0;0;0V │ [0;3;2Vmmmnnnoooppp[0;0;0V │ [0;6;2Vmmmmnnnnoooopppp[0;0;0V │ [0;10;2Vmmmmmnnnnnoooooppppp[0;0;0V │
+  ├──────┼──────────┼──────────────┼──────────────────┼──────────────────────┤
+  │ [0;0;3Vabcd[0;0;0V │ [0;1;3Vaabbccdd[0;0;0V │ [0;3;3Vaaabbbcccddd[0;0;0V │ [0;6;3Vaaaabbbbccccdddd[0;0;0V │ [0;10;3Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;4Vabcd[0;0;0V │ [0;1;4Vaabbccdd[0;0;0V │ [0;3;4Vaaabbbcccddd[0;0;0V │ [0;6;4Vaaaabbbbccccdddd[0;0;0V │ [0;10;4Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;5Vabcd[0;0;0V │ [0;1;5Vaabbccdd[0;0;0V │ [0;3;5Vaaabbbcccddd[0;0;0V │ [0;6;5Vaaaabbbbccccdddd[0;0;0V │ [0;10;5Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;3Vefgh[0;0;0V │ [0;1;3Veeffgghh[0;0;0V │ [0;3;3Veeefffggghhh[0;0;0V │ [0;6;3Veeeeffffgggghhhh[0;0;0V │ [0;10;3Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;4Vefgh[0;0;0V │ [0;1;4Veeffgghh[0;0;0V │ [0;3;4Veeefffggghhh[0;0;0V │ [0;6;4Veeeeffffgggghhhh[0;0;0V │ [0;10;4Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;5Vefgh[0;0;0V │ [0;1;5Veeffgghh[0;0;0V │ [0;3;5Veeefffggghhh[0;0;0V │ [0;6;5Veeeeffffgggghhhh[0;0;0V │ [0;10;5Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;3Vijkl[0;0;0V │ [0;1;3Viijjkkll[0;0;0V │ [0;3;3Viiijjjkkklll[0;0;0V │ [0;6;3Viiiijjjjkkkkllll[0;0;0V │ [0;10;3Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;4Vijkl[0;0;0V │ [0;1;4Viijjkkll[0;0;0V │ [0;3;4Viiijjjkkklll[0;0;0V │ [0;6;4Viiiijjjjkkkkllll[0;0;0V │ [0;10;4Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;5Vijkl[0;0;0V │ [0;1;5Viijjkkll[0;0;0V │ [0;3;5Viiijjjkkklll[0;0;0V │ [0;6;5Viiiijjjjkkkkllll[0;0;0V │ [0;10;5Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;3Vmnop[0;0;0V │ [0;1;3Vmmnnoopp[0;0;0V │ [0;3;3Vmmmnnnoooppp[0;0;0V │ [0;6;3Vmmmmnnnnoooopppp[0;0;0V │ [0;10;3Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;4Vmnop[0;0;0V │ [0;1;4Vmmnnoopp[0;0;0V │ [0;3;4Vmmmnnnoooppp[0;0;0V │ [0;6;4Vmmmmnnnnoooopppp[0;0;0V │ [0;10;4Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;5Vmnop[0;0;0V │ [0;1;5Vmmnnoopp[0;0;0V │ [0;3;5Vmmmnnnoooppp[0;0;0V │ [0;6;5Vmmmmnnnnoooopppp[0;0;0V │ [0;10;5Vmmmmmnnnnnoooooppppp[0;0;0V │
+  ├──────┼──────────┼──────────────┼──────────────────┼──────────────────────┤
+  │ [0;0;6Vabcd[0;0;0V │ [0;1;6Vaabbccdd[0;0;0V │ [0;3;6Vaaabbbcccddd[0;0;0V │ [0;6;6Vaaaabbbbccccdddd[0;0;0V │ [0;10;6Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;7Vabcd[0;0;0V │ [0;1;7Vaabbccdd[0;0;0V │ [0;3;7Vaaabbbcccddd[0;0;0V │ [0;6;7Vaaaabbbbccccdddd[0;0;0V │ [0;10;7Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;8Vabcd[0;0;0V │ [0;1;8Vaabbccdd[0;0;0V │ [0;3;8Vaaabbbcccddd[0;0;0V │ [0;6;8Vaaaabbbbccccdddd[0;0;0V │ [0;10;8Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;9Vabcd[0;0;0V │ [0;1;9Vaabbccdd[0;0;0V │ [0;3;9Vaaabbbcccddd[0;0;0V │ [0;6;9Vaaaabbbbccccdddd[0;0;0V │ [0;10;9Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;6Vefgh[0;0;0V │ [0;1;6Veeffgghh[0;0;0V │ [0;3;6Veeefffggghhh[0;0;0V │ [0;6;6Veeeeffffgggghhhh[0;0;0V │ [0;10;6Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;7Vefgh[0;0;0V │ [0;1;7Veeffgghh[0;0;0V │ [0;3;7Veeefffggghhh[0;0;0V │ [0;6;7Veeeeffffgggghhhh[0;0;0V │ [0;10;7Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;8Vefgh[0;0;0V │ [0;1;8Veeffgghh[0;0;0V │ [0;3;8Veeefffggghhh[0;0;0V │ [0;6;8Veeeeffffgggghhhh[0;0;0V │ [0;10;8Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;9Vefgh[0;0;0V │ [0;1;9Veeffgghh[0;0;0V │ [0;3;9Veeefffggghhh[0;0;0V │ [0;6;9Veeeeffffgggghhhh[0;0;0V │ [0;10;9Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;6Vijkl[0;0;0V │ [0;1;6Viijjkkll[0;0;0V │ [0;3;6Viiijjjkkklll[0;0;0V │ [0;6;6Viiiijjjjkkkkllll[0;0;0V │ [0;10;6Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;7Vijkl[0;0;0V │ [0;1;7Viijjkkll[0;0;0V │ [0;3;7Viiijjjkkklll[0;0;0V │ [0;6;7Viiiijjjjkkkkllll[0;0;0V │ [0;10;7Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;8Vijkl[0;0;0V │ [0;1;8Viijjkkll[0;0;0V │ [0;3;8Viiijjjkkklll[0;0;0V │ [0;6;8Viiiijjjjkkkkllll[0;0;0V │ [0;10;8Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;9Vijkl[0;0;0V │ [0;1;9Viijjkkll[0;0;0V │ [0;3;9Viiijjjkkklll[0;0;0V │ [0;6;9Viiiijjjjkkkkllll[0;0;0V │ [0;10;9Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;6Vmnop[0;0;0V │ [0;1;6Vmmnnoopp[0;0;0V │ [0;3;6Vmmmnnnoooppp[0;0;0V │ [0;6;6Vmmmmnnnnoooopppp[0;0;0V │ [0;10;6Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;7Vmnop[0;0;0V │ [0;1;7Vmmnnoopp[0;0;0V │ [0;3;7Vmmmnnnoooppp[0;0;0V │ [0;6;7Vmmmmnnnnoooopppp[0;0;0V │ [0;10;7Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;8Vmnop[0;0;0V │ [0;1;8Vmmnnoopp[0;0;0V │ [0;3;8Vmmmnnnoooppp[0;0;0V │ [0;6;8Vmmmmnnnnoooopppp[0;0;0V │ [0;10;8Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;9Vmnop[0;0;0V │ [0;1;9Vmmnnoopp[0;0;0V │ [0;3;9Vmmmnnnoooppp[0;0;0V │ [0;6;9Vmmmmnnnnoooopppp[0;0;0V │ [0;10;9Vmmmmmnnnnnoooooppppp[0;0;0V │
+  ├──────┼──────────┼──────────────┼──────────────────┼──────────────────────┤
+  │ [0;0;10Vabcd[0;0;0V │ [0;1;10Vaabbccdd[0;0;0V │ [0;3;10Vaaabbbcccddd[0;0;0V │ [0;6;10Vaaaabbbbccccdddd[0;0;0V │ [0;10;10Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;11Vabcd[0;0;0V │ [0;1;11Vaabbccdd[0;0;0V │ [0;3;11Vaaabbbcccddd[0;0;0V │ [0;6;11Vaaaabbbbccccdddd[0;0;0V │ [0;10;11Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;12Vabcd[0;0;0V │ [0;1;12Vaabbccdd[0;0;0V │ [0;3;12Vaaabbbcccddd[0;0;0V │ [0;6;12Vaaaabbbbccccdddd[0;0;0V │ [0;10;12Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;13Vabcd[0;0;0V │ [0;1;13Vaabbccdd[0;0;0V │ [0;3;13Vaaabbbcccddd[0;0;0V │ [0;6;13Vaaaabbbbccccdddd[0;0;0V │ [0;10;13Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;14Vabcd[0;0;0V │ [0;1;14Vaabbccdd[0;0;0V │ [0;3;14Vaaabbbcccddd[0;0;0V │ [0;6;14Vaaaabbbbccccdddd[0;0;0V │ [0;10;14Vaaaaabbbbbcccccddddd[0;0;0V │
+  │ [0;0;10Vefgh[0;0;0V │ [0;1;10Veeffgghh[0;0;0V │ [0;3;10Veeefffggghhh[0;0;0V │ [0;6;10Veeeeffffgggghhhh[0;0;0V │ [0;10;10Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;11Vefgh[0;0;0V │ [0;1;11Veeffgghh[0;0;0V │ [0;3;11Veeefffggghhh[0;0;0V │ [0;6;11Veeeeffffgggghhhh[0;0;0V │ [0;10;11Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;12Vefgh[0;0;0V │ [0;1;12Veeffgghh[0;0;0V │ [0;3;12Veeefffggghhh[0;0;0V │ [0;6;12Veeeeffffgggghhhh[0;0;0V │ [0;10;12Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;13Vefgh[0;0;0V │ [0;1;13Veeffgghh[0;0;0V │ [0;3;13Veeefffggghhh[0;0;0V │ [0;6;13Veeeeffffgggghhhh[0;0;0V │ [0;10;13Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;14Vefgh[0;0;0V │ [0;1;14Veeffgghh[0;0;0V │ [0;3;14Veeefffggghhh[0;0;0V │ [0;6;14Veeeeffffgggghhhh[0;0;0V │ [0;10;14Veeeeefffffggggghhhhh[0;0;0V │
+  │ [0;0;10Vijkl[0;0;0V │ [0;1;10Viijjkkll[0;0;0V │ [0;3;10Viiijjjkkklll[0;0;0V │ [0;6;10Viiiijjjjkkkkllll[0;0;0V │ [0;10;10Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;11Vijkl[0;0;0V │ [0;1;11Viijjkkll[0;0;0V │ [0;3;11Viiijjjkkklll[0;0;0V │ [0;6;11Viiiijjjjkkkkllll[0;0;0V │ [0;10;11Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;12Vijkl[0;0;0V │ [0;1;12Viijjkkll[0;0;0V │ [0;3;12Viiijjjkkklll[0;0;0V │ [0;6;12Viiiijjjjkkkkllll[0;0;0V │ [0;10;12Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;13Vijkl[0;0;0V │ [0;1;13Viijjkkll[0;0;0V │ [0;3;13Viiijjjkkklll[0;0;0V │ [0;6;13Viiiijjjjkkkkllll[0;0;0V │ [0;10;13Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;14Vijkl[0;0;0V │ [0;1;14Viijjkkll[0;0;0V │ [0;3;14Viiijjjkkklll[0;0;0V │ [0;6;14Viiiijjjjkkkkllll[0;0;0V │ [0;10;14Viiiiijjjjjkkkkklllll[0;0;0V │
+  │ [0;0;10Vmnop[0;0;0V │ [0;1;10Vmmnnoopp[0;0;0V │ [0;3;10Vmmmnnnoooppp[0;0;0V │ [0;6;10Vmmmmnnnnoooopppp[0;0;0V │ [0;10;10Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;11Vmnop[0;0;0V │ [0;1;11Vmmnnoopp[0;0;0V │ [0;3;11Vmmmnnnoooppp[0;0;0V │ [0;6;11Vmmmmnnnnoooopppp[0;0;0V │ [0;10;11Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;12Vmnop[0;0;0V │ [0;1;12Vmmnnoopp[0;0;0V │ [0;3;12Vmmmnnnoooppp[0;0;0V │ [0;6;12Vmmmmnnnnoooopppp[0;0;0V │ [0;10;12Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;13Vmnop[0;0;0V │ [0;1;13Vmmnnoopp[0;0;0V │ [0;3;13Vmmmnnnoooppp[0;0;0V │ [0;6;13Vmmmmnnnnoooopppp[0;0;0V │ [0;10;13Vmmmmmnnnnnoooooppppp[0;0;0V │
+  │ [0;0;14Vmnop[0;0;0V │ [0;1;14Vmmnnoopp[0;0;0V │ [0;3;14Vmmmnnnoooppp[0;0;0V │ [0;6;14Vmmmmnnnnoooopppp[0;0;0V │ [0;10;14Vmmmmmnnnnnoooooppppp[0;0;0V │
+  └──────┴──────────┴──────────────┴──────────────────┴──────────────────────┘

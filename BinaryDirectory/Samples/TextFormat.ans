@@ -1,0 +1,17 @@
+underline negative blink bold
+                              [0m#### vanilla ####[0m
+                          *   [0;1m#### bold ####[0m
+                     *        [0;5m#### blink ####[0m
+                     *    *   [0;5;1m#### bold blink ####[0m
+             *                [0;7m#### negative ####[0m
+             *            *   [0;7;1m#### bold negative ####[0m
+             *       *        [0;7;5m#### blink negative ####[0m
+             *       *    *   [0;7;5;1m#### bold blink negative ####[0m
+    *                         [0;4m#### underline ####[0m
+    *                     *   [0;4;1m#### bold underline ####[0m
+    *                *        [0;4;5m#### underline blink ####[0m
+    *                *    *   [0;4;5;1m#### bold underline blink ####[0m
+    *        *                [0;4;7m#### underline negative ####[0m
+    *        *            *   [0;4;7;1m#### bold underline negative ####[0m
+    *        *       *        [0;4;7;5m#### underline blink negative ####[0m
+    *        *       *    *   [0;4;7;5;1m#### bold underline blink negative ####[0m

@@ -1,0 +1,383 @@
+<html>
+
+<head>
+<meta http-equiv="Content-Type"
+content="text/html; charset=windows-1250">
+<meta name="GENERATOR" content="Microsoft FrontPage Express 2.0">
+<title>Untitled</title>
+</head>
+
+<body>
+
+<h1>Image rendering</h1>
+
+<p><strong>TextPaint</strong> in <strong>WorkMode=4</strong> can
+render text/ANSI file into image or movie. Renderer uses the same
+appearance properties as display when <strong>WinUse=1</strong>
+or <strong>WinUse=2</strong>.</p>
+
+<p>Rendering movie is possible for ANSI files, when used <strong>ANSIRead=1</strong>.
+Some existing ANSI files saves simple animation, which can be
+shown be progressive processing characters slowly.</p>
+
+<p>In this mode, <strong>TextPaint</strong> behavies as command
+line application without user interface. The generated images
+will be in PNG format. While you render movie, actually it will
+be saved PNG image sequence in specified directory. You will have
+to use other software to merge image sequence into single movie
+file.</p>
+
+<h1>Rendering parameters</h1>
+
+<p>The following parameters are used only for rendering. Like
+other parameters, the parameters can be in <strong>Config.txt</strong>
+file or provided in command line:</p>
+
+<ul>
+    <li><strong>RenderFile</strong> - Image file name for
+        rendering single image (<strong>RenderStep=0</strong>) or
+        directory for rendering movie (<strong>RenderStep&gt;0</strong>)</li>
+    <li><strong>RenderStep</strong> - Number of processed
+        character between movie frames. To render single image,
+        use <strong>RenderStep=0</strong>. Rendering movie
+        requires <strong>ANSIRead=1</strong>.</li>
+    <li><strong>RenderOffset</strong> - Offset in character
+        sequence when rendering movie. For example, if <strong>RenderStep=10</strong>
+        and <strong>RenderOffset=4</strong>, the frames will be
+        generated after character no: 4th, 14th, 24th and so on.</li>
+    <li><strong>RenderCursor</strong> - Draw cursor on rendered
+        image. Possible value are <strong>0</strong> or <strong>1</strong>.</li>
+    <li><strong>RenderFrame</strong> - Number of steps per one
+        frame (unit) when you render file containing time
+        markers.</li>
+    <li><strong>RenderType</strong> - Type of rendered file (case
+        insensitive):<ul>
+            <li><strong>PNG</strong> or every other than listed
+                below- Render to PNG picture file(s).</li>
+            <li><strong>TXT</strong> or <strong>TEXT</strong> -
+                Render to text file(s) without saving color and
+                font size.</li>
+            <li><strong>ANS</strong> or <strong>ANSI</strong> -
+                Render to ANSI file(s) containing text with used
+                color and font size.</li>
+            <li><strong>XB</strong> or <strong>XBIN</strong> -
+                Convert XBIN file to ANSI file instead of
+                rendering, extract font and palette if contains.</li>
+            <li><strong>BIN</strong> - Convert raw binary file to
+                ANSI file instead of rendering.</li>
+            <li><strong>CONV</strong> or <strong>CONVERT</strong>
+                - Convert any text file from one encoding to
+                other encoding, without text parsing and
+                analyzing.</li>
+        </ul>
+    </li>
+</ul>
+
+<h1>Graphic parameters</h1>
+
+<p>The following parameters are usable in other work modes, but
+also affects the rendered image appearance:</p>
+
+<ul>
+    <li><strong>WinCellW</strong> - Character cell width in
+        window. If you use the bitmap font, it will be rounded to
+        integer multiply of font glyph width.</li>
+    <li><strong>WinCellH</strong> - Character cell height in
+        window. If you use the bitmap font, it will be rounded to
+        integer multiply of font glyph height.</li>
+    <li><strong>WinFontName</strong> - Font name or bitmap file
+        in window. When the file of given name exists, there will
+        be used bitmap file, otherwise, the value will be used as
+        font name.</li>
+    <li><strong>WinFontSize</strong> - Font size in window. This
+        setting not affects the cell size.</li>
+    <li><strong>WinColorBlending</strong> - Enables color
+        blending for some block characters.</li>
+    <li><strong>WinPaletteR</strong> - The red component of all
+        16 colors.</li>
+    <li><strong>WinPaletteG</strong> - The green component of all
+        16 colors.</li>
+    <li><strong>WinPaletteB</strong> - The blue component of all
+        16 colors.</li>
+    <li><strong>FileReadEncoding</strong> - Encoding used in file
+        reading, in most cases, it should be <strong>FileReadEncoding=utf-8</strong>.</li>
+    <li><strong>FileWriteEncoding</strong> - Encoding used in
+        ANSI file writing while converting XBIN or BIN file to
+        ANSI file.</li>
+    <li><strong>ColorNormal</strong> - Color of default
+        background and foreground in all work modes.</li>
+    <li><strong>ANSIRead</strong> - Use ANSI interpreter instead
+        of plain text text file on file reading.</li>
+    <li><strong>ANSIWidth</strong> - Define width of ANSI virtual
+        screen. If <strong>ANSIWidth=0</strong>, the default
+        screen width will be used.</li>
+    <li><strong>ANSIHeight</strong> - Define height of ANSI
+        virtual screen. If <strong>ANSIHeight=0</strong>, the
+        default screen height will be used.</li>
+</ul>
+
+<p>If <strong>ANSIRead=1</strong>, the ANSI-related parameters
+works as described in <strong>Readme_ANSI.md</strong> file.
+Parameters unusable in <strong>WorkMode=4</strong>. provided both
+in command line or in <strong>Config.txt</strong> file, are
+ignored.</p>
+
+<h2>Creating text frames</h2>
+
+<p>If you specify <strong>RenderType=TEXT</strong> or <strong>RenderType=ANSI</strong>,
+the rendering behavior will be the same, but there will be
+generate TXT/ANS files containing text instead of PNG files. Such
+TXT/ANS file can be opened in <strong>TextPaint</strong> or other
+text viewer/editor. This feature is usable for creating some art
+based on specified animation file.</p>
+
+<h1>Conversion XBIN file to ANSI file</h1>
+
+<p>The file format used in TextPaint is ANSI text file, which
+extension is usually <strong>.ans</strong>, but there is possible
+to convert XBIN file file into ANSI text file. Such XBIN files
+can be found on some repositories containing IBM-compatible
+computer screen dump saved to files. This conversion can be
+achieved using <strong>RenderType=XBIN</strong>.</p>
+
+<p>The XBIN file (usually <strong>.xb</strong> extension) can
+contain the following elements with file extension, which
+TextPaint uses in conversion:</p>
+
+<ul>
+    <li>Color palette used to define 16 colors - saved to <strong>*.txt</strong>
+        file.</li>
+    <li>Primary font glyphs set - saved to <strong>*.png</strong>
+        file.</li>
+    <li>Secondary font glyphs set - saved to <strong>*_.png</strong>
+        file.</li>
+    <li>Compressed or uncompressed raw screen data, containing
+        color and character - saved to <strong>*.ans</strong>
+        file.</li>
+</ul>
+
+<p>The palette and fonts can be ommited. Secondary font feature
+were used very rarely.</p>
+
+<p>The XBIN file can contain the special characters (including CR
+and LF) used to display some glyphs, so it is highly recommended
+to use encoding file, which remapes every control character to
+printable character. The write encoding uset to save ANSI file
+should be UTF-8 in most cases.</p>
+
+<p>The sample encodings suitable for conversione XBIN to ANSI
+are:</p>
+
+<ul>
+    <li><strong>Encodings/BIN_DOS437.txt</strong> - Based on <strong>DOS437.txt</strong>
+        (slightly modified code page 437), but the control
+        characters are mapped into standard glyphs. This encoding
+        is suitable for files with character set similar to
+        standard IBM character set.</li>
+    <li><strong>Encodings/BIN_ASCII.txt</strong> - Similar to
+        ASCII and ISO-8859-1 encodings, all printable characters
+        are mapped to the same numbers, but control characters
+        are mapped to character within <strong>2400h</strong>-<strong>241Fh</strong>.
+        This encoding is suitable for files with non-standard or
+        unknown character set.</li>
+</ul>
+
+<p>If XBIN file contains own font, which will be used in editor
+or viewer, there is not difference, which encoding will be used.
+The only difference is in font layout.</p>
+
+<p>The ANSI file will be saved without end-of-line marks, but
+will be saved with spaces from beginning to end of every line.
+This file can be displayed or rendered correctly regardless <strong>ANSIDOS</strong>
+parameter, but the <strong>ANSIWidth</strong> must match screen
+width saved in original XBIN file (in most cases, the XBIN file
+is dumped from screen with 80 columns).</p>
+
+<p>After conversion, there will be printed the following
+informations:</p>
+
+<ol>
+    <li>File name containing color palette, or information, that
+        color palette does not exist.</li>
+    <li>File name containing primary and secondary font file, or
+        information, that font does not exist.</li>
+    <li>File name containing text data.</li>
+    <li>Text width and height (number of columns and lines).</li>
+</ol>
+
+<p>The palette and font files can be used as <strong>WinPaletteFile</strong>
+and <strong>WinFontName</strong> parameters respectively.</p>
+
+<h1>Conversion BIN file to ANSI file</h1>
+
+<p>The BIN file is the simple raw screen dump, where odd bytes
+are character number, and even bytes are color number (combined
+background and foreground color). This conversion can be
+performed using <strong>RenderType=BIN</strong>.</p>
+
+<p>Conversion BIN to ANSI has the same rules as conversion XBIN
+to ANSI with following exceptions:</p>
+
+<ul>
+    <li>BIN file contains only text data.</li>
+    <li>Screen width and height is not specified in file and will
+        not printed after conversion.</li>
+    <li>Every file byte will be processed.</li>
+</ul>
+
+<p>The conversion wil generate the <strong>*.ans</strong> file
+only.</p>
+
+<h1>Conversion between encodings</h1>
+
+<p>TextPaint allows to convert text files between encoding by <strong>RenderType=CONVERT</strong>.
+The <strong>ANSIRead</strong> and <strong>ANSIWrite</strong>
+parameters will be ignored. You have to specify the following
+parameters:</p>
+
+<ul>
+    <li><strong>RenderFile</strong> - Destination text file.</li>
+    <li><strong>FileReadEncoding</strong> - Encoding of source
+        file (code page number or encoding name or encoding
+        file).</li>
+    <li><strong>FileWriteEncoding</strong> - Encoding of
+        destination file (code page number or encoding name or
+        encoding file).</li>
+</ul>
+
+<p>The text content will not be parsed or analyzed. You can use
+this command for any text file.</p>
+
+<h1>Command examples</h1>
+
+<p>There is examples with parameters can be invoked in command
+line, but the parameters can also be in <strong>Config.txt</strong>
+file.</p>
+
+<p>Create single image of plan text file using black characters
+on white backgrounf with size 80x25:</p>
+
+<pre>TextPaint /Path/File.txt RenderFile=/Path/Image.png ANSIRead=0 ANSIWidth=80 ANSIHeight=25 ColorNormal=F0</pre>
+
+<p>Create single image of ANSI file with default screen size:</p>
+
+<pre>TextPaint /Path/File.txt RenderFile=/Path/Image.png ANSIRead=1 ANSIWidth=0 ANSIHeight=0</pre>
+
+<p>Create movie from ANSI animation by creating frame on 5th
+character, 20th character, 35th character and so on:</p>
+
+<pre>TextPaint /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=15 RenderOffset=5</pre>
+
+<p>Create movie from ANSI animation recorded by TextPaint using
+1000 characters per rendered frame and 100 characters per one
+time marker unit:</p>
+
+<pre>TextPaint /Path/File.txt RenderFile=/Path/MovieFolder ANSIRead=1 RenderStep=1000 RenderOffset=0 RenderFrame=100</pre>
+
+<p>Convert XBIN (which contains font and color palette) file to
+ANSI file using encoding from file and open generated ANSI in
+editor:</p>
+
+<pre>TextPaint /Path/File.bin RenderFile=/Path/FileANSI RenderType=XBIN WorkMode=4 FileReadEncoding=&quot;Encodings/BIN_ISO.txt&quot;
+TextPaint /Path/FileANSI.ans WorkMode=0 WinFontName=/Path/FileANSI.png WinPaletteFile=/Path/FileANSI.txt</pre>
+
+<p>Convert text file from standard DOS 437 code page to UTF-8:</p>
+
+<pre>TextPaint /Path/Text437.txt RenderFile=/Path/TextUTF8.txt RenderType=CONVERT FileReadEncoding=&quot;437&quot; FileWriteEncoding=&quot;utf-8&quot;</pre>
+
+<h1>Terminal recording and rendering examples</h1>
+
+<p>Assume, that desired display speed is 2500 characters per
+second. There are example commands for record, view and render
+terminal session at the speed.</p>
+
+<p>To get this speed, you can use following command for telnet
+session with session recording:</p>
+
+<pre>TextPaint &quot;localhost&quot; WorkMode=2 TerminalFile=Example.ans <strong>TerminalStep=100</strong> <strong>TerminalTimeResolution=40</strong></pre>
+
+<p>The speed meets the following formula:</p>
+
+<pre>Speed in characters by second: (1000 / TerminalTimeResolution) * TerminalStep</pre>
+
+<p>The file will contain timing markers, where single marker has
+value equals to session time millisecond divided by <strong>TerminalTimeResolution</strong>.
+In this example, one second contains 25 timing units. This is
+only timing of data portions received only, its not affect the
+text display smooth, but you have to remember the <strong>TerminalTimeResolution</strong>
+value used for recording the file for correct playing. To create
+ledd resource-demanding, but less accurate recording (12.5 timing
+units per second) at the same speed, you should execute this
+command:</p>
+
+<pre>TextPaint &quot;localhost&quot; WorkMode=2 TerminalFile=Example.ans <strong>TerminalStep=200</strong> <strong>TerminalTimeResolution=80</strong></pre>
+
+<p>For display and play the file, which is saved terminal
+session, you can use the following command:</p>
+
+<pre>TextPaint Example.ans WorkMode=1 <strong>FileDelayTime=40</strong> <strong>FileDelayStep=100</strong> <strong>FileDelayFrame=100</strong></pre>
+
+<pre>Speed in characters by second: (1000 / FileDelayTime) * FileDelayStep</pre>
+
+<p>The <strong>FileDelayFrame</strong> value should be the same
+as <strong>TerminalStep</strong> value used for recording
+session. Otherwise, the pauses between data portions, which
+occurred while waiting for user reactions, will be too short or
+too long. If the file is not a terminal session record created in
+<strong>TextPaint</strong>, the <strong>FileDelayFrame</strong>
+value does not affect the result.</p>
+
+<p>For smoother playing at the same speed (but is more resource
+demanding) you can execute the following command:</p>
+
+<pre>TextPaint Example.ans WorkMode=1 <strong>FileDelayTime=20</strong> <strong>FileDelayStep=50</strong> <strong>FileDelayFrame=100</strong></pre>
+
+<p>For render the file, you can execute this command:</p>
+
+<pre>TextPaint Example.ans WorkMode=4 RenderFile=ExampleRender <strong>RenderStep=100 RenderFrame=100</strong></pre>
+
+<p>This command will generate serie of frames. The original frame
+rate for playing the sequence, you can calculate the frame rate:</p>
+
+<pre>Frames per second: [Characters per second] / RenderStep</pre>
+
+<p>To get the same movie rendered in 50 frames per second, you
+should execute:</p>
+
+<pre>TextPaint Example.ans WorkMode=4 RenderFile=ExampleRender <strong>RenderStep=50 RenderFrame=100</strong></pre>
+
+<p>The <strong>RenderFrame</strong> means the speed of timing
+units. It should be the same as <strong>TerminalStep</strong>
+used in terminal session. If the file is not a terminal session
+record created in <strong>TextPaint</strong>, the <strong>RenderFrame</strong>
+value does not affect the result.</p>
+
+<h1>Create files of 8-bit encodings</h1>
+
+<p>Using <strong>WorkMode=4</strong>, you can generate files of
+all 8-bit encodings supported by your system. In order to do
+this, you have to provide <strong>?ENCODING?</strong> as
+text/ANSI file name and use <strong>RenderFile</strong> parameter
+to provide folder. Other parameters does not affect creating the
+files in this case and will be ignored.</p>
+
+<pre>TextPaint ?ENCODING? WorkMode=4 RenderFile=DotNetEncodingFolder</pre>
+
+<p>Every file will have codepage numer as name with <strong>.txt</strong>
+extension. inside the file, there will be following parameters:</p>
+
+<ul>
+    <li><strong>Codepage</strong> - Codepage number.</li>
+    <li><strong>Name</strong> - The name of encoding, if exists.</li>
+    <li><strong>AlternativeName</strong> - Other name of encoding
+        if this encoding has two different names.</li>
+</ul>
+
+<p>Below the parameters, there are hexadecimal byte values as
+further parameters with assigned characters. Such file can be
+used as custom encoding without any modification.</p>
+
+<p><script language="JavaScript"
+src="file:///media/xxx/WORK1/__ToBackup/Develop/HTML/HTML2MD/Prog/html2md.js"></script></p>
+</body>
+</html>
