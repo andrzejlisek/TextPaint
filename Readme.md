@@ -728,9 +728,9 @@ You can use file instead of password to input very long password\. To do this, y
 Examples assuming that **CipherBegin=005B**, **CipherEnd=005D** and **CipherAlphabet=abcdefghijklmnopqrstuvwxyz**:
 
 
-* **pass123** \- The password is **pass**\.
-* **\[pas2s** \- The password is **pass**\.
-* **3pass\]** \- The password is **pass**\.
+* **pass123** \- The password is **pass123**\.
+* **\[pas2s** \- The password is **\[pas2s**\.
+* **3pass\]** \- The password is **3pass\]**\.
 * **\[pass123\.txt\]** \- The password is from file **pass123\.txt** existing in the current directory\.
 * **\[C:\\Documents\\pass\.123\.txt\]** \- The password is from file **pass123\.txt** existing in the **C:\\Documents\\** directory\.
 
