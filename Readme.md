@@ -843,7 +843,7 @@ In the **Palettes** subfolder, there are three example palette files, which can 
 
 ## Samples
 
-There are samples for demonstration and test purposes in **WorkMode=0**\. Files other than **8bitASCII\.txt **are encoded using UTF\-8\.
+There are samples for demonstration and test purposes in **WorkMode=0**\. Files other than **8bitASCII\.txt** are encoded using UTF\-8\.
 
 
 * **8bitASCII\.txt** \- Standard 8\-bit ASCII file, which should be opened using 1\-byte encoding\. You can test 1\-byte encoding matches and display all available character in such encoding\. There is only file, which is in ANSCII encoding\.
