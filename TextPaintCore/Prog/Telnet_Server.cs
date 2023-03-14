@@ -335,7 +335,7 @@ namespace TextPaint
                             case WorkStateSDef.DisplayPlayRev:
                             case WorkStateSDef.DisplayPause:
                                 {
-                                    if (PlaylistFiles.Count > 0)
+                                    if (PlaylistFiles.Count > 1)
                                     {
                                         if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
                                         {
@@ -376,7 +376,7 @@ namespace TextPaint
                             case WorkStateSDef.DisplayPlayRev:
                             case WorkStateSDef.DisplayPause:
                                 {
-                                    if (PlaylistFiles.Count > 0)
+                                    if (PlaylistFiles.Count > 1)
                                     {
                                         if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
                                         {
