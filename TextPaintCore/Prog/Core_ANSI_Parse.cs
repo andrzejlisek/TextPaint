@@ -5,99 +5,107 @@ namespace TextPaint
     {
         void SetProcessDelay(long TimeStamp)
         {
-            __AnsiProcessDelay = TimeStamp * __AnsiProcessDelayFactor;
+            AnsiState_.__AnsiProcessDelay = TimeStamp * __AnsiProcessDelayFactor;
 
-            long DelayDiff = __AnsiProcessDelay - __AnsiProcessStep;
+            long DelayDiff = AnsiState_.__AnsiProcessDelay - AnsiState_.__AnsiProcessStep;
 
-            if (__AnsiProcessDelayMin > __AnsiProcessDelayMax)
+            if (AnsiState_.__AnsiProcessDelayMin > AnsiState_.__AnsiProcessDelayMax)
             {
-                __AnsiProcessDelayMin = DelayDiff;
-                __AnsiProcessDelayMax = DelayDiff;
+                AnsiState_.__AnsiProcessDelayMin = DelayDiff;
+                AnsiState_.__AnsiProcessDelayMax = DelayDiff;
             }
             else
             {
-                __AnsiProcessDelayMin = Math.Min(__AnsiProcessDelayMin, DelayDiff);
-                __AnsiProcessDelayMax = Math.Max(__AnsiProcessDelayMax, DelayDiff);
+                AnsiState_.__AnsiProcessDelayMin = Math.Min(AnsiState_.__AnsiProcessDelayMin, DelayDiff);
+                AnsiState_.__AnsiProcessDelayMax = Math.Max(AnsiState_.__AnsiProcessDelayMax, DelayDiff);
             }
         }
 
         void AnsiProcess_VT52()
         {
-            switch (__AnsiCmd[0])
+            switch (AnsiState_.__AnsiCmd[0])
             {
+                case '=':
+                    __AnsiResponse.Add("NumpadKey_1");
+                    AnsiState_.__AnsiCommand = false;
+                    break;
+                case '>':
+                    __AnsiResponse.Add("NumpadKey_0");
+                    AnsiState_.__AnsiCommand = false;
+                    break;
                 case 'F':
-                    VT52_SemigraphDef = true;
-                    __AnsiCommand = false;
+                    AnsiState_.VT52_SemigraphDef = true;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'G':
-                    VT52_SemigraphDef = false;
-                    __AnsiCommand = false;
+                    AnsiState_.VT52_SemigraphDef = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '<':
-                    __AnsiVT52 = false;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiVT52 = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'A':
-                    __AnsiY -= 1;
-                    if (__AnsiY < 0)
+                    AnsiState_.__AnsiY -= 1;
+                    if (AnsiState_.__AnsiY < 0)
                     {
-                        __AnsiY = 0;
+                        AnsiState_.__AnsiY = 0;
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'B':
-                    __AnsiY += 1;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiY += 1;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'C':
-                    __AnsiX += 1;
-                    if ((AnsiMaxX > 0) && (__AnsiX >= AnsiMaxX))
+                    AnsiState_.__AnsiX += 1;
+                    if ((AnsiMaxX > 0) && (AnsiState_.__AnsiX >= AnsiMaxX))
                     {
                         if (ANSIDOS)
                         {
-                            __AnsiY++;
-                            __AnsiX = __AnsiX - AnsiMaxX;
+                            AnsiState_.__AnsiY++;
+                            AnsiState_.__AnsiX = AnsiState_.__AnsiX - AnsiMaxX;
                         }
                         else
                         {
-                            __AnsiX = AnsiMaxX - 1;
+                            AnsiState_.__AnsiX = AnsiMaxX - 1;
                         }
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'D':
                     if (AnsiMaxX > 0)
                     {
-                        if (__AnsiX >= AnsiMaxX)
+                        if (AnsiState_.__AnsiX >= AnsiMaxX)
                         {
-                            __AnsiX = AnsiMaxX - 1;
+                            AnsiState_.__AnsiX = AnsiMaxX - 1;
                         }
                     }
-                    __AnsiX -= 1;
-                    if (__AnsiX < 0)
+                    AnsiState_.__AnsiX -= 1;
+                    if (AnsiState_.__AnsiX < 0)
                     {
-                        __AnsiX = 0;
+                        AnsiState_.__AnsiX = 0;
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'H':
-                    __AnsiX = 0;
-                    __AnsiY = 0;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiX = 0;
+                    AnsiState_.__AnsiY = 0;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'Y':
-                    if (__AnsiCmd.Count == 3)
+                    if (AnsiState_.__AnsiCmd.Count == 3)
                     {
-                        __AnsiY = __AnsiCmd[1] - 32;
-                        __AnsiX = __AnsiCmd[2] - 32;
-                        __AnsiCommand = false;
+                        AnsiState_.__AnsiY = AnsiState_.__AnsiCmd[1] - 32;
+                        AnsiState_.__AnsiX = AnsiState_.__AnsiCmd[2] - 32;
+                        AnsiState_.__AnsiCommand = false;
                     }
                     break;
                 case 'd':
                     AnsiCalcColor();
-                    for (int i_ = 0; i_ < __AnsiY; i_++)
+                    for (int i_ = 0; i_ < AnsiState_.__AnsiY; i_++)
                     {
-                        if (AnsiMaxY > __AnsiY)
+                        if (AnsiMaxY > AnsiState_.__AnsiY)
                         {
                             for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                             {
@@ -109,66 +117,66 @@ namespace TextPaint
                             break;
                         }
                     }
-                    for (int ii_ = 0; ii_ <= __AnsiX; ii_++)
+                    for (int ii_ = 0; ii_ <= AnsiState_.__AnsiX; ii_++)
                     {
-                        AnsiChar(ii_, __AnsiY, 32);
+                        AnsiChar(ii_, AnsiState_.__AnsiY, 32);
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'E':
                 case 'J':
-                    if (__AnsiCmd[0] == 'E')
+                    if (AnsiState_.__AnsiCmd[0] == 'E')
                     {
-                        __AnsiX = 0;
-                        __AnsiY = 0;
+                        AnsiState_.__AnsiX = 0;
+                        AnsiState_.__AnsiY = 0;
                     }
                     AnsiCalcColor();
-                    for (int i_ = __AnsiY + 1; i_ < AnsiMaxY; i_++)
+                    for (int i_ = AnsiState_.__AnsiY + 1; i_ < AnsiMaxY; i_++)
                     {
                         for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                         {
                             AnsiChar(ii_, i_, 32);
                         }
                     }
-                    if (AnsiMaxY > __AnsiY)
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
                     {
-                        for (int ii_ = __AnsiX; ii_ < AnsiMaxX; ii_++)
+                        for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
                         {
-                            AnsiChar(ii_, __AnsiY, 32);
+                            AnsiChar(ii_, AnsiState_.__AnsiY, 32);
                         }
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'Z':
                     __AnsiResponse.Add("VT52:Z");
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'I':
-                    __AnsiY -= 1;
-                    if (__AnsiY < __AnsiScrollFirst)
+                    AnsiState_.__AnsiY -= 1;
+                    if (AnsiState_.__AnsiY < AnsiState_.__AnsiScrollFirst)
                     {
-                        AnsiScrollInit(__AnsiY - __AnsiScrollFirst, AnsiScrollCommandDef.None);
-                        __AnsiY = __AnsiScrollFirst;
+                        AnsiScrollInit(AnsiState_.__AnsiY - AnsiState_.__AnsiScrollFirst, AnsiState.AnsiScrollCommandDef.None);
+                        AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'K':
-                    for (int ii_ = __AnsiX; ii_ < AnsiMaxX; ii_++)
+                    for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
                     {
-                        AnsiChar(ii_, __AnsiY, 32);
+                        AnsiChar(ii_, AnsiState_.__AnsiY, 32);
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'b':
                 case 'c':
-                    if (__AnsiCmd.Count == 2)
+                    if (AnsiState_.__AnsiCmd.Count == 2)
                     {
-                        __AnsiCommand = false;
+                        AnsiState_.__AnsiCommand = false;
                     }
                     break;
                 case '[':
                     {
-                        switch (__AnsiCmd[__AnsiCmd.Count - 1])
+                        switch (AnsiState_.__AnsiCmd[AnsiState_.__AnsiCmd.Count - 1])
                         {
                             case '0':
                             case '1':
@@ -185,7 +193,7 @@ namespace TextPaint
                                 break;
                             case 'V':
                                 {
-                                    string AnsiCmd_ = TextWork.IntToStr(__AnsiCmd);
+                                    string AnsiCmd_ = TextWork.IntToStr(AnsiState_.__AnsiCmd);
                                     string[] AnsiParams = AnsiCmd_.Substring(1, AnsiCmd_.Length - 2).Split(';');
                                     if (AnsiCmd_.Length >= 2)
                                     {
@@ -199,32 +207,32 @@ namespace TextPaint
                                         }
                                     }
                                 }
-                                __AnsiCommand = false;
+                                AnsiState_.__AnsiCommand = false;
                                 break;
                             default:
-                                __AnsiCommand = false;
+                                AnsiState_.__AnsiCommand = false;
                                 break;
                         }
                     }
                     break;
                 default:
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
             }
         }
 
         void AnsiProcess_Fixed(int TextFileLine_i)
         {
-            switch (__AnsiCmd[0])
+            switch (AnsiState_.__AnsiCmd[0])
             {
                 case '(':
                 case ')':
                 case '*':
                 case '+':
-                    if (__AnsiCmd.Count == 2)
+                    if (AnsiState_.__AnsiCmd.Count == 2)
                     {
                         int CharNum = 0;
-                        switch (__AnsiCmd[0])
+                        switch (AnsiState_.__AnsiCmd[0])
                         {
                             case '(':
                                 CharNum = 0;
@@ -239,48 +247,48 @@ namespace TextPaint
                                 CharNum = 3;
                                 break;
                         }
-                        if ((__AnsiCmd[1] == '0') || (__AnsiCmd[1] == '2'))
+                        if ((AnsiState_.__AnsiCmd[1] == '0') || (AnsiState_.__AnsiCmd[1] == '2'))
                         {
-                            VT100_SemigraphDef[CharNum] = true;
+                            AnsiState_.VT100_SemigraphDef[CharNum] = true;
                         }
                         else
                         {
-                            VT100_SemigraphDef[CharNum] = false;
+                            AnsiState_.VT100_SemigraphDef[CharNum] = false;
                         }
-                        __AnsiCommand = false;
+                        AnsiState_.__AnsiCommand = false;
                     }
                     break;
                 case 'n': // LS2
-                    VT100_SemigraphNum = 2;
-                    __AnsiCommand = false;
+                    AnsiState_.VT100_SemigraphNum = 2;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'o': // LS3
-                    VT100_SemigraphNum = 3;
-                    __AnsiCommand = false;
+                    AnsiState_.VT100_SemigraphNum = 3;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '#':
-                    if (__AnsiCmd.Count == 2)
+                    if (AnsiState_.__AnsiCmd.Count == 2)
                     {
-                        switch (__AnsiCmd[1])
+                        switch (AnsiState_.__AnsiCmd[1])
                         {
                             case '3': // DECDHL
                                 {
-                                    AnsiSetFontSize(__AnsiY, 2, true);
+                                    AnsiSetFontSize(AnsiState_.__AnsiY, 2, true);
                                 }
                                 break;
                             case '4': // DECDHL
                                 {
-                                    AnsiSetFontSize(__AnsiY, 3, true);
+                                    AnsiSetFontSize(AnsiState_.__AnsiY, 3, true);
                                 }
                                 break;
                             case '5': // DECSWL
                                 {
-                                    AnsiSetFontSize(__AnsiY, 0, true);
+                                    AnsiSetFontSize(AnsiState_.__AnsiY, 0, true);
                                 }
                                 break;
                             case '6': // DECDWL
                                 {
-                                    AnsiSetFontSize(__AnsiY, 1, true);
+                                    AnsiSetFontSize(AnsiState_.__AnsiY, 1, true);
                                 }
                                 break;
                             case '8':
@@ -295,52 +303,52 @@ namespace TextPaint
                                 }
                                 break;
                         }
-                        __AnsiCommand = false;
+                        AnsiState_.__AnsiCommand = false;
                     }
                     break;
                 case ']':
                     if (TextFileLine_i == 0x07)
                     {
-                        __AnsiCommand = false;
+                        AnsiState_.__AnsiCommand = false;
                     }
                     break;
                 case 'N': // SS2 - not implemented
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'O': // SS3 - not implemented
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '7': // DECSC
-                    __AnsiX_ = __AnsiX;
-                    __AnsiY_ = __AnsiY;
-                    __AnsiBack_ = __AnsiBack;
-                    __AnsiFore_ = __AnsiFore;
-                    __AnsiFontBold_ = __AnsiFontBold;
-                    __AnsiFontInverse_ = __AnsiFontInverse;
-                    __AnsiFontBlink_ = __AnsiFontBlink;
-                    __AnsiFontInvisible_ = __AnsiFontInvisible;
-                    VT100_SemigraphDef_[0] = VT100_SemigraphDef[0];
-                    VT100_SemigraphDef_[1] = VT100_SemigraphDef[1];
-                    VT100_SemigraphDef_[2] = VT100_SemigraphDef[2];
-                    VT100_SemigraphDef_[3] = VT100_SemigraphDef[3];
-                    VT100_SemigraphNum_ = VT100_SemigraphNum;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiX_ = AnsiState_.__AnsiX;
+                    AnsiState_.__AnsiY_ = AnsiState_.__AnsiY;
+                    AnsiState_.__AnsiBack_ = AnsiState_.__AnsiBack;
+                    AnsiState_.__AnsiFore_ = AnsiState_.__AnsiFore;
+                    AnsiState_.__AnsiFontBold_ = AnsiState_.__AnsiFontBold;
+                    AnsiState_.__AnsiFontInverse_ = AnsiState_.__AnsiFontInverse;
+                    AnsiState_.__AnsiFontBlink_ = AnsiState_.__AnsiFontBlink;
+                    AnsiState_.__AnsiFontInvisible_ = AnsiState_.__AnsiFontInvisible;
+                    AnsiState_.VT100_SemigraphDef_[0] = AnsiState_.VT100_SemigraphDef[0];
+                    AnsiState_.VT100_SemigraphDef_[1] = AnsiState_.VT100_SemigraphDef[1];
+                    AnsiState_.VT100_SemigraphDef_[2] = AnsiState_.VT100_SemigraphDef[2];
+                    AnsiState_.VT100_SemigraphDef_[3] = AnsiState_.VT100_SemigraphDef[3];
+                    AnsiState_.VT100_SemigraphNum_ = AnsiState_.VT100_SemigraphNum;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '8': // DECRC
-                    __AnsiX = __AnsiX_;
-                    __AnsiY = __AnsiY_;
-                    __AnsiBack = __AnsiBack_;
-                    __AnsiFore = __AnsiFore_;
-                    __AnsiFontBold = __AnsiFontBold_;
-                    __AnsiFontInverse = __AnsiFontInverse_;
-                    __AnsiFontBlink = __AnsiFontBlink_;
-                    __AnsiFontInvisible = __AnsiFontInvisible_;
-                    VT100_SemigraphDef[0] = VT100_SemigraphDef_[0];
-                    VT100_SemigraphDef[1] = VT100_SemigraphDef_[1];
-                    VT100_SemigraphDef[2] = VT100_SemigraphDef_[2];
-                    VT100_SemigraphDef[3] = VT100_SemigraphDef_[3];
-                    VT100_SemigraphNum = VT100_SemigraphNum_;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiX = AnsiState_.__AnsiX_;
+                    AnsiState_.__AnsiY = AnsiState_.__AnsiY_;
+                    AnsiState_.__AnsiBack = AnsiState_.__AnsiBack_;
+                    AnsiState_.__AnsiFore = AnsiState_.__AnsiFore_;
+                    AnsiState_.__AnsiFontBold = AnsiState_.__AnsiFontBold_;
+                    AnsiState_.__AnsiFontInverse = AnsiState_.__AnsiFontInverse_;
+                    AnsiState_.__AnsiFontBlink = AnsiState_.__AnsiFontBlink_;
+                    AnsiState_.__AnsiFontInvisible = AnsiState_.__AnsiFontInvisible_;
+                    AnsiState_.VT100_SemigraphDef[0] = AnsiState_.VT100_SemigraphDef_[0];
+                    AnsiState_.VT100_SemigraphDef[1] = AnsiState_.VT100_SemigraphDef_[1];
+                    AnsiState_.VT100_SemigraphDef[2] = AnsiState_.VT100_SemigraphDef_[2];
+                    AnsiState_.VT100_SemigraphDef[3] = AnsiState_.VT100_SemigraphDef_[3];
+                    AnsiState_.VT100_SemigraphNum = AnsiState_.VT100_SemigraphNum_;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'D': // IND
                     if (ANSIDOS)
@@ -349,170 +357,184 @@ namespace TextPaint
                     }
                     else
                     {
-                        __AnsiY += 1;
-                        if (__AnsiY > __AnsiScrollLast)
+                        AnsiState_.__AnsiY += 1;
+                        if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
                         {
-                            AnsiScrollInit(__AnsiY - __AnsiScrollLast, AnsiScrollCommandDef.None);
-                            __AnsiY = __AnsiScrollLast;
+                            AnsiScrollInit(AnsiState_.__AnsiY - AnsiState_.__AnsiScrollLast, AnsiState.AnsiScrollCommandDef.None);
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                         }
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'M': // RI
                     if (ANSIDOS)
                     {
-                        __AnsiMusic = true;
+                        AnsiState_.__AnsiMusic = true;
                     }
                     else
                     {
-                        __AnsiY -= 1;
-                        if (__AnsiY < __AnsiScrollFirst)
+                        AnsiState_.__AnsiY -= 1;
+                        if (AnsiState_.__AnsiY < AnsiState_.__AnsiScrollFirst)
                         {
-                            AnsiScrollInit(__AnsiY - __AnsiScrollFirst, AnsiScrollCommandDef.None);
-                            __AnsiY = __AnsiScrollFirst;
+                            AnsiScrollInit(AnsiState_.__AnsiY - AnsiState_.__AnsiScrollFirst, AnsiState.AnsiScrollCommandDef.None);
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                         }
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'E': // NEL
-                    __AnsiY += 1;
-                    __AnsiX = AnsiProcessGetXMin(true);
-                    if (__AnsiY >= AnsiMaxY)
+                    AnsiState_.__AnsiY += 1;
+                    AnsiState_.__AnsiX = AnsiProcessGetXMin(true);
+                    if (AnsiState_.__AnsiY >= AnsiMaxY)
                     {
-                        AnsiScrollInit(1, AnsiScrollCommandDef.None);
-                        __AnsiY--;
+                        AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
+                        AnsiState_.__AnsiY--;
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'H': // HTS
-                    if (!__AnsiTabs.Contains(__AnsiX))
+                    if (!AnsiState_.__AnsiTabs.Contains(AnsiState_.__AnsiX))
                     {
-                        __AnsiTabs.Add(__AnsiX);
-                        __AnsiTabs.Sort();
+                        AnsiState_.__AnsiTabs.Add(AnsiState_.__AnsiX);
+                        AnsiState_.__AnsiTabs.Sort();
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'P': // DCS
-                    __AnsiDCS = "";
-                    __AnsiDCS_ = true;
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiDCS = "";
+                    AnsiState_.__AnsiDCS_ = true;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '=': // DECKPAM
+                    __AnsiResponse.Add("NumpadKey_1");
+                    AnsiState_.__AnsiCommand = false;
+                    break;
                 case '>': // DECKPNM
+                    __AnsiResponse.Add("NumpadKey_0");
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '\\': // ST
-                    if (__AnsiDCS_)
+                    if (AnsiState_.__AnsiDCS_)
                     {
-                        __AnsiResponse.Add(__AnsiDCS);
-                        __AnsiDCS = "";
-                        __AnsiDCS_ = false;
+                        __AnsiResponse.Add(AnsiState_.__AnsiDCS);
+                        AnsiState_.__AnsiDCS = "";
+                        AnsiState_.__AnsiDCS_ = false;
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case 'c': // RIS
                     AnsiTerminalReset();
                     break;
                 case '6': // DECBI
-                    if (__AnsiLineOccupy.Count > __AnsiY)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiY)
                     {
-                        int FontSize = AnsiGetFontSize(__AnsiY);
+                        int FontSize = AnsiGetFontSize(AnsiState_.__AnsiY);
                         int TempC = 0, TempB = 0, TempF = 0;
                         if (FontSize > 0)
                         {
-                            AnsiGetF(__AnsiX, __AnsiY, out TempC, out TempB, out TempF);
-                            if (__AnsiLineOccupy[__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
+                            AnsiGetF(AnsiState_.__AnsiX, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].RemoveRange((AnsiProcessGetXMax(false) - 1) * 2 * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiProcessGetXMax(false) - 1) * 2 * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
                             }
-                            if (__AnsiLineOccupy[__AnsiY].Count > (__AnsiX * 2 * __AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, FontSize - 1);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 2);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempF);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempB);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 32);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, FontSize - 1);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 1);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempF);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempB);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 32);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, FontSize - 1);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 2);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempF);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempB);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 32);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, FontSize - 1);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 1);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempF);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, TempB);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * 2 * __AnsiLineOccupyFactor, 32);
                             }
                         }
                         else
                         {
-                            AnsiGetF(AnsiProcessGetXMin(false), __AnsiY, out TempC, out TempB, out TempF);
-                            if (__AnsiLineOccupy[__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
+                            AnsiGetF(AnsiProcessGetXMin(false), AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].RemoveRange((AnsiProcessGetXMax(false) - 1) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiProcessGetXMax(false) - 1) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor);
                             }
-                            if (__AnsiLineOccupy[__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, TempF);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, TempB);
-                                __AnsiLineOccupy[__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 32);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, TempF);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, TempB);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor, 32);
                             }
                         }
-                        AnsiRepaintLine(__AnsiY);
+                        AnsiRepaintLine(AnsiState_.__AnsiY);
                     }
-                    __AnsiCommand = false;
+                    AnsiState_.PrintCharInsDel++;
+                    AnsiState_.__AnsiCommand = false;
                     break;
                 case '9': // DECFI
-                    if (__AnsiLineOccupy.Count > __AnsiY)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiY)
                     {
                         int TempC = 0, TempB = 0, TempF = 0;
-                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                         {
-                            AnsiGetF((AnsiProcessGetXMax(false) / 2) - 1, __AnsiY, out TempC, out TempB, out TempF);
-                            if (__AnsiLineOccupy[__AnsiY].Count >= ((AnsiProcessGetXMax(false) / 2) * __AnsiLineOccupyFactor))
+                            AnsiGetF((AnsiProcessGetXMax(false) / 2) - 1, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= ((AnsiProcessGetXMax(false) / 2) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, TempF);
-                                __AnsiLineOccupy[__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, TempB);
-                                __AnsiLineOccupy[__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 32);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, TempF);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, TempB);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(((AnsiProcessGetXMax(false) / 2)) * __AnsiLineOccupyFactor, 32);
                             }
-                            if (__AnsiLineOccupy[__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].RemoveRange((AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
                             }
                             if (TempC > 0)
                             {
                                 AnsiCalcColor();
-                                AnsiCharF((AnsiProcessGetXMax(false) / 2) - 1, __AnsiY, 32);
+                                AnsiCharF((AnsiProcessGetXMax(false) / 2) - 1, AnsiState_.__AnsiY, 32);
                             }
                         }
                         else
                         {
-                            AnsiGetF(AnsiProcessGetXMax(false) - 1, __AnsiY, out TempC, out TempB, out TempF);
-                            if (__AnsiLineOccupy[__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
+                            AnsiGetF(AnsiProcessGetXMax(false) - 1, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
-                                __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
-                                __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
                             }
-                            if (__AnsiLineOccupy[__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[__AnsiY].RemoveRange((AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor);
+                                AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiProcessGetXMin(false) * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor);
                             }
                             if (TempC > 0)
                             {
                                 AnsiCalcColor();
-                                AnsiCharF(AnsiProcessGetXMax(false) - 1, __AnsiY, 32);
+                                AnsiCharF(AnsiProcessGetXMax(false) - 1, AnsiState_.__AnsiY, 32);
                             }
                         }
-                        AnsiRepaintLine(__AnsiY);
+                        AnsiRepaintLine(AnsiState_.__AnsiY);
                     }
+                    AnsiState_.PrintCharInsDel++;
+                    AnsiState_.__AnsiCommand = false;
+                    break;
+                case 'V':
+                    AnsiState_.CharProtection2Print = true;
+                    break;
+                case 'W':
+                    AnsiState_.CharProtection2Print = false;
                     break;
             }
             if (__AnsiTestCmd)
             {
-                if (!__AnsiCommand)
+                if (!AnsiState_.__AnsiCommand)
                 {
-                    Console.WriteLine("ANSI command: " + TextWork.IntToStr(__AnsiCmd));
+                    Console.WriteLine("ANSI command: " + TextWork.IntToStr(AnsiState_.__AnsiCmd));
                 }
             }
         }
@@ -528,6 +550,9 @@ namespace TextPaint
                         {
                             switch (AnsiParams[i])
                             {
+                                case "1": // DECSET / DECCKM
+                                    __AnsiResponse.Add("CursorKey_1");
+                                    break;
                                 case "3": // DECSET / DECCOLM
                                     {
                                         AnsiClearFontSize(-1);
@@ -538,30 +563,30 @@ namespace TextPaint
                                                 AnsiChar(ii_, i_, 32);
                                             }
                                         }
-                                        __AnsiX = 0;
+                                        AnsiState_.__AnsiX = 0;
                                         if (AnsiMaxY > 0)
                                         {
-                                            __AnsiY = __AnsiScrollFirst;
+                                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                                         }
                                         else
                                         {
-                                            __AnsiY = 0;
+                                            AnsiState_.__AnsiY = 0;
                                         }
                                     }
                                     break;
                                 case "4": // DECSET / DECSCLM
-                                    __AnsiSmoothScroll = true;
+                                    AnsiState_.__AnsiSmoothScroll = true;
                                     break;
                                 case "6": // DECSET / DECOM
-                                    __AnsiOrigin = true;
-                                    __AnsiX = 0;
-                                    __AnsiY = __AnsiScrollFirst;
+                                    AnsiState_.__AnsiOrigin = true;
+                                    AnsiState_.__AnsiX = 0;
+                                    AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                                     break;
                                 case "7": // DECSET / DECCOLM
-                                    __AnsiNoWrap = false;
+                                    AnsiState_.__AnsiNoWrap = false;
                                     break;
                                 case "69": // DECSET / DECLRMM
-                                    __AnsiMarginLeftRight = true;
+                                    AnsiState_.__AnsiMarginLeftRight = true;
                                     break;
                             }
                         }
@@ -573,9 +598,12 @@ namespace TextPaint
                         {
                             switch (AnsiParams[i])
                             {
+                                case "1": // DECRST / DECCKM
+                                    __AnsiResponse.Add("CursorKey_0");
+                                    break;
                                 case "2": // DECRST / DECANM
-                                    __AnsiVT52 = true;
-                                    __AnsiCommand = false;
+                                    AnsiState_.__AnsiVT52 = true;
+                                    AnsiState_.__AnsiCommand = false;
                                     break;
                                 case "3": // DECRST / DECCOLM
                                     {
@@ -587,32 +615,167 @@ namespace TextPaint
                                                 AnsiChar(ii_, i_, 32);
                                             }
                                         }
-                                        __AnsiX = 0;
+                                        AnsiState_.__AnsiX = 0;
                                         if (AnsiMaxY > 0)
                                         {
-                                            __AnsiY = __AnsiScrollFirst;
+                                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                                         }
                                         else
                                         {
-                                            __AnsiY = 0;
+                                            AnsiState_.__AnsiY = 0;
                                         }
                                     }
                                     break;
                                 case "4": // DECRST / DECSCLM
-                                    __AnsiSmoothScroll = false;
+                                    AnsiState_.__AnsiSmoothScroll = false;
                                     break;
                                 case "6": // DECRST / DECOM
-                                    __AnsiOrigin = false;
-                                    __AnsiX = 0;
-                                    __AnsiY = 0;
+                                    AnsiState_.__AnsiOrigin = false;
+                                    AnsiState_.__AnsiX = 0;
+                                    AnsiState_.__AnsiY = 0;
                                     break;
                                 case "7": // DECRST / DECAWM
-                                    __AnsiNoWrap = true;
+                                    AnsiState_.__AnsiNoWrap = true;
                                     break;
                                 case "69": // DECRST / DECLRMM
-                                    __AnsiMarginLeftRight = false;
+                                    AnsiState_.__AnsiMarginLeftRight = false;
                                     break;
                             }
+                        }
+                    }
+                    break;
+            }
+            switch (AnsiCmd_)
+            {
+                case "[?J": // DECSED
+                case "[?0J": // DECSED
+                    AnsiCalcColor();
+                    AnsiClearFontSize(AnsiState_.__AnsiY + 1);
+                    for (int i_ = AnsiState_.__AnsiY + 1; i_ < AnsiMaxY; i_++)
+                    {
+                        for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
+                        {
+                            AnsiCharUnprotected1(ii_, i_, 32);
+                        }
+                    }
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
+                    {
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
+                        {
+                            for (int ii_ = (AnsiState_.__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                        else
+                        {
+                            for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                    }
+                    break;
+                case "[?1J": // DECSED
+                    AnsiCalcColor();
+                    for (int i_ = 0; i_ < AnsiState_.__AnsiY; i_++)
+                    {
+                        AnsiSetFontSize(i_, 0, true);
+                        if (AnsiMaxY > AnsiState_.__AnsiY)
+                        {
+                            for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, i_, 32);
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
+                    {
+                        for (int ii_ = 0; ii_ <= (AnsiState_.__AnsiX << 1); ii_++)
+                        {
+                            AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                        }
+                    }
+                    else
+                    {
+                        for (int ii_ = 0; ii_ <= AnsiState_.__AnsiX; ii_++)
+                        {
+                            AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                        }
+                    }
+                    break;
+                case "[?2J": // DECSED
+                    AnsiCalcColor();
+                    if (__AnsiTest == 2)
+                    {
+                        Console.Clear();
+                    }
+                    AnsiClearFontSize(-1);
+                    for (int i_ = 0; i_ < AnsiMaxY; i_++)
+                    {
+                        for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
+                        {
+                            AnsiCharUnprotected1(ii_, i_, 32);
+                        }
+                    }
+                    if (ANSIDOS)
+                    {
+                        AnsiState_.__AnsiX = 0;
+                        AnsiState_.__AnsiY = 0;
+                    }
+                    break;
+                case "[?K": // DECSEL
+                case "[?0K": // DECSEL
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
+                    {
+                        AnsiCalcColor();
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
+                        {
+                            for (int ii_ = (AnsiState_.__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                        else
+                        {
+                            for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                    }
+                    break;
+                case "[?1K": // DECSEL
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
+                    {
+                        AnsiCalcColor();
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
+                        {
+                            for (int ii_ = 0; ii_ <= (AnsiState_.__AnsiX << 1); ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                        else
+                        {
+                            for (int ii_ = 0; ii_ <= AnsiState_.__AnsiX; ii_++)
+                            {
+                                AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
+                            }
+                        }
+                    }
+                    break;
+                case "[?2K": // DECSEL
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
+                    {
+                        AnsiCalcColor();
+                        for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
+                        {
+                            AnsiCharUnprotected1(ii_, AnsiState_.__AnsiY, 32);
                         }
                     }
                     break;
@@ -637,82 +800,82 @@ namespace TextPaint
                     __AnsiResponse.Add(AnsiCmd_);
                     break;
                 case "[s": // SCOSC
-                    if (!__AnsiMarginLeftRight)
+                    if (!AnsiState_.__AnsiMarginLeftRight)
                     {
-                        __AnsiX_ = __AnsiX;
-                        __AnsiY_ = __AnsiY;
-                        __AnsiBack_ = __AnsiBack;
-                        __AnsiFore_ = __AnsiFore;
-                        __AnsiFontBold_ = __AnsiFontBold;
-                        __AnsiFontInverse_ = __AnsiFontInverse;
-                        __AnsiFontBlink_ = __AnsiFontBlink;
-                        __AnsiFontInvisible_ = __AnsiFontInvisible;
-                        VT100_SemigraphDef_[0] = VT100_SemigraphDef[0];
-                        VT100_SemigraphDef_[1] = VT100_SemigraphDef[1];
-                        VT100_SemigraphDef_[2] = VT100_SemigraphDef[2];
-                        VT100_SemigraphDef_[3] = VT100_SemigraphDef[3];
-                        VT100_SemigraphNum_ = VT100_SemigraphNum;
+                        AnsiState_.__AnsiX_ = AnsiState_.__AnsiX;
+                        AnsiState_.__AnsiY_ = AnsiState_.__AnsiY;
+                        AnsiState_.__AnsiBack_ = AnsiState_.__AnsiBack;
+                        AnsiState_.__AnsiFore_ = AnsiState_.__AnsiFore;
+                        AnsiState_.__AnsiFontBold_ = AnsiState_.__AnsiFontBold;
+                        AnsiState_.__AnsiFontInverse_ = AnsiState_.__AnsiFontInverse;
+                        AnsiState_.__AnsiFontBlink_ = AnsiState_.__AnsiFontBlink;
+                        AnsiState_.__AnsiFontInvisible_ = AnsiState_.__AnsiFontInvisible;
+                        AnsiState_.VT100_SemigraphDef_[0] = AnsiState_.VT100_SemigraphDef[0];
+                        AnsiState_.VT100_SemigraphDef_[1] = AnsiState_.VT100_SemigraphDef[1];
+                        AnsiState_.VT100_SemigraphDef_[2] = AnsiState_.VT100_SemigraphDef[2];
+                        AnsiState_.VT100_SemigraphDef_[3] = AnsiState_.VT100_SemigraphDef[3];
+                        AnsiState_.VT100_SemigraphNum_ = AnsiState_.VT100_SemigraphNum;
                     }
                     else
                     {
-                        __AnsiMarginLeft = 0;
-                        __AnsiMarginRight = AnsiMaxX;
+                        AnsiState_.__AnsiMarginLeft = 0;
+                        AnsiState_.__AnsiMarginRight = AnsiMaxX;
                     }
                     break;
                 case "[u": // SCORC
-                    __AnsiX = __AnsiX_;
-                    __AnsiY = __AnsiY_;
-                    __AnsiBack = __AnsiBack_;
-                    __AnsiFore = __AnsiFore_;
-                    __AnsiFontBold = __AnsiFontBold_;
-                    __AnsiFontInverse = __AnsiFontInverse_;
-                    __AnsiFontBlink = __AnsiFontBlink_;
-                    __AnsiFontInvisible = __AnsiFontInvisible_;
-                    VT100_SemigraphDef[0] = VT100_SemigraphDef_[0];
-                    VT100_SemigraphDef[1] = VT100_SemigraphDef_[1];
-                    VT100_SemigraphDef[2] = VT100_SemigraphDef_[2];
-                    VT100_SemigraphDef[3] = VT100_SemigraphDef_[3];
-                    VT100_SemigraphNum = VT100_SemigraphNum_;
+                    AnsiState_.__AnsiX = AnsiState_.__AnsiX_;
+                    AnsiState_.__AnsiY = AnsiState_.__AnsiY_;
+                    AnsiState_.__AnsiBack = AnsiState_.__AnsiBack_;
+                    AnsiState_.__AnsiFore = AnsiState_.__AnsiFore_;
+                    AnsiState_.__AnsiFontBold = AnsiState_.__AnsiFontBold_;
+                    AnsiState_.__AnsiFontInverse = AnsiState_.__AnsiFontInverse_;
+                    AnsiState_.__AnsiFontBlink = AnsiState_.__AnsiFontBlink_;
+                    AnsiState_.__AnsiFontInvisible = AnsiState_.__AnsiFontInvisible_;
+                    AnsiState_.VT100_SemigraphDef[0] = AnsiState_.VT100_SemigraphDef_[0];
+                    AnsiState_.VT100_SemigraphDef[1] = AnsiState_.VT100_SemigraphDef_[1];
+                    AnsiState_.VT100_SemigraphDef[2] = AnsiState_.VT100_SemigraphDef_[2];
+                    AnsiState_.VT100_SemigraphDef[3] = AnsiState_.VT100_SemigraphDef_[3];
+                    AnsiState_.VT100_SemigraphNum = AnsiState_.VT100_SemigraphNum_;
                     break;
                 case "[J": // ED
                 case "[0J": // ED
                     AnsiCalcColor();
-                    AnsiClearFontSize(__AnsiY + 1);
-                    for (int i_ = __AnsiY + 1; i_ < AnsiMaxY; i_++)
+                    AnsiClearFontSize(AnsiState_.__AnsiY + 1);
+                    for (int i_ = AnsiState_.__AnsiY + 1; i_ < AnsiMaxY; i_++)
                     {
                         for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                         {
-                            AnsiChar(ii_, i_, 32);
+                            AnsiCharUnprotected2(ii_, i_, 32);
                         }
                     }
-                    if (AnsiMaxY > __AnsiY)
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
                     {
-                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                         {
-                            for (int ii_ = (__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
+                            for (int ii_ = (AnsiState_.__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                         else
                         {
-                            for (int ii_ = __AnsiX; ii_ < AnsiMaxX; ii_++)
+                            for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                     }
                     break;
                 case "[1J": // ED
                     AnsiCalcColor();
-                    for (int i_ = 0; i_ < __AnsiY; i_++)
+                    for (int i_ = 0; i_ < AnsiState_.__AnsiY; i_++)
                     {
                         AnsiSetFontSize(i_, 0, true);
-                        if (AnsiMaxY > __AnsiY)
+                        if (AnsiMaxY > AnsiState_.__AnsiY)
                         {
                             for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                             {
-                                AnsiChar(ii_, i_, 32);
+                                AnsiCharUnprotected2(ii_, i_, 32);
                             }
                         }
                         else
@@ -720,18 +883,18 @@ namespace TextPaint
                             break;
                         }
                     }
-                    if (AnsiGetFontSize(__AnsiY) > 0)
+                    if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                     {
-                        for (int ii_ = 0; ii_ <= (__AnsiX << 1); ii_++)
+                        for (int ii_ = 0; ii_ <= (AnsiState_.__AnsiX << 1); ii_++)
                         {
-                            AnsiChar(ii_, __AnsiY, 32);
+                            AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                         }
                     }
                     else
                     {
-                        for (int ii_ = 0; ii_ <= __AnsiX; ii_++)
+                        for (int ii_ = 0; ii_ <= AnsiState_.__AnsiX; ii_++)
                         {
-                            AnsiChar(ii_, __AnsiY, 32);
+                            AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                         }
                     }
                     break;
@@ -746,63 +909,63 @@ namespace TextPaint
                     {
                         for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                         {
-                            AnsiChar(ii_, i_, 32);
+                            AnsiCharUnprotected2(ii_, i_, 32);
                         }
                     }
                     if (ANSIDOS)
                     {
-                        __AnsiX = 0;
-                        __AnsiY = 0;
+                        AnsiState_.__AnsiX = 0;
+                        AnsiState_.__AnsiY = 0;
                     }
                     break;
                 case "[K": // EL
                 case "[0K": // EL
-                    if (AnsiMaxY > __AnsiY)
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
                     {
                         AnsiCalcColor();
-                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                         {
-                            for (int ii_ = (__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
+                            for (int ii_ = (AnsiState_.__AnsiX << 1); ii_ < AnsiMaxX; ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                         else
                         {
-                            for (int ii_ = __AnsiX; ii_ < AnsiMaxX; ii_++)
+                            for (int ii_ = AnsiState_.__AnsiX; ii_ < AnsiMaxX; ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                     }
                     break;
                 case "[1K": // EL
-                    if (AnsiMaxY > __AnsiY)
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
                     {
                         AnsiCalcColor();
-                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                         {
-                            for (int ii_ = 0; ii_ <= (__AnsiX << 1); ii_++)
+                            for (int ii_ = 0; ii_ <= (AnsiState_.__AnsiX << 1); ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                         else
                         {
-                            for (int ii_ = 0; ii_ <= __AnsiX; ii_++)
+                            for (int ii_ = 0; ii_ <= AnsiState_.__AnsiX; ii_++)
                             {
-                                AnsiChar(ii_, __AnsiY, 32);
+                                AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                             }
                         }
                     }
                     break;
                 case "[2K": // EL
-                    if (AnsiMaxY > __AnsiY)
+                    if (AnsiMaxY > AnsiState_.__AnsiY)
                     {
                         AnsiCalcColor();
                         for (int ii_ = 0; ii_ < AnsiMaxX; ii_++)
                         {
-                            AnsiChar(ii_, __AnsiY, 32);
+                            AnsiCharUnprotected2(ii_, AnsiState_.__AnsiY, 32);
                         }
                     }
                     break;
@@ -848,15 +1011,15 @@ namespace TextPaint
                     switch (AnsiParams[0])
                     {
                         case "0":
-                            __AnsiFontSizeW = AnsiProcess_Int(AnsiParams[1], AnsiCmd_);
-                            __AnsiFontSizeH = AnsiProcess_Int(AnsiParams[2], AnsiCmd_);
-                            if (__AnsiFontSizeW > FontMaxSizeCode)
+                            AnsiState_.__AnsiFontSizeW = AnsiProcess_Int(AnsiParams[1], AnsiCmd_);
+                            AnsiState_.__AnsiFontSizeH = AnsiProcess_Int(AnsiParams[2], AnsiCmd_);
+                            if (AnsiState_.__AnsiFontSizeW > FontMaxSizeCode)
                             {
-                                __AnsiFontSizeW = 0;
+                                AnsiState_.__AnsiFontSizeW = 0;
                             }
-                            if (__AnsiFontSizeH > FontMaxSizeCode)
+                            if (AnsiState_.__AnsiFontSizeH > FontMaxSizeCode)
                             {
-                                __AnsiFontSizeH = 0;
+                                AnsiState_.__AnsiFontSizeH = 0;
                             }
                             break;
                         case "1":
@@ -870,10 +1033,16 @@ namespace TextPaint
                     switch (AnsiParams[0])
                     {
                         case "4": // SM / IRM
-                            __AnsiInsertMode = true;
+                            AnsiState_.__AnsiInsertMode = true;
+                            break;
+                        case "6": // SM / ???
+                            AnsiState_.CharProtection2Ommit = true;
+                            break;
+                        case "12": // SM / SRM
+                            __AnsiResponse.Add("LocalEcho_0");
                             break;
                         case "20": // SM / LNM
-                            __AnsiNewLineKey = true;
+                            __AnsiResponse.Add("EnterKey_1");
                             break;
                     }
                     break;
@@ -881,12 +1050,16 @@ namespace TextPaint
                     switch (AnsiParams[0])
                     {
                         case "4": // RM / IRM
-                            __AnsiInsertMode = false;
+                            AnsiState_.__AnsiInsertMode = false;
+                            break;
+                        case "6": // RM / ???
+                            AnsiState_.CharProtection2Ommit = false;
+                            break;
+                        case "12": // RM / SRM
+                            __AnsiResponse.Add("LocalEcho_1");
                             break;
                         case "20": // RM / LNM
-                            {
-                                __AnsiNewLineKey = false;
-                            }
+                            __AnsiResponse.Add("EnterKey_0");
                             break;
                     }
                     break;
@@ -898,34 +1071,38 @@ namespace TextPaint
                     }
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
                     if ("".Equals(AnsiParams[1])) { AnsiParams[1] = "1"; }
-                    __AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                    __AnsiX = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
-                    if (__AnsiY < 0)
+                    AnsiState_.__AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                    AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                    if (AnsiState_.__AnsiY < 0)
                     {
-                        __AnsiY = 0;
+                        AnsiState_.__AnsiY = 0;
                     }
-                    if (__AnsiX < 0)
+                    if (AnsiState_.__AnsiX < 0)
                     {
-                        __AnsiX = 0;
+                        AnsiState_.__AnsiX = 0;
                     }
-                    if (__AnsiOrigin)
+                    if (AnsiState_.__AnsiOrigin)
                     {
-                        __AnsiY += __AnsiScrollFirst;
+                        AnsiState_.__AnsiY += AnsiState_.__AnsiScrollFirst;
                     }
-                    __AnsiX += AnsiProcessGetXMin(true);
-                    if (__AnsiY >= AnsiMaxY)
+                    AnsiState_.__AnsiX += AnsiProcessGetXMin(true);
+                    if (AnsiState_.__AnsiX >= AnsiMaxX)
                     {
-                        __AnsiY = AnsiMaxY - 1;
+                        AnsiState_.__AnsiX = AnsiMaxX - 1;
                     }
-                    if (__AnsiOrigin)
+                    if (AnsiState_.__AnsiY >= AnsiMaxY)
                     {
-                        if (__AnsiMarginLeftRight && (__AnsiX >= __AnsiMarginRight))
+                        AnsiState_.__AnsiY = AnsiMaxY - 1;
+                    }
+                    if (AnsiState_.__AnsiOrigin)
+                    {
+                        if (AnsiState_.__AnsiMarginLeftRight && (AnsiState_.__AnsiX >= AnsiState_.__AnsiMarginRight))
                         {
-                            __AnsiX = __AnsiMarginRight - 1;
+                            AnsiState_.__AnsiX = AnsiState_.__AnsiMarginRight - 1;
                         }
-                        if (__AnsiY > __AnsiScrollLast)
+                        if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
                         {
-                            __AnsiY = __AnsiScrollLast;
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                         }
                     }
 
@@ -942,34 +1119,34 @@ namespace TextPaint
                     {
                         // CUU
                         if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                        __AnsiY -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
-                        if (__AnsiY < __AnsiScrollFirst)
+                        AnsiState_.__AnsiY -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
+                        if (AnsiState_.__AnsiY < AnsiState_.__AnsiScrollFirst)
                         {
-                            __AnsiY = __AnsiScrollFirst;
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                         }
                     }
                     break;
                 case 'B': // CUD
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiY += Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
-                    if (__AnsiY > __AnsiScrollLast)
+                    AnsiState_.__AnsiY += Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
+                    if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiY = __AnsiScrollLast;
+                        AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                     }
                     break;
                 case 'C': // CUF
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiX += Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
-                    if ((AnsiMaxX > 0) && (__AnsiX >= AnsiProcessGetXMax(false)))
+                    AnsiState_.__AnsiX += Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
+                    if ((AnsiMaxX > 0) && (AnsiState_.__AnsiX >= AnsiProcessGetXMax(false)))
                     {
                         if (ANSIDOS)
                         {
-                            __AnsiY++;
-                            __AnsiX = __AnsiX - AnsiMaxX;
+                            AnsiState_.__AnsiY++;
+                            AnsiState_.__AnsiX = AnsiState_.__AnsiX - AnsiMaxX;
                         }
                         else
                         {
-                            __AnsiX = AnsiProcessGetXMax(false) - 1;
+                            AnsiState_.__AnsiX = AnsiProcessGetXMax(false) - 1;
                         }
                     }
                     break;
@@ -977,79 +1154,168 @@ namespace TextPaint
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
                     if (AnsiMaxX > 0)
                     {
-                        if (__AnsiX >= AnsiMaxX)
+                        if (AnsiState_.__AnsiX >= AnsiMaxX)
                         {
-                            __AnsiX = AnsiMaxX - 1;
+                            AnsiState_.__AnsiX = AnsiMaxX - 1;
                         }
                     }
-                    __AnsiX -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
-                    if (__AnsiX < AnsiProcessGetXMin(false))
+                    AnsiState_.__AnsiX -= Math.Max(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), 1);
+                    if (AnsiState_.__AnsiX < AnsiProcessGetXMin(false))
                     {
-                        __AnsiX = AnsiProcessGetXMin(false);
+                        AnsiState_.__AnsiX = AnsiProcessGetXMin(false);
                     }
                     break;
 
                 case 'd': // VPA
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                    if (__AnsiOrigin)
+                    AnsiState_.__AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                    if (AnsiState_.__AnsiOrigin)
                     {
-                        __AnsiY += __AnsiScrollFirst;
+                        AnsiState_.__AnsiY += AnsiState_.__AnsiScrollFirst;
                     }
                     break;
                 case 'e': // VPR
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    AnsiState_.__AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                     break;
 
                 case '`': // HPA
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1 + AnsiProcessGetXMin(true);
+                    AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1 + AnsiProcessGetXMin(true);
                     break;
                 case 'a': // HPR
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiX += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    AnsiState_.__AnsiX += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
                     break;
 
                 case 'E': // CNL
-                    __AnsiX = AnsiProcessGetXMin(false);
+                    AnsiState_.__AnsiX = AnsiProcessGetXMin(false);
                     if ("0".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
-                    if (__AnsiY > __AnsiScrollLast)
+                    AnsiState_.__AnsiY += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiY = __AnsiScrollLast;
+                        AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                     }
                     break;
                 case 'F': // CPL
-                    __AnsiX = AnsiProcessGetXMin(false);
+                    AnsiState_.__AnsiX = AnsiProcessGetXMin(false);
                     if ("0".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiY -= AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
-                    if (__AnsiY < __AnsiScrollFirst)
+                    AnsiState_.__AnsiY -= AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    if (AnsiState_.__AnsiY < AnsiState_.__AnsiScrollFirst)
                     {
-                        __AnsiY = __AnsiScrollFirst;
+                        AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                     }
                     break;
                 case 'G': // CHA
                     if ("0".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    __AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                    if (__AnsiOrigin && __AnsiMarginLeftRight)
+                    AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                    if (AnsiState_.__AnsiOrigin && AnsiState_.__AnsiMarginLeftRight)
                     {
-                        __AnsiX += __AnsiMarginLeft;
+                        AnsiState_.__AnsiX += AnsiState_.__AnsiMarginLeft;
                     }
                     break;
                 case 'S': // SU
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    AnsiScrollInit(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiScrollCommandDef.None);
+                    AnsiScrollInit(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiState.AnsiScrollCommandDef.None);
                     break;
                 case 'T': // SD
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    AnsiScrollInit(0 - AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiScrollCommandDef.None);
+                    AnsiScrollInit(0 - AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiState.AnsiScrollCommandDef.None);
+                    break;
+                case 'q':
+                    if (AnsiCmd_.EndsWith("\"q"))
+                    {
+                        if (AnsiParams.Length >= 1)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            if (AnsiProcess_Int(AnsiParams[0], AnsiCmd_) == 1)
+                            {
+                                AnsiState_.CharProtection1Print = true;
+                            }
+                            else
+                            {
+                                AnsiState_.CharProtection1Print = false;
+                            }
+                        }
+                    }
                     break;
                 case 'r': // DECSTBM
-
-                    // DECCARA - not implemented
+                    // DECCARA
                     if (AnsiCmd_.EndsWith("$r"))
                     {
+                        if (AnsiParams.Length >= 5)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int RecY1 = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            int Attr = AnsiProcess_Int(AnsiParams[4], AnsiCmd_);
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            for (int Y = RecY1; Y <= RecY2; Y++)
+                            {
+                                for (int X = RecX1; X <= RecX2; X++)
+                                {
+                                    int TempC, TempB, TempF;
+                                    AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                    AnsiDetectAttributes(TempB, TempF);
+                                    switch (Attr)
+                                    {
+                                        case 0:
+                                            if (AnsiState_.__AnsiFontInverse && (ANSIReverseMode == 1))
+                                            {
+                                                int T = TempF;
+                                                TempF = TempB;
+                                                TempB = T;
+                                            }
+                                            if (AnsiState_.__AnsiFontBold)
+                                            {
+                                                TempF = AnsiCalcColorSwapLoHi(TempF);
+                                            }
+                                            if (AnsiState_.__AnsiFontBlink)
+                                            {
+                                                TempB = AnsiCalcColorSwapLoHi(TempB);
+                                            }
+                                            if (AnsiState_.__AnsiFontInverse && (ANSIReverseMode == 0))
+                                            {
+                                                int T = TempF;
+                                                TempF = TempB;
+                                                TempB = T;
+                                            }
+                                            AnsiState_.__AnsiFontBold = false;
+                                            AnsiState_.__AnsiFontBlink = false;
+                                            AnsiState_.__AnsiFontInverse = false;
+                                            break;
+                                        case 1: // Bold
+                                            AnsiState_.__AnsiFontBold = true;
+                                            break;
+                                        case 4: // Underline
+                                            break;
+                                        case 5: // Blink
+                                            AnsiState_.__AnsiFontBlink = true;
+                                            break;
+                                        case 7: // Inverse
+                                            AnsiState_.__AnsiFontInverse = true;
+                                            break;
+                                    }
+                                    AnsiCalcColor(TempB, TempF);
+                                    AnsiCharF(X, Y, TempC);
+                                }
+                                AnsiRepaintLine(Y);
+                            }
+                            AnsiAttributesLoad();
+                        }
                     }
                     else
                     {
@@ -1060,32 +1326,334 @@ namespace TextPaint
                         }
                         if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "0"; }
                         if ("".Equals(AnsiParams[1])) { AnsiParams[1] = "0"; }
-                        __AnsiScrollFirst = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                        __AnsiScrollLast = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
-                        if (__AnsiScrollFirst > __AnsiScrollLast)
+                        AnsiState_.__AnsiScrollFirst = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                        AnsiState_.__AnsiScrollLast = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                        if (AnsiState_.__AnsiScrollFirst > AnsiState_.__AnsiScrollLast)
                         {
-                            __AnsiScrollFirst = 0;
-                            __AnsiScrollLast = AnsiMaxY - 1;
+                            AnsiState_.__AnsiScrollFirst = 0;
+                            AnsiState_.__AnsiScrollLast = AnsiMaxY - 1;
                         }
-                        if (__AnsiScrollFirst < 0)
+                        if (AnsiState_.__AnsiScrollFirst < 0)
                         {
-                            __AnsiScrollFirst = 0;
+                            AnsiState_.__AnsiScrollFirst = 0;
                         }
-                        if (__AnsiScrollLast >= AnsiMaxY)
+                        if (AnsiState_.__AnsiScrollLast >= AnsiMaxY)
                         {
-                            __AnsiScrollLast = AnsiMaxY - 1;
+                            AnsiState_.__AnsiScrollLast = AnsiMaxY - 1;
                         }
-                        __AnsiX = 0;
-                        if (__AnsiOrigin)
+                        AnsiState_.__AnsiX = 0;
+                        if (AnsiState_.__AnsiOrigin)
                         {
-                            __AnsiY = __AnsiScrollFirst;
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollFirst;
                         }
                         else
                         {
-                            __AnsiY = 0;
+                            AnsiState_.__AnsiY = 0;
                         }
                     }
                     break;
+                case 'v':
+                    // DECCRA
+                    if (AnsiCmd_.EndsWith("$v")) 
+                    {
+                        if (AnsiParams.Length >= 8)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int RecY1 = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            int TargetY = AnsiProcess_Int(AnsiParams[5], AnsiCmd_) - 1;
+                            int TargetX = AnsiProcess_Int(AnsiParams[6], AnsiCmd_) - 1;
+                            TargetX = TargetX - RecX1;
+                            TargetY = TargetY - RecY1;
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            if (TargetY >= 0)
+                            {
+                                for (int Y = RecY2; Y >= RecY1; Y--)
+                                {
+                                    if (TargetX >= 0)
+                                    {
+                                        for (int X = RecX2; X >= RecX1; X--)
+                                        {
+                                            int TempC, TempB, TempF;
+                                            AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                            AnsiCalcColor(TempB, TempF);
+                                            AnsiCharF(X + TargetX, Y + TargetY, TempC);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int X = RecX1; X <= RecX2; X++)
+                                        {
+                                            int TempC, TempB, TempF;
+                                            AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                            AnsiCalcColor(TempB, TempF);
+                                            AnsiCharF(X + TargetX, Y + TargetY, TempC);
+                                        }
+                                    }
+                                    AnsiRepaintLine(Y + TargetY);
+                                }
+                            }
+                            else
+                            {
+                                for (int Y = RecY1; Y <= RecY2; Y++)
+                                {
+                                    if (TargetX >= 0)
+                                    {
+                                        for (int X = RecX2; X >= RecX1; X--)
+                                        {
+                                            int TempC, TempB, TempF;
+                                            AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                            AnsiCalcColor(TempB, TempF);
+                                            AnsiCharF(X + TargetX, Y + TargetY, TempC);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        for (int X = RecX1; X <= RecX2; X++)
+                                        {
+                                            int TempC, TempB, TempF;
+                                            AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                            AnsiCalcColor(TempB, TempF);
+                                            AnsiCharF(X + TargetX, Y + TargetY, TempC);
+                                        }
+                                    }
+                                    AnsiRepaintLine(Y + TargetY);
+                                }
+                            }
+                            AnsiAttributesLoad();
+                        }
+                    }
+                    break;
+                case 'x':
+                    // DECFRA
+                    if (AnsiCmd_.EndsWith("$x"))
+                    {
+                        if (AnsiParams.Length >= 5)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int FillC = AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                            int RecY1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[4], AnsiCmd_) - 1;
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            if (AnsiState_.VT100_SemigraphDef[AnsiState_.VT100_SemigraphNum])
+                            {
+                                if ((FillC >= 95) && (FillC <= 126))
+                                {
+                                    FillC = VT100_SemigraphChars[FillC - 95];
+                                }
+                            }
+
+                            for (int Y = RecY1; Y <= RecY2; Y++)
+                            {
+                                for (int X = RecX1; X <= RecX2; X++)
+                                {
+                                    AnsiCalcColor();
+                                    AnsiCharF(X, Y, FillC);
+                                }
+                                AnsiRepaintLine(Y);
+                            }
+                            AnsiAttributesLoad();
+                        }
+                    }
+                    break;
+                case 'z':
+                    // DECERA
+                    if (AnsiCmd_.EndsWith("$z"))
+                    {
+                        if (AnsiParams.Length >= 4)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int RecY1 = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            for (int Y = RecY1; Y <= RecY2; Y++)
+                            {
+                                for (int X = RecX1; X <= RecX2; X++)
+                                {
+                                    int TempC, TempB, TempF;
+                                    AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                    AnsiState_.__AnsiBack = TempB;
+                                    AnsiState_.__AnsiFore = TempF;
+                                    AnsiCalcColor();
+                                    AnsiCharF(X, Y, ' ');
+                                }
+                                AnsiRepaintLine(Y);
+                            }
+                            AnsiAttributesLoad();
+                        }
+                    }
+                    break;
+                case 't':
+                    // DECRARA - not implemented
+                    if (AnsiCmd_.EndsWith("$t"))
+                    {
+                        if (AnsiParams.Length >= 5)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int RecY1 = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            int Attr = AnsiProcess_Int(AnsiParams[4], AnsiCmd_);
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            for (int Y = RecY1; Y <= RecY2; Y++)
+                            {
+                                for (int X = RecX1; X <= RecX2; X++)
+                                {
+                                    int TempC, TempB, TempF;
+                                    AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                    AnsiDetectAttributes(TempB, TempF);
+                                    switch (Attr)
+                                    {
+                                        case 1: // Bold
+                                            if (AnsiState_.__AnsiFontBold)
+                                            {
+                                                TempF = AnsiCalcColorSwapLoHi(TempF);
+                                            }
+                                            AnsiState_.__AnsiFontBold = !AnsiState_.__AnsiFontBold;
+                                            break;
+                                        case 4: // Underline
+                                            break;
+                                        case 5: // Blink
+                                            if (AnsiState_.__AnsiFontBlink)
+                                            {
+                                                TempB = AnsiCalcColorSwapLoHi(TempB);
+                                            }
+                                            AnsiState_.__AnsiFontBlink = !AnsiState_.__AnsiFontBlink;
+                                            break;
+                                        case 7: // Inverse
+                                            if (AnsiState_.__AnsiFontInverse)
+                                            {
+                                                if (ANSIReverseMode == 1)
+                                                {
+                                                    if (AnsiState_.__AnsiFontBold)
+                                                    {
+                                                        TempF = AnsiCalcColorSwapLoHi(TempF);
+                                                    }
+                                                    if (AnsiState_.__AnsiFontBlink)
+                                                    {
+                                                        TempB = AnsiCalcColorSwapLoHi(TempB);
+                                                    }
+                                                }
+                                                int T = TempF;
+                                                TempF = TempB;
+                                                TempB = T;
+                                                if (ANSIReverseMode == 1)
+                                                {
+                                                    if (AnsiState_.__AnsiFontBold)
+                                                    {
+                                                        TempF = AnsiCalcColorSwapLoHi(TempF);
+                                                    }
+                                                    if (AnsiState_.__AnsiFontBlink)
+                                                    {
+                                                        TempB = AnsiCalcColorSwapLoHi(TempB);
+                                                    }
+                                                }
+                                            }
+                                            AnsiState_.__AnsiFontInverse = !AnsiState_.__AnsiFontInverse;
+                                            break;
+                                    }
+                                    AnsiCalcColor(TempB, TempF);
+                                    AnsiCharF(X, Y, TempC);
+                                }
+                                AnsiRepaintLine(Y);
+                            }
+                            AnsiAttributesLoad();
+                        }
+                    }
+                    break;
+                case '{':
+                    // DECSERA
+                    if (AnsiCmd_.EndsWith("${"))
+                    {
+                        if (AnsiParams.Length >= 4)
+                        {
+                            AnsiParams[AnsiParams.Length - 1] = AnsiParams[AnsiParams.Length - 1].Substring(0, AnsiParams[AnsiParams.Length - 1].Length - 1);
+                            AnsiAttriburesSave();
+                            int RecY1 = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                            int RecX1 = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                            int RecY2 = AnsiProcess_Int(AnsiParams[2], AnsiCmd_) - 1;
+                            int RecX2 = AnsiProcess_Int(AnsiParams[3], AnsiCmd_) - 1;
+                            if (AnsiState_.__AnsiOrigin)
+                            {
+                                RecY1 += AnsiState_.__AnsiScrollFirst;
+                                RecY2 += AnsiState_.__AnsiScrollFirst;
+                                if (AnsiState_.__AnsiMarginLeftRight)
+                                {
+                                    RecX1 += AnsiState_.__AnsiMarginLeft;
+                                    RecX2 += AnsiState_.__AnsiMarginLeft;
+                                }
+                            }
+
+                            for (int Y = RecY1; Y <= RecY2; Y++)
+                            {
+                                for (int X = RecX1; X <= RecX2; X++)
+                                {
+                                    int TempC, TempB, TempF;
+                                    AnsiGetF(X, Y, out TempC, out TempB, out TempF);
+                                    AnsiState_.__AnsiBack = TempB;
+                                    AnsiState_.__AnsiFore = TempF;
+                                    AnsiCalcColor();
+                                    AnsiCharFUnprotected1(X, Y, ' ');
+                                }
+                                AnsiRepaintLine(Y);
+                            }
+                            AnsiAttributesLoad();
+                        }
+                    }
+                    break;
+
+
                 case 's': // DECSLRM
                     if (AnsiParams.Length == 1)
                     {
@@ -1093,27 +1661,27 @@ namespace TextPaint
                     }
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "0"; }
                     if ("".Equals(AnsiParams[1])) { AnsiParams[1] = "0"; }
-                    if (__AnsiMarginLeftRight)
+                    if (AnsiState_.__AnsiMarginLeftRight)
                     {
-                        __AnsiMarginLeft = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                        __AnsiMarginRight = AnsiProcess_Int(AnsiParams[1], AnsiCmd_);
-                        if ((__AnsiMarginLeft == -1) && (__AnsiMarginRight == 0))
+                        AnsiState_.__AnsiMarginLeft = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                        AnsiState_.__AnsiMarginRight = AnsiProcess_Int(AnsiParams[1], AnsiCmd_);
+                        if ((AnsiState_.__AnsiMarginLeft == -1) && (AnsiState_.__AnsiMarginRight == 0))
                         {
-                            __AnsiMarginLeft = 0;
-                            __AnsiMarginRight = AnsiMaxX;
+                            AnsiState_.__AnsiMarginLeft = 0;
+                            AnsiState_.__AnsiMarginRight = AnsiMaxX;
                         }
-                        if (__AnsiMarginLeft >= __AnsiMarginRight)
+                        if (AnsiState_.__AnsiMarginLeft >= AnsiState_.__AnsiMarginRight)
                         {
-                            __AnsiMarginLeft = 0;
-                            __AnsiMarginRight = AnsiMaxX;
+                            AnsiState_.__AnsiMarginLeft = 0;
+                            AnsiState_.__AnsiMarginRight = AnsiMaxX;
                         }
-                        if (__AnsiMarginLeft < 0)
+                        if (AnsiState_.__AnsiMarginLeft < 0)
                         {
-                            __AnsiMarginLeft = 0;
+                            AnsiState_.__AnsiMarginLeft = 0;
                         }
-                        if (__AnsiMarginRight > AnsiMaxX)
+                        if (AnsiState_.__AnsiMarginRight > AnsiMaxX)
                         {
-                            __AnsiMarginRight = AnsiMaxX;
+                            AnsiState_.__AnsiMarginRight = AnsiMaxX;
                         }
                     }
                     break;
@@ -1125,13 +1693,13 @@ namespace TextPaint
                     }
                     else
                     {
-                        if ((__AnsiY >= __AnsiScrollFirst) && (__AnsiY <= __AnsiScrollLast))
+                        if ((AnsiState_.__AnsiY >= AnsiState_.__AnsiScrollFirst) && (AnsiState_.__AnsiY <= AnsiState_.__AnsiScrollLast))
                         {
-                            int T1 = __AnsiScrollFirst;
-                            int T2 = __AnsiScrollLast;
+                            int T1 = AnsiState_.__AnsiScrollFirst;
+                            int T2 = AnsiState_.__AnsiScrollLast;
                             //__AnsiX = 0;
-                            __AnsiScrollFirst = __AnsiY;
-                            AnsiScrollInit(0 - AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiScrollCommandDef.FirstLast, T1, T2, 0);
+                            AnsiState_.__AnsiScrollFirst = AnsiState_.__AnsiY;
+                            AnsiScrollInit(0 - AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiState.AnsiScrollCommandDef.FirstLast, T1, T2, 0);
                         }
                     }
                     break;
@@ -1139,17 +1707,17 @@ namespace TextPaint
                     if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
                     if (ANSIDOS)
                     {
-                        __AnsiMusic = true;
+                        AnsiState_.__AnsiMusic = true;
                     }
                     else
                     {
-                        if ((__AnsiY >= __AnsiScrollFirst) && (__AnsiY <= __AnsiScrollLast))
+                        if ((AnsiState_.__AnsiY >= AnsiState_.__AnsiScrollFirst) && (AnsiState_.__AnsiY <= AnsiState_.__AnsiScrollLast))
                         {
-                            int T1 = __AnsiScrollFirst;
-                            int T2 = __AnsiScrollLast;
+                            int T1 = AnsiState_.__AnsiScrollFirst;
+                            int T2 = AnsiState_.__AnsiScrollLast;
                             //__AnsiX = 0;
-                            __AnsiScrollFirst = __AnsiY;
-                            AnsiScrollInit(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiScrollCommandDef.FirstLast, T1, T2, 0);
+                            AnsiState_.__AnsiScrollFirst = AnsiState_.__AnsiY;
+                            AnsiScrollInit(AnsiProcess_Int(AnsiParams[0], AnsiCmd_), AnsiState.AnsiScrollCommandDef.FirstLast, T1, T2, 0);
                         }
                     }
                     break;
@@ -1171,115 +1739,117 @@ namespace TextPaint
                         // ICH
                         if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
                         int InsCycle = AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
-                        if (__AnsiLineOccupy.Count > __AnsiY)
+                        if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiY)
                         {
-                            int FontSize = AnsiGetFontSize(__AnsiY);
+                            int FontSize = AnsiGetFontSize(AnsiState_.__AnsiY);
                             while (InsCycle > 0)
                             {
                                 int TempC = 0, TempB = 0, TempF = 0;
                                 if (FontSize > 0)
                                 {
-                                    AnsiGetF(__AnsiX, __AnsiY, out TempC, out TempB, out TempF);
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (__AnsiX * 2 * __AnsiLineOccupyFactor))
+                                    AnsiGetF(AnsiState_.__AnsiX, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, FontSize - 1);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, 2);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, 32);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, FontSize - 1);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, 1);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * 2 * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, FontSize - 1);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, 2);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, FontSize - 1);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, 1);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * 2 * __AnsiLineOccupyFactor, 32);
                                     }
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].RemoveRange(AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange(AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
                                     }
                                 }
                                 else
                                 {
-                                    AnsiGetF(__AnsiX, __AnsiY, out TempC, out TempB, out TempF);
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (__AnsiX * __AnsiLineOccupyFactor))
+                                    AnsiGetF(AnsiState_.__AnsiX, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiState_.__AnsiX * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert(__AnsiX * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert(AnsiState_.__AnsiX * __AnsiLineOccupyFactor, 32);
                                     }
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].RemoveRange(AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange(AnsiProcessGetXMax(false) * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor);
                                     }
                                 }
                                 InsCycle--;
                             }
-                            AnsiRepaintLine(__AnsiY);
+                            AnsiRepaintLine(AnsiState_.__AnsiY);
                         }
+                        AnsiState_.PrintCharInsDel++;
                     }
                     break;
                 case 'P': // DCH
                     {
                         if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
                         int DelCycle = AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
-                        if (__AnsiLineOccupy.Count > __AnsiY)
+                        if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiY)
                         {
                             while (DelCycle > 0)
                             {
                                 int TempC = 0, TempB = 0, TempF = 0;
-                                if (AnsiGetFontSize(__AnsiY) > 0)
+                                if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                                 {
-                                    AnsiGetF((AnsiProcessGetXMax(false)) - 1, __AnsiY, out TempC, out TempB, out TempF);
-                                    if (__AnsiLineOccupy[__AnsiY].Count >= ((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor))
+                                    AnsiGetF((AnsiProcessGetXMax(false)) - 1, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= ((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
                                     }
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (__AnsiX * __AnsiLineOccupyFactor))
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiState_.__AnsiX * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].RemoveRange((__AnsiX * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiState_.__AnsiX * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor + __AnsiLineOccupyFactor);
                                     }
                                     if (TempC > 0)
                                     {
                                         AnsiCalcColor();
-                                        AnsiCharF((AnsiProcessGetXMax(false) / 2) - 1, __AnsiY, 32);
+                                        AnsiCharF((AnsiProcessGetXMax(false) / 2) - 1, AnsiState_.__AnsiY, 32);
                                     }
                                 }
                                 else
                                 {
-                                    AnsiGetF(AnsiProcessGetXMax(false) - 1, __AnsiY, out TempC, out TempB, out TempF);
-                                    if (__AnsiLineOccupy[__AnsiY].Count >= ((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor))
+                                    AnsiGetF(AnsiProcessGetXMax(false) - 1, AnsiState_.__AnsiY, out TempC, out TempB, out TempF);
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count >= ((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
-                                        __AnsiLineOccupy[__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 0);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempF);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, TempB);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Insert((AnsiProcessGetXMax(false)) * __AnsiLineOccupyFactor, 32);
                                     }
-                                    if (__AnsiLineOccupy[__AnsiY].Count > (__AnsiX * __AnsiLineOccupyFactor))
+                                    if (AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].Count > (AnsiState_.__AnsiX * __AnsiLineOccupyFactor))
                                     {
-                                        __AnsiLineOccupy[__AnsiY].RemoveRange((__AnsiX * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor);
+                                        AnsiState_.__AnsiLineOccupy[AnsiState_.__AnsiY].RemoveRange((AnsiState_.__AnsiX * __AnsiLineOccupyFactor), __AnsiLineOccupyFactor);
                                     }
                                     if (TempC > 0)
                                     {
                                         AnsiCalcColor();
-                                        AnsiCharF(AnsiProcessGetXMax(false) - 1, __AnsiY, 32);
+                                        AnsiCharF(AnsiProcessGetXMax(false) - 1, AnsiState_.__AnsiY, 32);
                                     }
                                 }
                                 DelCycle--;
                             }
-                            AnsiRepaintLine(__AnsiY);
+                            AnsiRepaintLine(AnsiState_.__AnsiY);
                         }
+                        AnsiState_.PrintCharInsDel++;
                     }
                     break;
                 case 'X': // ECH
@@ -1289,7 +1859,7 @@ namespace TextPaint
                         AnsiCalcColor();
                         while (DelCycle > 0)
                         {
-                            AnsiCharF(__AnsiX + DelCycle - 1, __AnsiY, 32);
+                            AnsiCharFUnprotected2(AnsiState_.__AnsiX + DelCycle - 1, AnsiState_.__AnsiY, 32);
                             DelCycle--;
                         }
                     }
@@ -1301,14 +1871,14 @@ namespace TextPaint
                         {
                             case "":
                             case "0":
-                                if (__AnsiTabs.Contains(__AnsiX) && (__AnsiX >= 0))
+                                if (AnsiState_.__AnsiTabs.Contains(AnsiState_.__AnsiX) && (AnsiState_.__AnsiX >= 0))
                                 {
-                                    __AnsiTabs.Remove(__AnsiX);
+                                    AnsiState_.__AnsiTabs.Remove(AnsiState_.__AnsiX);
                                 }
                                 break;
                             case "3":
-                                __AnsiTabs.Clear();
-                                __AnsiTabs.Add(-1);
+                                AnsiState_.__AnsiTabs.Clear();
+                                AnsiState_.__AnsiTabs.Add(-1);
                                 break;
                         }
                     }
@@ -1358,61 +1928,61 @@ namespace TextPaint
                     case "0":
                     case "00":
                     case "":
-                        __AnsiFore = -1;
-                        __AnsiBack = -1;
-                        __AnsiFontBold = false;
-                        __AnsiFontInverse = false;
-                        __AnsiFontBlink = false;
-                        __AnsiFontInvisible = false;
+                        AnsiState_.__AnsiFore = -1;
+                        AnsiState_.__AnsiBack = -1;
+                        AnsiState_.__AnsiFontBold = false;
+                        AnsiState_.__AnsiFontInverse = false;
+                        AnsiState_.__AnsiFontBlink = false;
+                        AnsiState_.__AnsiFontInvisible = false;
                         break;
 
-                    case "39": __AnsiFore = -1; break;
-                    case "49": __AnsiBack = -1; break;
+                    case "39": AnsiState_.__AnsiFore = -1; break;
+                    case "49": AnsiState_.__AnsiBack = -1; break;
 
-                    case "30": __AnsiFore = 0; break;
-                    case "31": __AnsiFore = 1; break;
-                    case "32": __AnsiFore = 2; break;
-                    case "33": __AnsiFore = 3; break;
-                    case "34": __AnsiFore = 4; break;
-                    case "35": __AnsiFore = 5; break;
-                    case "36": __AnsiFore = 6; break;
-                    case "37": __AnsiFore = 7; break;
+                    case "30": AnsiState_.__AnsiFore = 0; break;
+                    case "31": AnsiState_.__AnsiFore = 1; break;
+                    case "32": AnsiState_.__AnsiFore = 2; break;
+                    case "33": AnsiState_.__AnsiFore = 3; break;
+                    case "34": AnsiState_.__AnsiFore = 4; break;
+                    case "35": AnsiState_.__AnsiFore = 5; break;
+                    case "36": AnsiState_.__AnsiFore = 6; break;
+                    case "37": AnsiState_.__AnsiFore = 7; break;
 
-                    case "90": __AnsiFore = 8; break;
-                    case "91": __AnsiFore = 9; break;
-                    case "92": __AnsiFore = 10; break;
-                    case "93": __AnsiFore = 11; break;
-                    case "94": __AnsiFore = 12; break;
-                    case "95": __AnsiFore = 13; break;
-                    case "96": __AnsiFore = 14; break;
-                    case "97": __AnsiFore = 15; break;
+                    case "90": AnsiState_.__AnsiFore = 8; break;
+                    case "91": AnsiState_.__AnsiFore = 9; break;
+                    case "92": AnsiState_.__AnsiFore = 10; break;
+                    case "93": AnsiState_.__AnsiFore = 11; break;
+                    case "94": AnsiState_.__AnsiFore = 12; break;
+                    case "95": AnsiState_.__AnsiFore = 13; break;
+                    case "96": AnsiState_.__AnsiFore = 14; break;
+                    case "97": AnsiState_.__AnsiFore = 15; break;
 
-                    case "40": __AnsiBack = 0; break;
-                    case "41": __AnsiBack = 1; break;
-                    case "42": __AnsiBack = 2; break;
-                    case "43": __AnsiBack = 3; break;
-                    case "44": __AnsiBack = 4; break;
-                    case "45": __AnsiBack = 5; break;
-                    case "46": __AnsiBack = 6; break;
-                    case "47": __AnsiBack = 7; break;
+                    case "40": AnsiState_.__AnsiBack = 0; break;
+                    case "41": AnsiState_.__AnsiBack = 1; break;
+                    case "42": AnsiState_.__AnsiBack = 2; break;
+                    case "43": AnsiState_.__AnsiBack = 3; break;
+                    case "44": AnsiState_.__AnsiBack = 4; break;
+                    case "45": AnsiState_.__AnsiBack = 5; break;
+                    case "46": AnsiState_.__AnsiBack = 6; break;
+                    case "47": AnsiState_.__AnsiBack = 7; break;
 
-                    case "100": __AnsiBack = 8; break;
-                    case "101": __AnsiBack = 9; break;
-                    case "102": __AnsiBack = 10; break;
-                    case "103": __AnsiBack = 11; break;
-                    case "104": __AnsiBack = 12; break;
-                    case "105": __AnsiBack = 13; break;
-                    case "106": __AnsiBack = 14; break;
-                    case "107": __AnsiBack = 15; break;
+                    case "100": AnsiState_.__AnsiBack = 8; break;
+                    case "101": AnsiState_.__AnsiBack = 9; break;
+                    case "102": AnsiState_.__AnsiBack = 10; break;
+                    case "103": AnsiState_.__AnsiBack = 11; break;
+                    case "104": AnsiState_.__AnsiBack = 12; break;
+                    case "105": AnsiState_.__AnsiBack = 13; break;
+                    case "106": AnsiState_.__AnsiBack = 14; break;
+                    case "107": AnsiState_.__AnsiBack = 15; break;
 
-                    case "1": __AnsiFontBold = true; break;
-                    case "22": __AnsiFontBold = false; break;
-                    case "5": __AnsiFontBlink = true; break;
-                    case "25": __AnsiFontBlink = false; break;
-                    case "7": __AnsiFontInverse = true; break;
-                    case "27": __AnsiFontInverse = false; break;
-                    case "8": __AnsiFontInvisible = true; break;
-                    case "28": __AnsiFontInvisible = false; break;
+                    case "1": AnsiState_.__AnsiFontBold = true; break;
+                    case "22": AnsiState_.__AnsiFontBold = false; break;
+                    case "5": AnsiState_.__AnsiFontBlink = true; break;
+                    case "25": AnsiState_.__AnsiFontBlink = false; break;
+                    case "7": AnsiState_.__AnsiFontInverse = true; break;
+                    case "27": AnsiState_.__AnsiFontInverse = false; break;
+                    case "8": AnsiState_.__AnsiFontInvisible = true; break;
+                    case "28": AnsiState_.__AnsiFontInvisible = false; break;
 
 
                     case "38":
@@ -1423,14 +1993,32 @@ namespace TextPaint
                                 {
                                     try
                                     {
-                                        __AnsiFore = Color256[int.Parse(AnsiParams[i_ + 2])];
+                                        AnsiState_.__AnsiFore = Color256[int.Parse(AnsiParams[i_ + 2])];
                                     }
                                     catch
                                     {
-                                        __AnsiFore = -1;
+                                        AnsiState_.__AnsiFore = -1;
                                     }
+                                    i_ += 2;
                                 }
-                                i_ += 2;
+                            }
+                            if (AnsiParams.Length > i_ + 4)
+                            {
+                                if ("2".Equals(AnsiParams[i_ + 1]))
+                                {
+                                    try
+                                    {
+                                        int TempR = int.Parse(AnsiParams[i_ + 2]);
+                                        int TempG = int.Parse(AnsiParams[i_ + 3]);
+                                        int TempB = int.Parse(AnsiParams[i_ + 4]);
+                                        AnsiState_.__AnsiFore = AnsiColor16(TempR, TempG, TempB);
+                                    }
+                                    catch
+                                    {
+                                        AnsiState_.__AnsiFore = -1;
+                                    }
+                                    i_ += 4;
+                                }
                             }
                         }
                         break;
@@ -1443,19 +2031,103 @@ namespace TextPaint
                                 {
                                     try
                                     {
-                                        __AnsiBack = Color256[int.Parse(AnsiParams[i_ + 2])];
+                                        AnsiState_.__AnsiBack = Color256[int.Parse(AnsiParams[i_ + 2])];
                                     }
                                     catch
                                     {
-                                        __AnsiBack = -1;
+                                        AnsiState_.__AnsiBack = -1;
                                     }
+                                    i_ += 2;
                                 }
-                                i_ += 2;
+                            }
+                            if (AnsiParams.Length > i_ + 4)
+                            {
+                                if ("2".Equals(AnsiParams[i_ + 1]))
+                                {
+                                    try
+                                    {
+                                        int TempR = int.Parse(AnsiParams[i_ + 2]);
+                                        int TempG = int.Parse(AnsiParams[i_ + 3]);
+                                        int TempB = int.Parse(AnsiParams[i_ + 4]);
+                                        AnsiState_.__AnsiBack = AnsiColor16(TempR, TempG, TempB);
+                                    }
+                                    catch
+                                    {
+                                        AnsiState_.__AnsiBack = -1;
+                                    }
+                                    i_ += 4;
+                                }
                             }
                         }
                         break;
 
                     default:
+                        if (AnsiParams[i_].StartsWith("38:2:", StringComparison.Ordinal))
+                        {
+                            string[] AnsiParamsX = AnsiParams[i_].Split(':');
+                            if (AnsiParamsX.Length >= 5)
+                            {
+                                try
+                                {
+                                    int TempR = int.Parse(AnsiParamsX[2]);
+                                    int TempG = int.Parse(AnsiParamsX[3]);
+                                    int TempB = int.Parse(AnsiParamsX[4]);
+                                    AnsiState_.__AnsiFore = AnsiColor16(TempR, TempG, TempB);
+                                }
+                                catch
+                                {
+                                    AnsiState_.__AnsiFore = -1;
+                                }
+                            }
+                        }
+                        if (AnsiParams[i_].StartsWith("48:2:", StringComparison.Ordinal))
+                        {
+                            string[] AnsiParamsX = AnsiParams[i_].Split(':');
+                            if (AnsiParamsX.Length >= 5)
+                            {
+                                try
+                                {
+                                    int TempR = int.Parse(AnsiParamsX[2]);
+                                    int TempG = int.Parse(AnsiParamsX[3]);
+                                    int TempB = int.Parse(AnsiParamsX[4]);
+                                    AnsiState_.__AnsiBack = AnsiColor16(TempR, TempG, TempB);
+                                }
+                                catch
+                                {
+                                    AnsiState_.__AnsiBack = -1;
+                                }
+                            }
+                        }
+                        if (AnsiParams[i_].StartsWith("38:5:", StringComparison.Ordinal))
+                        {
+                            string[] AnsiParamsX = AnsiParams[i_].Split(':');
+                            if (AnsiParamsX.Length >= 3)
+                            {
+                                try
+                                {
+                                    AnsiState_.__AnsiFore = Color256[int.Parse(AnsiParamsX[2])];
+                                }
+                                catch
+                                {
+                                    AnsiState_.__AnsiFore = -1;
+                                }
+                            }
+                        }
+                        if (AnsiParams[i_].StartsWith("48:5:", StringComparison.Ordinal))
+                        {
+                            string[] AnsiParamsX = AnsiParams[i_].Split(':');
+                            if (AnsiParamsX.Length >= 3)
+                            {
+                                try
+                                {
+                                    AnsiState_.__AnsiBack = Color256[int.Parse(AnsiParamsX[2])];
+                                }
+                                catch
+                                {
+                                    AnsiState_.__AnsiBack = -1;
+                                }
+                            }
+                        }
                         //Console.BackgroundColor = ConsoleColor.Black;
                         //Console.ForegroundColor = ConsoleColor.White;
                         //Console.WriteLine("{" + AnsiParams[i_] + "}");
@@ -1466,9 +2138,9 @@ namespace TextPaint
 
         int AnsiProcessGetXMin(bool Origin)
         {
-            if (((!Origin) || __AnsiOrigin) && __AnsiMarginLeftRight)
+            if (((!Origin) || AnsiState_.__AnsiOrigin) && AnsiState_.__AnsiMarginLeftRight)
             {
-                return __AnsiMarginLeft;
+                return AnsiState_.__AnsiMarginLeft;
             }
             else
             {
@@ -1478,9 +2150,9 @@ namespace TextPaint
 
         int AnsiProcessGetXMax(bool Origin)
         {
-            if (((!Origin) || __AnsiOrigin) && __AnsiMarginLeftRight)
+            if (((!Origin) || AnsiState_.__AnsiOrigin) && AnsiState_.__AnsiMarginLeftRight)
             {
-                return __AnsiMarginRight;
+                return AnsiState_.__AnsiMarginRight;
             }
             else
             {
@@ -1490,13 +2162,13 @@ namespace TextPaint
 
         public void AnsiRepaintCursor()
         {
-            if (AnsiGetFontSize(__AnsiY) > 0)
+            if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
             {
-                Screen_.SetCursorPosition(__AnsiX << 1, __AnsiY);
+                Screen_.SetCursorPosition(AnsiState_.__AnsiX << 1, AnsiState_.__AnsiY);
             }
             else
             {
-                Screen_.SetCursorPosition(__AnsiX, __AnsiY);
+                Screen_.SetCursorPosition(AnsiState_.__AnsiX, AnsiState_.__AnsiY);
             }
         }
 
@@ -1513,7 +2185,7 @@ namespace TextPaint
                 }
             }
 
-            if ((!__AnsiMusic) && (TextFileLine_i < 32) && (ANSIDOS))
+            if ((!AnsiState_.__AnsiMusic) && (TextFileLine_i < 32) && (ANSIDOS))
             {
                 switch (TextFileLine_i)
                 {
@@ -1527,6 +2199,12 @@ namespace TextPaint
                             TextFileLine_i = DosControl[TextFileLine_i];
                         }
                         break;
+                    case 9:
+                        if (ANSIPrintTab)
+                        {
+                            TextFileLine_i = DosControl[TextFileLine_i];
+                        }
+                        break;
                     default:
                         TextFileLine_i = DosControl[TextFileLine_i];
                         break;
@@ -1535,9 +2213,9 @@ namespace TextPaint
             AnsiCalcColor();
             if ((TextFileLine_i >= 32))
             {
-                if (__AnsiVT52)
+                if (AnsiState_.__AnsiVT52)
                 {
-                    if (VT52_SemigraphDef)
+                    if (AnsiState_.VT52_SemigraphDef)
                     {
                         if ((TextFileLine_i >= 95) && (TextFileLine_i <= 126))
                         {
@@ -1547,7 +2225,7 @@ namespace TextPaint
                 }
                 else
                 {
-                    if (VT100_SemigraphDef[VT100_SemigraphNum])
+                    if (AnsiState_.VT100_SemigraphDef[AnsiState_.VT100_SemigraphNum])
                     {
                         if ((TextFileLine_i >= 95) && (TextFileLine_i <= 126))
                         {
@@ -1556,28 +2234,28 @@ namespace TextPaint
                     }
                 }
 
-                if (!__AnsiMusic)
+                if (!AnsiState_.__AnsiMusic)
                 {
                     if (ANSIDOS)
                     {
                         AnsiCharPrintLast = TextFileLine_i;
-                        AnsiCharFI(__AnsiX, __AnsiY, TextFileLine_i, __AnsiBackWork, __AnsiForeWork);
-                        __AnsiX++;
-                        if ((AnsiMaxX > 0) && (__AnsiX == AnsiProcessGetXMax(true)))
+                        AnsiCharFI(AnsiState_.__AnsiX, AnsiState_.__AnsiY, TextFileLine_i, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork);
+                        AnsiState_.__AnsiX++;
+                        if ((AnsiMaxX > 0) && (AnsiState_.__AnsiX == AnsiProcessGetXMax(true)))
                         {
-                            if (__AnsiNoWrap)
+                            if (AnsiState_.__AnsiNoWrap)
                             {
-                                __AnsiX--;
+                                AnsiState_.__AnsiX--;
                             }
                             else
                             {
-                                __AnsiX = AnsiProcessGetXMin(true);
-                                __AnsiY++;
-                                if ((AnsiMaxY > 0) && (__AnsiY > __AnsiScrollLast))
+                                AnsiState_.__AnsiX = AnsiProcessGetXMin(true);
+                                AnsiState_.__AnsiY++;
+                                if ((AnsiMaxY > 0) && (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast))
                                 {
-                                    int L = __AnsiY - __AnsiScrollLast;
-                                    __AnsiY = __AnsiScrollLast;
-                                    AnsiScrollInit(L, AnsiScrollCommandDef.None);
+                                    int L = AnsiState_.__AnsiY - AnsiState_.__AnsiScrollLast;
+                                    AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
+                                    AnsiScrollInit(L, AnsiState.AnsiScrollCommandDef.None);
                                 }
                             }
                         }
@@ -1585,22 +2263,22 @@ namespace TextPaint
                     else
                     {
                         bool CharNoScroll = true;
-                        if ((AnsiMaxX > 0) && (__AnsiX == AnsiProcessGetXMax(true)))
+                        if ((AnsiMaxX > 0) && (AnsiState_.__AnsiX == AnsiProcessGetXMax(true)))
                         {
-                            if (__AnsiNoWrap)
+                            if (AnsiState_.__AnsiNoWrap)
                             {
-                                __AnsiX--;
+                                AnsiState_.__AnsiX--;
                             }
                             else
                             {
-                                __AnsiX = AnsiProcessGetXMin(true);
-                                __AnsiY++;
+                                AnsiState_.__AnsiX = AnsiProcessGetXMin(true);
+                                AnsiState_.__AnsiY++;
 
-                                if ((AnsiMaxY > 0) && (__AnsiY > __AnsiScrollLast))
+                                if ((AnsiMaxY > 0) && (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast))
                                 {
-                                    int L = __AnsiY - __AnsiScrollLast;
-                                    __AnsiY = __AnsiScrollLast;
-                                    AnsiScrollInit(L, AnsiScrollCommandDef.Char, TextFileLine_i, __AnsiBackWork, __AnsiForeWork);
+                                    int L = AnsiState_.__AnsiY - AnsiState_.__AnsiScrollLast;
+                                    AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
+                                    AnsiScrollInit(L, AnsiState.AnsiScrollCommandDef.Char, TextFileLine_i, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork);
                                     CharNoScroll = false;
                                 }
                             }
@@ -1608,23 +2286,23 @@ namespace TextPaint
                         if (CharNoScroll)
                         {
                             AnsiCharPrintLast = TextFileLine_i;
-                            AnsiCharFI(__AnsiX, __AnsiY, TextFileLine_i, __AnsiBackWork, __AnsiForeWork);
-                            __AnsiX++;
+                            AnsiCharFI(AnsiState_.__AnsiX, AnsiState_.__AnsiY, TextFileLine_i, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork);
+                            AnsiState_.__AnsiX++;
                         }
                     }
                 }
             }
             else
             {
-                if (__AnsiMusic)
+                if (AnsiState_.__AnsiMusic)
                 {
                     switch (TextFileLine_i)
                     {
                         case 14:
                             {
-                                if (__AnsiMusic)
+                                if (AnsiState_.__AnsiMusic)
                                 {
-                                    __AnsiMusic = false;
+                                    AnsiState_.__AnsiMusic = false;
                                 }
                             }
                             break;
@@ -1634,30 +2312,40 @@ namespace TextPaint
                 {
                     switch (TextFileLine_i)
                     {
-                        case 7:
-                            if (!__AnsiCommand)
+                        case 5:
+                            if (!ANSIDOS)
                             {
-                                Screen_.Bell();
+                                __AnsiResponse.Add("AnswerBack");
+                            }
+                            break;
+                        case 7:
+                            if (!AnsiState_.__AnsiCommand)
+                            {
+                                AnsiState_.AnsiRingBellCount++;
+                                if (AnsiRingBell)
+                                {
+                                    Screen_.Bell();
+                                }
                             }
                             break;
                         case 8:
                             {
                                 if (!ANSIPrintBackspace)
                                 {
-                                    if (__AnsiX == AnsiMaxX)
+                                    if (AnsiState_.__AnsiX == AnsiMaxX)
                                     {
-                                        __AnsiX--;
+                                        AnsiState_.__AnsiX--;
                                     }
-                                    if (__AnsiX > AnsiProcessGetXMin(true))
+                                    if (AnsiState_.__AnsiX > AnsiProcessGetXMin(true))
                                     {
-                                        __AnsiX--;
+                                        AnsiState_.__AnsiX--;
                                     }
                                 }
                             }
                             break;
                         case 9:
                             {
-                                if (!ANSIDOS)
+                                if (!ANSIPrintTab)
                                 {
                                     AnsiDoTab(1);
                                 }
@@ -1668,17 +2356,17 @@ namespace TextPaint
                                 switch (ANSI_CR)
                                 {
                                     case 0:
-                                        __AnsiX = AnsiProcessGetXMin(false);
+                                        AnsiState_.__AnsiX = AnsiProcessGetXMin(false);
                                         break;
                                     case 1:
-                                        __AnsiX = AnsiProcessGetXMin(false);
-                                        if (__AnsiY == __AnsiScrollLast)
+                                        AnsiState_.__AnsiX = AnsiProcessGetXMin(false);
+                                        if (AnsiState_.__AnsiY == AnsiState_.__AnsiScrollLast)
                                         {
-                                            AnsiScrollInit(1, AnsiScrollCommandDef.None);
+                                            AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
                                         }
                                         else
                                         {
-                                            __AnsiY++;
+                                            AnsiState_.__AnsiY++;
                                         }
                                         break;
                                 }
@@ -1690,24 +2378,24 @@ namespace TextPaint
                                 switch (ANSI_LF)
                                 {
                                     case 0:
-                                        if (__AnsiY == __AnsiScrollLast)
+                                        if (AnsiState_.__AnsiY == AnsiState_.__AnsiScrollLast)
                                         {
-                                            AnsiScrollInit(1, AnsiScrollCommandDef.None);
+                                            AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
                                         }
                                         else
                                         {
-                                            __AnsiY++;
+                                            AnsiState_.__AnsiY++;
                                         }
                                         break;
                                     case 1:
-                                        __AnsiX = AnsiProcessGetXMin(true);
-                                        if (__AnsiY == __AnsiScrollLast)
+                                        AnsiState_.__AnsiX = AnsiProcessGetXMin(true);
+                                        if (AnsiState_.__AnsiY == AnsiState_.__AnsiScrollLast)
                                         {
-                                            AnsiScrollInit(1, AnsiScrollCommandDef.None);
+                                            AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
                                         }
                                         else
                                         {
-                                            __AnsiY++;
+                                            AnsiState_.__AnsiY++;
                                         }
                                         break;
                                 }
@@ -1718,24 +2406,24 @@ namespace TextPaint
                                 switch (ANSI_LF)
                                 {
                                     case 0:
-                                        if (__AnsiY == __AnsiScrollLast)
+                                        if (AnsiState_.__AnsiY == AnsiState_.__AnsiScrollLast)
                                         {
-                                            AnsiScrollInit(1, AnsiScrollCommandDef.None);
+                                            AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
                                         }
                                         else
                                         {
-                                            __AnsiY++;
+                                            AnsiState_.__AnsiY++;
                                         }
                                         break;
                                     case 1:
-                                        __AnsiX = AnsiProcessGetXMin(true);
-                                        if (__AnsiY == __AnsiScrollLast)
+                                        AnsiState_.__AnsiX = AnsiProcessGetXMin(true);
+                                        if (AnsiState_.__AnsiY == AnsiState_.__AnsiScrollLast)
                                         {
-                                            AnsiScrollInit(1, AnsiScrollCommandDef.None);
+                                            AnsiScrollInit(1, AnsiState.AnsiScrollCommandDef.None);
                                         }
                                         else
                                         {
-                                            __AnsiY++;
+                                            AnsiState_.__AnsiY++;
                                         }
                                         break;
                                 }
@@ -1744,13 +2432,13 @@ namespace TextPaint
                         case 11:
                             if (!ANSIDOS)
                             {
-                                __AnsiY++;
+                                AnsiState_.__AnsiY++;
                                 if (AnsiMaxY > 0)
                                 {
-                                    if (__AnsiY > __AnsiScrollLast)
+                                    if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
                                     {
-                                        AnsiScrollInit(__AnsiY - __AnsiScrollLast, AnsiScrollCommandDef.None);
-                                        __AnsiY = __AnsiScrollLast;
+                                        AnsiScrollInit(AnsiState_.__AnsiY - AnsiState_.__AnsiScrollLast, AnsiState.AnsiScrollCommandDef.None);
+                                        AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                                     }
                                 }
                             }
@@ -1758,26 +2446,24 @@ namespace TextPaint
                         case 14:
                             if (!ANSIDOS)
                             {
-                                VT100_SemigraphNum = 1;
+                                AnsiState_.VT100_SemigraphNum = 1;
                             }
                             break;
                         case 15:
                             if (!ANSIDOS)
                             {
-                                VT100_SemigraphNum = 0;
+                                AnsiState_.VT100_SemigraphNum = 0;
                             }
                             break;
                         case 26:
-                            if (__AnsiUseEOF)
+                            if (AnsiState_.__AnsiUseEOF)
                             {
-                                __AnsiBeyondEOF = true;
+                                AnsiState_.__AnsiBeyondEOF = true;
                             }
                             break;
                     }
                 }
             }
         }
-
-
     }
 }

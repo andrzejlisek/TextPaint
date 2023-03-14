@@ -24,15 +24,15 @@ namespace TextPaint
             return KeyName + "_" + TextWork.CharCode(KeyChar, 0);
         }
 
-        public void CoreEvent_Client(string KeyName, char KeyChar, int KeyCharI)
+        public void CoreEvent_Client(string KeyName, char KeyChar, int KeyCharI, bool ModShift, bool ModCtrl, bool ModAlt)
         {
             if ("Resize".Equals(KeyName))
             {
-                if (WorkState == 0)
+                if (WorkStateC == WorkStateCDef.InfoScreen)
                 {
                     EscapeKeyMessage();
                 }
-                if ((WorkState == 2) || (WorkState == 4))
+                if ((WorkStateC == WorkStateCDef.Toolbox) || (WorkStateC == WorkStateCDef.EscapeKey))
                 {
                     TelnetDisplayInfo(true);
                 }
@@ -49,11 +49,11 @@ namespace TextPaint
                 if (Core_.AnsiTerminalResize(Core_.Screen_.WinW, Core_.Screen_.WinH))
                 {
                     Monitor.Exit(TelnetMutex);
-                    if (WorkState == 0)
+                    if (WorkStateC == WorkStateCDef.InfoScreen)
                     {
                         EscapeKeyMessage();
                     }
-                    if ((WorkState == 1) || (WorkState == 2))
+                    if ((WorkStateC == WorkStateCDef.Session) || (WorkStateC == WorkStateCDef.Toolbox))
                     {
                         if (Conn.IsConnected() == 1)
                         {
@@ -66,9 +66,9 @@ namespace TextPaint
                     Monitor.Exit(TelnetMutex);
                 }
 
-                switch (WorkState)
+                switch (WorkStateC)
                 {
-                    case 0:
+                    case WorkStateCDef.InfoScreen:
                         {
                             if (!("".Equals(KeyName)))
                             {
@@ -76,11 +76,11 @@ namespace TextPaint
                             }
                         }
                         break;
-                    case 1:
+                    case WorkStateCDef.Session:
                         {
                             if (EscapeKeyId(KeyName, KeyChar).Equals(EscapeKey))
                             {
-                                WorkState = 2;
+                                WorkStateC = WorkStateCDef.Toolbox;
                             }
                             else
                             {
@@ -124,14 +124,7 @@ namespace TextPaint
                                     case "Escape": Send(TerminalKeys["Escape"]); break;
 
                                     case "Enter":
-                                        if (Core_.__AnsiNewLineKey)
-                                        {
-                                            Send(TerminalKeys["Enter1"]);
-                                        }
-                                        else
-                                        {
-                                            Send(TerminalKeys["Enter0"]);
-                                        }
+                                        Send(TerminalKeys["Enter_" + GetTelnetKeyboardConf(4)]);
                                         if (LocalEcho)
                                         {
                                             Monitor.Enter(LocalEchoBuf);
@@ -142,21 +135,35 @@ namespace TextPaint
                                         break;
 
 
-                                    case "F1": Send(TerminalKeys["F1_" + GetTelnetKeyboardConf(1)]); break;
-                                    case "F2": Send(TerminalKeys["F2_" + GetTelnetKeyboardConf(1)]); break;
-                                    case "F3": Send(TerminalKeys["F3_" + GetTelnetKeyboardConf(1)]); break;
-                                    case "F4": Send(TerminalKeys["F4_" + GetTelnetKeyboardConf(1)]); break;
-                                    case "F5": Send(TerminalKeys["F5_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F6": Send(TerminalKeys["F6_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F7": Send(TerminalKeys["F7_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F8": Send(TerminalKeys["F8_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F9": Send(TerminalKeys["F9_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F10": Send(TerminalKeys["F10_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F11": Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]); break;
-                                    case "F12": Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F1": if (ModShift) { Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F1_" + GetTelnetKeyboardConf(1)]); } break;
+                                    case "F2": if (ModShift) { Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F2_" + GetTelnetKeyboardConf(1)]); } break;
+                                    case "F3": if (ModShift) { Send(TerminalKeys["F13_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F3_" + GetTelnetKeyboardConf(1)]); } break;
+                                    case "F4": if (ModShift) { Send(TerminalKeys["F14_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F4_" + GetTelnetKeyboardConf(1)]); } break;
+                                    case "F5": if (ModShift) { Send(TerminalKeys["F15_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F5_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F6": if (ModShift) { Send(TerminalKeys["F16_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F6_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F7": if (ModShift) { Send(TerminalKeys["F17_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F7_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F8": if (ModShift) { Send(TerminalKeys["F18_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F8_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F9": if (ModShift) { Send(TerminalKeys["F19_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F9_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F10": if (ModShift) { Send(TerminalKeys["F20_" + GetTelnetKeyboardConf(2)]); } else { Send(TerminalKeys["F10_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F11": if (ModShift) { } else { Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]); } break;
+                                    case "F12": if (ModShift) { } else { Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]); } break;
+
+                                    case "F13": Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F14": Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F15": Send(TerminalKeys["F13_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F16": Send(TerminalKeys["F14_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F17": Send(TerminalKeys["F15_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F18": Send(TerminalKeys["F16_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F19": Send(TerminalKeys["F17_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F20": Send(TerminalKeys["F18_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F21": Send(TerminalKeys["F19_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F22": Send(TerminalKeys["F20_" + GetTelnetKeyboardConf(2)]); break;
+                                    case "F23": break;
+                                    case "F24": break;
+
 
                                     case "Backspace":
-                                        Send(TerminalKeys["Backspace"]);
+                                        Send(TerminalKeys["Backspace_" + GetTelnetKeyboardConf(5)]);
                                         if (LocalEcho)
                                         {
                                             Monitor.Enter(LocalEchoBuf);
@@ -167,21 +174,55 @@ namespace TextPaint
 
                                     default:
                                         {
-                                            if ((KeyCharI >= 32) || ((KeyCharI >= 1) && (KeyCharI <= 26) && (KeyCharI != 13)))
+                                            bool StdKey = true;
+                                            if (GetTelnetKeyboardConf(6) == "1")
                                             {
-                                                List<int> KeyCharI_ = new List<int>();
-                                                KeyCharI_.Add(KeyCharI);
-                                                if (LocalEcho)
+                                                switch (KeyCharI)
                                                 {
-                                                    Monitor.Enter(LocalEchoBuf);
-                                                    byte[] KeyBytes = StrToBytes(KeyCharI_);
-                                                    for (int i = 0; i < KeyBytes.Length; i++)
-                                                    {
-                                                        LocalEchoBuf.Add(KeyBytes[i]);
-                                                    }
-                                                    Monitor.Exit(LocalEchoBuf);
+                                                    case '0':
+                                                    case '1':
+                                                    case '2':
+                                                    case '3':
+                                                    case '4':
+                                                    case '5':
+                                                    case '6':
+                                                    case '7':
+                                                    case '8':
+                                                    case '9':
+                                                    case '.':
+                                                    case ',':
+                                                    case '-':
+                                                    case '+':
+                                                        StdKey = false;
+                                                        if (Core_.AnsiState_.__AnsiVT52)
+                                                        {
+                                                            Send(TerminalKeys["NumPad_" + KeyCharI + "_1"]);
+                                                        }
+                                                        else
+                                                        {
+                                                            Send(TerminalKeys["NumPad_" + KeyCharI + "_0"]);
+                                                        }
+                                                        break;
                                                 }
-                                                Send(KeyCharI_);
+                                            }
+                                            if (StdKey)
+                                            {
+                                                if ((KeyCharI >= 32) || ((KeyCharI >= 1) && (KeyCharI <= 26) && (KeyCharI != 13)))
+                                                {
+                                                    List<int> KeyCharI_ = new List<int>();
+                                                    KeyCharI_.Add(KeyCharI);
+                                                    if (LocalEcho)
+                                                    {
+                                                        Monitor.Enter(LocalEchoBuf);
+                                                        byte[] KeyBytes = StrToBytes(KeyCharI_);
+                                                        for (int i = 0; i < KeyBytes.Length; i++)
+                                                        {
+                                                            LocalEchoBuf.Add(KeyBytes[i]);
+                                                        }
+                                                        Monitor.Exit(LocalEchoBuf);
+                                                    }
+                                                    Send(KeyCharI_);
+                                                }
                                             }
                                         }
                                         break;
@@ -189,7 +230,7 @@ namespace TextPaint
                             }
                         }
                         break;
-                    case 2:
+                    case WorkStateCDef.Toolbox:
                         {
                             switch (KeyName)
                             {
@@ -205,9 +246,9 @@ namespace TextPaint
                             }
                         }
                         break;
-                    case 4:
+                    case WorkStateCDef.EscapeKey:
                         EscapeKey = EscapeKeyId(KeyName, KeyChar);
-                        WorkState = 2;
+                        WorkStateC = WorkStateCDef.Toolbox;
                         break;
                 }
             }
@@ -239,53 +280,155 @@ namespace TextPaint
                         break;
                     case "Enter":
                         {
-                            WorkState = 4;
+                            WorkStateC = WorkStateCDef.EscapeKey;
                         }
                         break;
                     case "Escape":
                         {
-                            WorkState = 1;
+                            WorkStateC = WorkStateCDef.Session;
                         }
                         break;
 
-                    case "D1": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F1_" + GetTelnetKeyboardConf(1)]); } else { Send("00"); } break;
-                    case "D2": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F2_" + GetTelnetKeyboardConf(1)]); } else { Send("1B"); } break;
-                    case "D3": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F3_" + GetTelnetKeyboardConf(1)]); } else { Send("1C"); } break;
-                    case "D4": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F4_" + GetTelnetKeyboardConf(1)]); } else { Send("1D"); } break;
-                    case "D5": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F5_" + GetTelnetKeyboardConf(2)]); } else { Send("1E"); } break;
-                    case "D6": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F6_" + GetTelnetKeyboardConf(2)]); } else { Send("1F"); } break;
-                    case "D7": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F7_" + GetTelnetKeyboardConf(2)]); } else { } break;
-                    case "D8": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F8_" + GetTelnetKeyboardConf(2)]); } else { } break;
-                    case "D9": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F9_" + GetTelnetKeyboardConf(2)]); } else { } break;
-                    case "D0": WorkState = 1; if (!TelnetFuncKeyOther) { Send(TerminalKeys["F10_" + GetTelnetKeyboardConf(2)]); } else { } break;
+                    case "D1":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F1_" + GetTelnetKeyboardConf(1)]); break;
+                                case 1: Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("00"); break;
+                            }
+                        }
+                        break;
+                    case "D2":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F2_" + GetTelnetKeyboardConf(1)]); break;
+                                case 1: Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("1B"); break;
+                            }
+                        }
+                        break;
+                    case "D3":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F3_" + GetTelnetKeyboardConf(1)]); break;
+                                case 1: Send(TerminalKeys["F13_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("1C"); break;
+                            }
+                        }
+                        break;
+                    case "D4":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F4_" + GetTelnetKeyboardConf(1)]); break;
+                                case 1: Send(TerminalKeys["F14_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("1D"); break;
+                            }
+                        }
+                        break;
+                    case "D5":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F5_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F15_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("1E"); break;
+                            }
+                        }
+                        break;
+                    case "D6":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F6_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F16_" + GetTelnetKeyboardConf(2)]); break;
+                                case 2: Send("1F"); break;
+                            }
+                        }
+                        break;
+                    case "D7":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F7_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F17_" + GetTelnetKeyboardConf(2)]); break;
+                            }
+                        }
+                        break;
+                    case "D8":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F8_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F18_" + GetTelnetKeyboardConf(2)]); break;
+                            }
+                        }
+                        break;
+                    case "D9":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F9_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F19_" + GetTelnetKeyboardConf(2)]); break;
+                            }
+                        }
+                        break;
+                    case "D0":
+                        {
+                            WorkStateC = WorkStateCDef.Session;
+                            switch (TelnetFuncKeyOther)
+                            {
+                                case 0: Send(TerminalKeys["F10_" + GetTelnetKeyboardConf(2)]); break;
+                                case 1: Send(TerminalKeys["F20_" + GetTelnetKeyboardConf(2)]); break;
+                            }
+                        }
+                        break;
 
-                    case "Space": TelnetFuncKeyOther = !TelnetFuncKeyOther; break;
-                    case "A": WorkState = 1; Send("01"); break;
-                    case "B": WorkState = 1; Send("02"); break;
-                    case "C": WorkState = 1; Send("03"); break;
-                    case "D": WorkState = 1; Send("04"); break;
-                    case "E": WorkState = 1; Send("05"); break;
-                    case "F": WorkState = 1; Send("06"); break;
-                    case "G": WorkState = 1; Send("07"); break;
-                    case "H": WorkState = 1; Send("08"); break;
-                    case "I": WorkState = 1; Send("09"); break;
-                    case "J": WorkState = 1; Send("0A"); break;
-                    case "K": WorkState = 1; Send("0B"); break;
-                    case "L": WorkState = 1; Send("0C"); break;
-                    case "M": WorkState = 1; Send("0D"); break;
-                    case "N": WorkState = 1; Send("0E"); break;
-                    case "O": WorkState = 1; Send("0F"); break;
-                    case "P": WorkState = 1; Send("10"); break;
-                    case "Q": WorkState = 1; Send("11"); break;
-                    case "R": WorkState = 1; Send("12"); break;
-                    case "S": WorkState = 1; Send("13"); break;
-                    case "T": WorkState = 1; Send("14"); break;
-                    case "U": WorkState = 1; Send("15"); break;
-                    case "V": WorkState = 1; Send("16"); break;
-                    case "W": WorkState = 1; Send("17"); break;
-                    case "X": WorkState = 1; Send("18"); break;
-                    case "Y": WorkState = 1; Send("19"); break;
-                    case "Z": WorkState = 1; Send("1A"); break;
+                    case "Space":
+                        TelnetFuncKeyOther++;
+                        if (TelnetFuncKeyOther == 3)
+                        {
+                            TelnetFuncKeyOther = 0;
+                        }
+                        break;
+                    case "A": WorkStateC = WorkStateCDef.Session; Send("01"); break;
+                    case "B": WorkStateC = WorkStateCDef.Session; Send("02"); break;
+                    case "C": WorkStateC = WorkStateCDef.Session; Send("03"); break;
+                    case "D": WorkStateC = WorkStateCDef.Session; Send("04"); break;
+                    case "E": WorkStateC = WorkStateCDef.Session; Send("05"); break;
+                    case "F": WorkStateC = WorkStateCDef.Session; Send("06"); break;
+                    case "G": WorkStateC = WorkStateCDef.Session; Send("07"); break;
+                    case "H": WorkStateC = WorkStateCDef.Session; Send("08"); break;
+                    case "I": WorkStateC = WorkStateCDef.Session; Send("09"); break;
+                    case "J": WorkStateC = WorkStateCDef.Session; Send("0A"); break;
+                    case "K": WorkStateC = WorkStateCDef.Session; Send("0B"); break;
+                    case "L": WorkStateC = WorkStateCDef.Session; Send("0C"); break;
+                    case "M": WorkStateC = WorkStateCDef.Session; Send("0D"); break;
+                    case "N": WorkStateC = WorkStateCDef.Session; Send("0E"); break;
+                    case "O": WorkStateC = WorkStateCDef.Session; Send("0F"); break;
+                    case "P": WorkStateC = WorkStateCDef.Session; Send("10"); break;
+                    case "Q": WorkStateC = WorkStateCDef.Session; Send("11"); break;
+                    case "R": WorkStateC = WorkStateCDef.Session; Send("12"); break;
+                    case "S": WorkStateC = WorkStateCDef.Session; Send("13"); break;
+                    case "T": WorkStateC = WorkStateCDef.Session; Send("14"); break;
+                    case "U": WorkStateC = WorkStateCDef.Session; Send("15"); break;
+                    case "V": WorkStateC = WorkStateCDef.Session; Send("16"); break;
+                    case "W": WorkStateC = WorkStateCDef.Session; Send("17"); break;
+                    case "X": WorkStateC = WorkStateCDef.Session; Send("18"); break;
+                    case "Y": WorkStateC = WorkStateCDef.Session; Send("19"); break;
+                    case "Z": WorkStateC = WorkStateCDef.Session; Send("1A"); break;
 
                     default:
                         switch (KeyChar)
@@ -304,13 +447,27 @@ namespace TextPaint
                                 break;
                             case '[':
                             case '{':
-                                WorkState = 1;
-                                Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]);
+                                WorkStateC = WorkStateCDef.Session;
+                                if (TelnetFuncKeyOther < 2)
+                                {
+                                    Send(TerminalKeys["F11_" + GetTelnetKeyboardConf(2)]);
+                                }
+                                else
+                                {
+                                    Send(TerminalAnswerBack);
+                                }
                                 break;
                             case ']':
                             case '}':
-                                WorkState = 1;
-                                Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]);
+                                WorkStateC = WorkStateCDef.Session;
+                                if (TelnetFuncKeyOther < 2)
+                                {
+                                    Send(TerminalKeys["F12_" + GetTelnetKeyboardConf(2)]);
+                                }
+                                else
+                                {
+                                    Send(TerminalAnswerBack);
+                                }
                                 break;
                             case '/':
                             case '?':
@@ -329,7 +486,7 @@ namespace TextPaint
                             case '\\':
                             case '|':
                                 {
-                                    WorkState = 1;
+                                    WorkStateC = WorkStateCDef.Session;
                                     TelnetSendWindowSize();
                                 }
                                 break;
@@ -416,7 +573,7 @@ namespace TextPaint
             string Buf_ = "";
             for (int i = 0; i < Buf.Length; i++)
             {
-                Buf_ += Conn.H(Buf[i]);
+                Buf_ += UniConn.H(Buf[i]);
             }
             Send(Buf_);
         }
@@ -494,6 +651,10 @@ namespace TextPaint
                 default:
                     Conn = new UniConnLoopback(TerminalEncoding);
                     break;
+                case "RAW":
+                    DefaultPort = 23;
+                    Conn = new UniConnRaw(TerminalEncoding);
+                    break;
                 case "TELNET":
                     DefaultPort = 23;
                     Conn = new UniConnTelnet(TerminalEncoding);
@@ -502,14 +663,17 @@ namespace TextPaint
                     DefaultPort = 22;
                     Conn = new UniConnSSH(TerminalEncoding);
                     break;
-                case "APPLICATION0":
-                case "APPLICATION1":
-                case "APPLICATION2":
-                case "APPLICATION3":
+                case "APPLICATION":
                     AddrPort = new string[2];
                     AddrPort[0] = Core_.CurrentFileName;
-                    AddrPort[1] = TerminalConnection.Substring(11);
+                    AddrPort[1] = "0";
                     Conn = new UniConnApp(TerminalEncoding);
+                    break;
+                case "SERIAL":
+                    AddrPort = new string[2];
+                    AddrPort[0] = Core_.CurrentFileName;
+                    AddrPort[1] = "0";
+                    Conn = new UniConnSerial(TerminalEncoding);
                     break;
             }
             try
@@ -535,9 +699,14 @@ namespace TextPaint
                 Conn.Send(TerminalEncoding.GetBytes(e.Message));
                 Conn.Close();
             }
+            if (Server_ != null)
+            {
+                Server_.Receive();
+                Server_.Send(UniConn.HexToRaw(TerminalResetCommand));
+            }
             Screen_.Clear(Core_.TextNormalBack, Core_.TextNormalFore);
             Monitor.Enter(TelnetMutex);
-            Core_.AnsiProcessReset(false);
+            Core_.AnsiProcessReset(false, true, 0);
             Monitor.Exit(TelnetMutex);
             OpenCloseRepaint = true;
         }
@@ -588,7 +757,21 @@ namespace TextPaint
         public void TelnetClientWork()
         {
             EscapeKeyMessage();
-            WorkState = 0;
+
+            if (ServerPort > 0)
+            {
+                Server_ = new Server();
+                if (!Server_.Start(ServerPort, ServerTelnet))
+                {
+                    Server_ = null;
+                }
+            }
+            else
+            {
+                Server_ = null;
+            }
+
+            WorkStateC = WorkStateCDef.InfoScreen;
             EscapeKey = "";
             while (Screen_.AppWorking && ("".Equals(EscapeKey)))
             {
@@ -596,7 +779,7 @@ namespace TextPaint
             }
             Screen_.Clear(Core_.TextNormalBack, Core_.TextNormalFore);
             Screen_.SetCursorPosition(0, 0);
-            WorkState = 1;
+            WorkStateC = WorkStateCDef.Session;
 
 
 
@@ -606,11 +789,11 @@ namespace TextPaint
 
             FileCtX = new List<int>();
             TelnetOpen();
-            int WorkState_ = 1;
+            WorkStateCDef WorkState_ = WorkStateCDef.Session;
             int TelnetInfoPos_ = -1;
             string TelnetKeyboardConf_ = "";
             int TelnetKeyboardConfI_ = -1;
-            bool TelnetFuncKeyOther_ = false;
+            int TelnetFuncKeyOther_ = 0;
             bool LocalEcho_ = false;
             int ConnStatusX = Conn.IsConnected();
 
@@ -664,9 +847,9 @@ namespace TextPaint
                     }
                     if (ConnStatusX != Conn.IsConnected())
                     {
-                        if (WorkState == 2)
+                        if (WorkStateC == WorkStateCDef.Toolbox)
                         {
-                            WorkState_ = 20;
+                            WorkState_ = WorkStateCDef.Toolbox_;
                         }
                         ConnStatusX = Conn.IsConnected();
                     }
@@ -678,8 +861,24 @@ namespace TextPaint
                     FileCtX.Clear();
 
                     Monitor.Enter(TelnetMutex);
+                    int AnsiBufferI1 = Core_.AnsiState_.AnsiBufferI;
                     WasAnsiProcess = (Core_.AnsiProcess(TerminalStep) != 0);
+                    int AnsiBufferI2 = Core_.AnsiState_.AnsiBufferI;
                     Monitor.Exit(TelnetMutex);
+                    if (Server_ != null)
+                    {
+                        byte[] ServerBuf = Server_.Receive();
+                        if ((ServerBuf.Length > 0) && (Conn.IsConnected() == 1))
+                        {
+                            /*for (int I = 0; I < ServerBuf.Length; I++)
+                            {
+                                Console.Write(ServerBuf[I] + "_");
+                            }
+                            Console.WriteLine();*/
+                            string DataStr = ServerEncoding.GetString(ServerBuf);
+                            Conn.Send(TerminalEncoding.GetBytes(DataStr));
+                        }
+                    }
 
                     if (WasAnsiProcess)
                     {
@@ -688,55 +887,62 @@ namespace TextPaint
                             TelnetReport(Core_.__AnsiResponse[i]);
                         }
                         Core_.__AnsiResponse.Clear();
-                        if (Core_.AnsiGetFontSize(Core_.__AnsiY) > 0)
+
+                        if ((Server_ != null) && (AnsiBufferI2 > AnsiBufferI1))
                         {
-                            Screen_.SetCursorPosition(Core_.__AnsiX * 2, Core_.__AnsiY);
+                            Server_.Send(ServerEncoding.GetBytes(TextWork.IntToStr(Core_.AnsiBuffer.GetRange(AnsiBufferI1, AnsiBufferI2 - AnsiBufferI1))));
+                        }
+
+
+                        if (Core_.AnsiGetFontSize(Core_.AnsiState_.__AnsiY) > 0)
+                        {
+                            Screen_.SetCursorPosition(Core_.AnsiState_.__AnsiX * 2, Core_.AnsiState_.__AnsiY);
                         }
                         else
                         {
-                            Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
+                            Screen_.SetCursorPosition(Core_.AnsiState_.__AnsiX, Core_.AnsiState_.__AnsiY);
                         }
-                        if (WorkState == 2)
+                        if (WorkStateC == WorkStateCDef.Toolbox)
                         {
-                            WorkState_ = 20;
+                            WorkState_ = WorkStateCDef.Toolbox_;
                         }
                     }
                     if (OpenCloseRepaint)
                     {
-                        if (WorkState == 2)
+                        if (WorkStateC == WorkStateCDef.Toolbox)
                         {
-                            WorkState_ = 20;
+                            WorkState_ = WorkStateCDef.Toolbox_;
                         }
                     }
-                    if (((WorkState == 2) || (WorkState == 4)) && ((WorkState_ != WorkState) || (TelnetInfoPos_ != TelnetInfoPos) || (TelnetKeyboardConfI_ != TelnetKeyboardConfI) || (TelnetKeyboardConf_ != TelnetKeyboardConf) || (TelnetFuncKeyOther_ != TelnetFuncKeyOther) || (LocalEcho_ != LocalEcho)))
+                    if (((WorkStateC == WorkStateCDef.Toolbox) || (WorkStateC == WorkStateCDef.EscapeKey)) && ((WorkState_ != WorkStateC) || (TelnetInfoPos_ != TelnetInfoPos) || (TelnetKeyboardConfI_ != TelnetKeyboardConfI) || (TelnetKeyboardConf_ != TelnetKeyboardConf) || (TelnetFuncKeyOther_ != TelnetFuncKeyOther) || (LocalEcho_ != LocalEcho)))
                     {
                         bool NeedRepaint = (TelnetInfoPos_ != TelnetInfoPos);
                         NeedRepaint = NeedRepaint | (TelnetKeyboardConfI_ != TelnetKeyboardConfI);
                         NeedRepaint = NeedRepaint | (TelnetKeyboardConf_ != TelnetKeyboardConf);
                         NeedRepaint = NeedRepaint | (LocalEcho_ != LocalEcho);
-                        NeedRepaint = NeedRepaint | (WorkState_ != 20);
+                        NeedRepaint = NeedRepaint | (WorkState_ != WorkStateCDef.Toolbox_);
                         NeedRepaint = NeedRepaint | OpenCloseRepaint;
                         OpenCloseRepaint = false;
                         TelnetDisplayInfo(NeedRepaint);
-                        WorkState_ = WorkState;
+                        WorkState_ = WorkStateC;
                         TelnetInfoPos_ = TelnetInfoPos;
                         TelnetKeyboardConfI_ = TelnetKeyboardConfI;
                         TelnetKeyboardConf_ = TelnetKeyboardConf;
                         TelnetFuncKeyOther_ = TelnetFuncKeyOther;
                         LocalEcho_ = LocalEcho;
                     }
-                    if ((WorkState == 1) && (WorkState_ != WorkState))
+                    if ((WorkStateC == WorkStateCDef.Session) && (WorkState_ != WorkStateC))
                     {
                         Core_.AnsiRepaint(false);
-                        if (Core_.AnsiGetFontSize(Core_.__AnsiY) > 0)
+                        if (Core_.AnsiGetFontSize(Core_.AnsiState_.__AnsiY) > 0)
                         {
-                            Screen_.SetCursorPosition(Core_.__AnsiX * 2, Core_.__AnsiY);
+                            Screen_.SetCursorPosition(Core_.AnsiState_.__AnsiX * 2, Core_.AnsiState_.__AnsiY);
                         }
                         else
                         {
-                            Screen_.SetCursorPosition(Core_.__AnsiX, Core_.__AnsiY);
+                            Screen_.SetCursorPosition(Core_.AnsiState_.__AnsiX, Core_.AnsiState_.__AnsiY);
                         }
-                        WorkState_ = WorkState;
+                        WorkState_ = WorkStateC;
                     }
                     FuncKeyProcess();
                 }
@@ -748,6 +954,10 @@ namespace TextPaint
                 TelnetCloseFile();
             }
 
+            if (Server_ != null)
+            {
+                Server_.Stop();
+            }
             Screen_.CloseApp(Core_.TextNormalBack, Core_.TextNormalFore);
         }
 
@@ -762,7 +972,7 @@ namespace TextPaint
 
             List<string> InfoMsg = new List<string>();
             int IsConn = Conn.IsConnected();
-            if (WorkState == 2)
+            if (WorkStateC == WorkStateCDef.Toolbox)
             {
                 string StatusInfo = "Unknown";
                 switch (IsConn)
@@ -770,6 +980,7 @@ namespace TextPaint
                     case 0: StatusInfo = "Disconnected"; break;
                     case 1: StatusInfo = "Connected"; break;
                     case 2: StatusInfo = "Connecting"; break;
+                    case 3: StatusInfo = "Disconnecting"; break;
                 }
                 InfoMsg.Add(" Status: " + StatusInfo + " ");
                 InfoMsg.Add(" Screen size: " + Core_.AnsiMaxX + "x" + Core_.AnsiMaxY + " ");
@@ -778,31 +989,57 @@ namespace TextPaint
                 InfoMsg.Add(" Enter - Change escape key ");
                 InfoMsg.Add(" Tab - Move info ");
                 InfoMsg.Add(" Backspace - Quit ");
-                if (TelnetFuncKeyOther)
+                switch (TelnetFuncKeyOther)
                 {
-                    InfoMsg.Add(" 1-6 - Send NUL,ESC,FS,GS,RS,US ");
-                }
-                else
-                {
-                    InfoMsg.Add(" 1-0 - Send F1-F10 ");
+                    case 0:
+                        InfoMsg.Add(" 1-0 - Send F1-F10 ");
+                        InfoMsg.Add(" [, ] - Send F11, F12 ");
+                        break;
+                    case 1:
+                        InfoMsg.Add(" 1-0 - Send F11-F20 ");
+                        InfoMsg.Add(" [, ] - Send F11, F12 ");
+                        break;
+                    case 2:
+                        InfoMsg.Add(" 1-6 - Send NUL,ESC,FS,GS,RS,US ");
+                        InfoMsg.Add(" [, ] - Send AnswerBack ");
+                        break;
                 }
                 InfoMsg.Add(" Space - Send other control code ");
-                InfoMsg.Add(" [, ] - Send F11, F12 ");
                 InfoMsg.Add(" Letter - Send CTRL+letter ");
                 InfoMsg.Add(" / - Connect/disconnect ");
                 InfoMsg.Add(" \\ - Send screen size ");
                 string TelnetKeyboardConf_ = "";
-                switch (TelnetKeyboardConfI)
+                for (int i = 0; i < TelnetKeyboardConfMax.Length; i++)
                 {
-                    case 0: TelnetKeyboardConf_ = "[" + TelnetKeyboardConf[0] + "]" + TelnetKeyboardConf[1] + " " + TelnetKeyboardConf[2] + " " + TelnetKeyboardConf[3] + " "; break;
-                    case 1: TelnetKeyboardConf_ = " " + TelnetKeyboardConf[0] + "[" + TelnetKeyboardConf[1] + "]" + TelnetKeyboardConf[2] + " " + TelnetKeyboardConf[3] + " "; break;
-                    case 2: TelnetKeyboardConf_ = " " + TelnetKeyboardConf[0] + " " + TelnetKeyboardConf[1] + "[" + TelnetKeyboardConf[2] + "]" + TelnetKeyboardConf[3] + " "; break;
-                    case 3: TelnetKeyboardConf_ = " " + TelnetKeyboardConf[0] + " " + TelnetKeyboardConf[1] + " " + TelnetKeyboardConf[2] + "[" + TelnetKeyboardConf[3] + "]"; break;
+                    if (i == TelnetKeyboardConfI)
+                    {
+                        TelnetKeyboardConf_ = TelnetKeyboardConf_ + "[";
+                    }
+                    else
+                    {
+                        if (i == (TelnetKeyboardConfI + 1))
+                        {
+                            TelnetKeyboardConf_ = TelnetKeyboardConf_ + "]";
+                        }
+                        else
+                        {
+                            TelnetKeyboardConf_ = TelnetKeyboardConf_ + " ";
+                        }
+                    }
+                    TelnetKeyboardConf_ = TelnetKeyboardConf_ + TelnetKeyboardConf[i];
+                }
+                if (TelnetKeyboardConfMax.Length == (TelnetKeyboardConfI + 1))
+                {
+                    TelnetKeyboardConf_ = TelnetKeyboardConf_ + "]";
+                }
+                else
+                {
+                    TelnetKeyboardConf_ = TelnetKeyboardConf_ + " ";
                 }
                 InfoMsg.Add(" +=, -* - Key codes: " + TelnetKeyboardConf_ + " ");
                 InfoMsg.Add(" `~ - Local echo: " + (LocalEcho ? "on" : "off"));
             }
-            if (WorkState == 4)
+            if (WorkStateC == WorkStateCDef.EscapeKey)
             {
                 InfoMsg.Add(" Press key, which will be ");
                 InfoMsg.Add(" used as new escape key   ");
@@ -870,6 +1107,8 @@ namespace TextPaint
 
 
         string TerminalName = "";
+
+        string TerminalAnswerBack = "";
 
         // 0 - VT100
         // 1 - VT102
@@ -992,6 +1231,36 @@ namespace TextPaint
                     break;
                 case "[1x": // DECREQTPARM
                     Send("1B_[_3_;_1_;_1_;_1_1_2_;_1_1_2_;_1_;_0_x");
+                    break;
+                case "CursorKey_1":
+                    SetTelnetKeyboardConf(0, 1);
+                    break;
+                case "CursorKey_0":
+                    SetTelnetKeyboardConf(0, 0);
+                    break;
+                case "EnterKey_1":
+                    SetTelnetKeyboardConf(4, 1);
+                    break;
+                case "EnterKey_0":
+                    SetTelnetKeyboardConf(4, 0);
+                    break;
+
+                case "NumpadKey_1":
+                    SetTelnetKeyboardConf(6, 1);
+                    break;
+                case "NumpadKey_0":
+                    SetTelnetKeyboardConf(6, 0);
+                    break;
+
+                case "AnswerBack":
+                    Send(TerminalAnswerBack);
+                    break;
+
+                case "LocalEcho_1":
+                    LocalEcho = true;
+                    break;
+                case "LocalEcho_0":
+                    LocalEcho = false;
                     break;
             }
         }

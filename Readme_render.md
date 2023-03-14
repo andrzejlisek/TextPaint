@@ -13,7 +13,7 @@ The following parameters are used only for rendering\. Like other parameters, th
 
 * **RenderFile** \- Image file name for rendering single image \(**RenderStep=0**\) or directory for rendering movie \(**RenderStep>0**\)
 * **RenderStep** \- Number of processed character between movie frames\. To render single image, use **RenderStep=0**\. Rendering movie requires **ANSIRead=1**\.
-* **RenderOffset** \- Offset in character sequence when rendering movie\. For example, if **RenderStep=10** and **RenderOffset=4**, the frames will be generated after character no: 4th, 14th, 24th and so on\.
+* **RenderOffset** \- Offset in steps when rendering movie\. For example, if **RenderStep=10** and **RenderOffset=4**, the frames will be generated after step no: 4th, 14th, 24th and so on\.
 * **RenderCursor** \- Draw cursor on rendered image\. Possible value are **0** or **1**\.
 * **RenderFrame** \- Number of steps per one frame \(unit\) when you render file containing time markers\.
 * **RenderType** \- Type of rendered file \(case insensitive\):
@@ -23,6 +23,10 @@ The following parameters are used only for rendering\. Like other parameters, th
   * **XB** or **XBIN** \- Convert XBIN file to ANSI file instead of rendering, extract font and palette if contains\.
   * **BIN** \- Convert raw binary file to ANSI file instead of rendering\.
   * **CONV** or **CONVERT** \- Convert any text file from one encoding to other encoding, without text parsing and analyzing\.
+* **RenderSliceW** \- The width of sliced picture\. Use **RenderSliceW=0** for disable slicing horizontally\.
+* **RenderSliceH** \- The height of sliced picture\. Use **RenderSliceH=0** for disable slicing vertically\.
+* **RenderSliceX** \- The horizontal offset, works only if **RenderSliceW>0**\.
+* **RenderSliceY** \- The horizontal offset, works only if **RenderSliceH>0**\.
 
 # Graphic parameters
 
@@ -69,12 +73,13 @@ The XBIN file can contain the special characters \(including CR and LF\) used to
 The sample encodings suitable for conversione XBIN to ANSI are:
 
 
-* **Encodings/BIN\_DOS437\.txt** \- Based on **DOS437\.txt** \(slightly modified code page 437\), but the control characters are mapped into standard glyphs\. This encoding is suitable for files with character set similar to standard IBM character set\.
-* **Encodings/BIN\_ASCII\.txt** \- Similar to ASCII and ISO\-8859\-1 encodings, all printable characters are mapped to the same numbers, but control characters are mapped to character within **2400h**\-**241Fh**\. This encoding is suitable for files with non\-standard or unknown character set\.
+* **Encodings/STD437\_BIN\.txt** \- Based on **STD437\.txt** \(code page 437\), but the control characters are mapped into standard glyphs\. This encoding is suitable for files with IBM standard character set and font other than DOS font\.
+* **Encodings/DOS437\_BIN\.txt** \- Based on **DOS437\.txt** \(slightly modified code page 437\), but the control characters are mapped into standard glyphs\. This encoding is suitable for files with character set similar to standard IBM character set\.
+* **Encodings/ASCII\_BIN\.txt** \- Similar to ASCII and ISO\-8859\-1 encodings, all printable characters are mapped to the same numbers, but control characters are mapped to character within **2400h**\-**241Fh**\. This encoding is suitable for files with non\-standard or unknown character set\.
 
 If XBIN file contains own font, which will be used in editor or viewer, there is not difference, which encoding will be used\. The only difference is in font layout\.
 
-The ANSI file will be saved without end\-of\-line marks, but will be saved with spaces from beginning to end of every line\. This file can be displayed or rendered correctly regardless **ANSIDOS** parameter, but the **ANSIWidth** must match screen width saved in original XBIN file \(in most cases, the XBIN file is dumped from screen with 80 columns\)\.
+The ANSI file will be saved without end\-of\-line marks, but will be saved with spaces from beginning to end of every line\. This file can be displayed or rendered correctly regardless **ANSIDOS** parameter, but the **ANSIWidth** must match screen width saved in original XBIN file \(in most cases, the XBIN file is dumped from screen with 80 columns\)\. If the original XBIN file contains the SAUCE information, the unmodified SAUCE information will be saved in he ANSI file\.
 
 After conversion, there will be printed the following informations:
 
@@ -97,7 +102,7 @@ Conversion BIN to ANSI has the same rules as conversion XBIN to ANSI with follow
 * Screen width and height is not specified in file and will not printed after conversion\.
 * Every file byte will be processed\.
 
-The conversion wil generate the **\*\.ans** file only\.
+The conversion wil generate the **\*\.ans** file only\. If the original BIN file contains the SAUCE information, the unmodified SAUCE information will be saved in he ANSI file\.
 
 # Conversion between encodings
 
@@ -150,6 +155,36 @@ Convert text file from standard DOS 437 code page to UTF\-8:
 ```
 TextPaint /Path/Text437.txt RenderFile=/Path/TextUTF8.txt RenderType=CONVERT FileReadEncoding="437" FileWriteEncoding="utf-8"
 ```
+
+# Slicing file
+
+The rendered file \(TEXT, ANSI or PNG\) can be sliced into parts horizontally and vertically\. This feature is usable especially, when you want to prepare old\-school style slideshow using **TextPaint**\. In this case, you can prepare all slides in single TEXT or ANSI file\. Assuming, that the single slide size is 80x25, the slide may have the following layout:
+
+
+* The first slide will occupy lices from 0 to 24\.
+* The second slide will occupy lices from 25 to 49\.
+* The third slide will occupy lices from 50 to 74\.
+* The n\-th slide will occupy lices from `(n-1)*25` to `(n*25)-1`\.
+
+Of course, you can use any existing ANSI or TXT file for slicing\.
+
+Without slicing, the final file size will be measured when rendering\. You can slice horizontally, vertically and in both directions \(produces horizontal and vertical slice matrix\)\.
+
+For vertical slice, you have to set the **RenderSliceH** parameter as single slice height\. This slice dimension does not have to be equal to **ANSIHeight**\. Also, you can set the vertical offset by parameter **RenderSliceY**\. This value indicates, where will be sliced the first place\. If **RenderSliceY** is negative or equals at least **ANSIHeight**, the **RenderSliceY** will be automaticaly changed by adding or subtracting the **RenderSizeY** value\.
+
+Horizontal slicing works independally of vertical slicing and can be controlled by **RenderSliceW** and **RenderSliceX** values\. The meaning is analogous to vertical slicing\.
+
+The number of slices will be measured during rendering\.
+
+If you configure both vertical and horizontal slicing, there will be generatef slicing matrix\. Assume, that rendered file without slicing has the size 120x70\. Assume, that the slicing parameters are following:
+
+
+* **RenderSliceW**=80
+* **RenderSliceH**=25
+* **RenderSliceX**=0
+* **RenderSliceY**=0
+
+In thys case, there will be generated 2 slices horizontally and 3 slices vertically\. In total, there will be generated 6 files, due to 6 slices in 2x3 matrix\.
 
 # Terminal recording and rendering examples
 

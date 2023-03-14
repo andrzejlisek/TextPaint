@@ -5,61 +5,38 @@ namespace TextPaint
 {
     public partial class Core
     {
-        bool __AnsiSmoothScroll = false;
-
         int ANSIScrollChars = 0;
         int ANSIScrollBuffer = 0;
-        bool AnsiScrollRev = false;
-        int AnsiScrollLinesI = 0;
         int ANSIScrollSmooth = 0;
-
-        enum AnsiScrollCommandDef { None, Char, FirstLast, Tab };
-        int AnsiScrollCounter = 0;
-        AnsiScrollCommandDef AnsiScrollCommand = AnsiScrollCommandDef.None;
-        int AnsiScrollParam1 = 0;
-        int AnsiScrollParam2 = 0;
-        int AnsiScrollParam3 = 0;
 
         int[] AnsiScrollPosition = null;
         int[] AnsiScrollOffset = null;
 
-        void AnsiScrollReset()
-        {
-            __AnsiSmoothScroll = false;
-            AnsiScrollRev = false;
-            AnsiScrollCounter = 0;
-            AnsiScrollCommand = AnsiScrollCommandDef.None;
-            AnsiScrollParam1 = 0;
-            AnsiScrollParam2 = 0;
-            AnsiScrollParam3 = 0;
-            AnsiScrollLinesI = 0;
-        }
-
-        void AnsiScrollInit(int Lines, AnsiScrollCommandDef Command)
+        void AnsiScrollInit(int Lines, AnsiState.AnsiScrollCommandDef Command)
         {
             AnsiScrollInit(Lines, Command, 0, 0, 0);
         }
 
-        void AnsiScrollInit(int Lines, AnsiScrollCommandDef Command, int Param1, int Param2, int Param3)
+        void AnsiScrollInit(int Lines, AnsiState.AnsiScrollCommandDef Command, int Param1, int Param2, int Param3)
         {
             if (Lines == 0)
             {
                 return;
             }
-            AnsiScrollCommand = Command;
-            AnsiScrollParam1 = Param1;
-            AnsiScrollParam2 = Param2;
-            AnsiScrollParam3 = Param3;
-            AnsiScrollRev = (Lines < 0);
-            AnsiScrollLinesI = (Lines >= 0) ? Lines : (0 - Lines);
+            AnsiState_.AnsiScrollCommand = Command;
+            AnsiState_.AnsiScrollParam1 = Param1;
+            AnsiState_.AnsiScrollParam2 = Param2;
+            AnsiState_.AnsiScrollParam3 = Param3;
+            AnsiState_.AnsiScrollRev = (Lines < 0);
+            AnsiState_.AnsiScrollLinesI = (Lines >= 0) ? Lines : (0 - Lines);
 
-            if (__AnsiSmoothScroll && (ANSIScrollSmooth > 0))
+            if (AnsiState_.__AnsiSmoothScroll && (ANSIScrollSmooth > 0))
             {
-                AnsiScrollCounter = ANSIScrollChars + 1;
+                AnsiState_.AnsiScrollCounter = ANSIScrollChars + 1;
 
                 if (AnsiScrollPosition == null)
                 {
-                    int ScrollTime = (AnsiScrollCounter - 1);
+                    int ScrollTime = (AnsiState_.AnsiScrollCounter - 1);
 
                     switch (ANSIScrollSmooth)
                     {
@@ -131,8 +108,8 @@ namespace TextPaint
             }
             else
             {
-                AnsiScrollCounter = 0;
-                AnsiScrollLines(AnsiScrollRev ? 0 - AnsiScrollLinesI : AnsiScrollLinesI);
+                AnsiState_.AnsiScrollCounter = 0;
+                AnsiScrollLines(AnsiState_.AnsiScrollRev ? 0 - AnsiState_.AnsiScrollLinesI : AnsiState_.AnsiScrollLinesI);
                 AnsiScrollFinish(false);
             }
         }
@@ -140,22 +117,24 @@ namespace TextPaint
         bool AnsiScrollFinish(bool ScrollDisp)
         {
             AnsiScrollSetOffset(0);
-            switch (AnsiScrollCommand)
+            AnsiState_.PrintCharScroll++;
+            switch (AnsiState_.AnsiScrollCommand)
             {
-                case AnsiScrollCommandDef.Char:
-                    AnsiCharFI(__AnsiX, __AnsiY, AnsiScrollParam1, AnsiScrollParam2, AnsiScrollParam3);
-                    __AnsiX++;
+                case AnsiState.AnsiScrollCommandDef.Char:
+                    AnsiCharFI(AnsiState_.__AnsiX, AnsiState_.__AnsiY, AnsiState_.AnsiScrollParam1, AnsiState_.AnsiScrollParam2, AnsiState_.AnsiScrollParam3);
+                    AnsiState_.__AnsiX++;
                     ScrollDisp = true;
                     break;
-                case AnsiScrollCommandDef.FirstLast:
-                    __AnsiScrollFirst = AnsiScrollParam1;
-                    __AnsiScrollLast = AnsiScrollParam2;
+                case AnsiState.AnsiScrollCommandDef.FirstLast:
+                    AnsiState_.__AnsiScrollFirst = AnsiState_.AnsiScrollParam1;
+                    AnsiState_.__AnsiScrollLast = AnsiState_.AnsiScrollParam2;
                     break;
-                case AnsiScrollCommandDef.Tab:
-                    AnsiDoTab(AnsiScrollParam1);
+                case AnsiState.AnsiScrollCommandDef.Tab:
+                    AnsiDoTab(AnsiState_.AnsiScrollParam1);
                     break;
             }
-            AnsiScrollCommand = AnsiScrollCommandDef.None;
+            AnsiState_.AnsiScrollCommand = AnsiState.AnsiScrollCommandDef.None;
+            SeekStateSave(true);
             return ScrollDisp;
         }
 
@@ -166,7 +145,7 @@ namespace TextPaint
 
             for (int i = 0; i < AnsiScrollPosition.Length; i++)
             {
-                if (AnsiScrollCounter == AnsiScrollPosition[i])
+                if (AnsiState_.AnsiScrollCounter == AnsiScrollPosition[i])
                 {
                     if (AnsiScrollOffset[i] == 8)
                     {
@@ -175,7 +154,7 @@ namespace TextPaint
                     }
                     else
                     {
-                        if (AnsiScrollRev)
+                        if (AnsiState_.AnsiScrollRev)
                         {
                             AnsiScrollSetOffset(0 - AnsiScrollOffset[i]);
                         }
@@ -191,47 +170,48 @@ namespace TextPaint
             //if (AnsiScrollCounter == ((ANSIScrollChars2) + 1))
             if (ScrollMove)
             {
-                AnsiScrollLines(AnsiScrollRev ? -1 : 1);
+                AnsiScrollLines(AnsiState_.AnsiScrollRev ? -1 : 1);
                 ScrollDisp = true;
             }
-            if (AnsiScrollCounter == 1)
+            if (AnsiState_.AnsiScrollCounter == 1)
             {
-                AnsiScrollLinesI--;
-                if (AnsiScrollLinesI > 0)
+                AnsiState_.AnsiScrollLinesI--;
+                if (AnsiState_.AnsiScrollLinesI > 0)
                 {
-                    AnsiScrollCounter = ANSIScrollChars + 1;
+                    AnsiState_.AnsiScrollCounter = ANSIScrollChars + 1;
                 }
                 else
                 {
                     ScrollDisp = AnsiScrollFinish(ScrollDisp);
                 }
             }
-            AnsiScrollCounter--;
+            AnsiState_.AnsiScrollCounter--;
             return ScrollDisp;
         }
 
-        int ScrollLastOffset = 0;
-
         private void AnsiScrollSetOffset(int Offset)
         {
-            ScrollLastOffset = Offset;
-            if (Offset < 0)
+            AnsiState_.ScrollLastOffset = Offset;
+            if (__AnsiScreen)
             {
-                Screen_.SetLineOffset(__AnsiScrollLast, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
-                for (int Y = __AnsiScrollLast - 1; Y > __AnsiScrollFirst; Y--)
+                if (Offset < 0)
                 {
-                    Screen_.SetLineOffset(Y, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
+                    Screen_.SetLineOffset(AnsiState_.__AnsiScrollLast, Offset, false, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
+                    for (int Y = AnsiState_.__AnsiScrollLast - 1; Y > AnsiState_.__AnsiScrollFirst; Y--)
+                    {
+                        Screen_.SetLineOffset(Y, Offset, false, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
+                    }
+                    Screen_.SetLineOffset(AnsiState_.__AnsiScrollFirst, Offset, true, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
                 }
-                Screen_.SetLineOffset(__AnsiScrollFirst, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
-            }
-            else
-            {
-                Screen_.SetLineOffset(__AnsiScrollFirst, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
-                for (int Y = __AnsiScrollFirst + 1; Y < __AnsiScrollLast; Y++)
+                else
                 {
-                    Screen_.SetLineOffset(Y, Offset, false, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
+                    Screen_.SetLineOffset(AnsiState_.__AnsiScrollFirst, Offset, false, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
+                    for (int Y = AnsiState_.__AnsiScrollFirst + 1; Y < AnsiState_.__AnsiScrollLast; Y++)
+                    {
+                        Screen_.SetLineOffset(Y, Offset, false, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
+                    }
+                    Screen_.SetLineOffset(AnsiState_.__AnsiScrollLast, Offset, true, AnsiState_.__AnsiBackScroll > 0 ? AnsiState_.__AnsiBackScroll : TextNormalBack, AnsiState_.__AnsiForeScroll > 0 ? AnsiState_.__AnsiForeScroll : TextNormalFore);
                 }
-                Screen_.SetLineOffset(__AnsiScrollLast, Offset, true, __AnsiBackScroll > 0 ? __AnsiBackScroll : TextNormalBack, __AnsiForeScroll > 0 ? __AnsiForeScroll : TextNormalFore);
             }
         }
 
@@ -241,41 +221,41 @@ namespace TextPaint
             int MaxPos0 = (AnsiProcessGetXMax(true) * (__AnsiLineOccupyFactor));
             int MaxPos1 = ((AnsiProcessGetXMax(true) - 1) * (__AnsiLineOccupyFactor));
             int MaxPos2 = ((AnsiProcessGetXMax(true) - 2) * (__AnsiLineOccupyFactor));
-            for (int i = __AnsiScrollFirst; i <= __AnsiScrollLast; i++)
+            for (int i = AnsiState_.__AnsiScrollFirst; i <= AnsiState_.__AnsiScrollLast; i++)
             {
-                if (__AnsiLineOccupy.Count > i)
+                if (AnsiState_.__AnsiLineOccupy.Count > i)
                 {
                     int Columns_ = Columns;
                     while (Columns_ < 0)
                     {
                         if (AnsiGetFontSize(i) > 0)
                         {
-                            if (__AnsiLineOccupy[i].Count >= (MaxPos0))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (MaxPos0))
                             {
-                                __AnsiLineOccupy[i].RemoveRange((AnsiProcessGetXMax(true) - 2) * (__AnsiLineOccupyFactor), (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor));
+                                AnsiState_.__AnsiLineOccupy[i].RemoveRange((AnsiProcessGetXMax(true) - 2) * (__AnsiLineOccupyFactor), (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor));
                             }
-                            __AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
-                            __AnsiLineOccupy[i].Insert(0, 2);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
-                            __AnsiLineOccupy[i].Insert(0, 32);
-                            __AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
-                            __AnsiLineOccupy[i].Insert(0, 1);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
-                            __AnsiLineOccupy[i].Insert(0, 32);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 2);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 32);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiGetFontH(i));
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 1);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 32);
                         }
                         else
                         {
-                            if (__AnsiLineOccupy[i].Count >= (MaxPos0))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (MaxPos0))
                             {
-                                __AnsiLineOccupy[i].RemoveRange((AnsiProcessGetXMax(true) - 1) * (__AnsiLineOccupyFactor), (__AnsiLineOccupyFactor));
+                                AnsiState_.__AnsiLineOccupy[i].RemoveRange((AnsiProcessGetXMax(true) - 1) * (__AnsiLineOccupyFactor), (__AnsiLineOccupyFactor));
                             }
-                            __AnsiLineOccupy[i].Insert(0, 0);
-                            __AnsiLineOccupy[i].Insert(0, 0);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiForeScroll);
-                            __AnsiLineOccupy[i].Insert(0, __AnsiBackScroll);
-                            __AnsiLineOccupy[i].Insert(0, 32);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 0);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 0);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[i].Insert(0, 32);
                         }
                         Columns_++;
                     }
@@ -283,43 +263,45 @@ namespace TextPaint
                     {
                         if (AnsiGetFontSize(i) > 0)
                         {
-                            if (__AnsiLineOccupy[i].Count >= (MaxPos0))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (MaxPos0))
                             {
-                                __AnsiLineOccupy[i].Insert(MaxPos2, AnsiGetFontH(i));
-                                __AnsiLineOccupy[i].Insert(MaxPos2, 2);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, __AnsiForeScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, __AnsiBackScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, 32);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, AnsiGetFontH(i));
-                                __AnsiLineOccupy[i].Insert(MaxPos2, 1);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, __AnsiForeScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, __AnsiBackScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos2, 32);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiGetFontH(i));
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, 2);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiState_.__AnsiForeScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiState_.__AnsiBackScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, 32);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiGetFontH(i));
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, 1);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiState_.__AnsiForeScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, AnsiState_.__AnsiBackScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos2, 32);
                             }
-                            if (__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor));
+                                AnsiState_.__AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor + __AnsiLineOccupyFactor));
                             }
                         }
                         else
                         {
-                            if (__AnsiLineOccupy[i].Count >= (AnsiProcessGetXMax(true) * (__AnsiLineOccupyFactor)))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (AnsiProcessGetXMax(true) * (__AnsiLineOccupyFactor)))
                             {
-                                __AnsiLineOccupy[i].Insert(MaxPos1, 0);
-                                __AnsiLineOccupy[i].Insert(MaxPos1, 0);
-                                __AnsiLineOccupy[i].Insert(MaxPos1, __AnsiForeScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos1, __AnsiBackScroll);
-                                __AnsiLineOccupy[i].Insert(MaxPos1, 32);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos1, 0);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos1, 0);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos1, AnsiState_.__AnsiForeScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos1, AnsiState_.__AnsiBackScroll);
+                                AnsiState_.__AnsiLineOccupy[i].Insert(MaxPos1, 32);
                             }
-                            if (__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor))
+                            if (AnsiState_.__AnsiLineOccupy[i].Count >= (__AnsiLineOccupyFactor))
                             {
-                                __AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor));
+                                AnsiState_.__AnsiLineOccupy[i].RemoveRange(0, (__AnsiLineOccupyFactor));
                             }
                         }
                         Columns_--;
                     }
                     AnsiRepaintLine(i);
                 }
+                AnsiState_.PrintCharInsDel++;
+                AnsiState_.PrintCharInsDel++;
             }
         }
 
@@ -334,76 +316,79 @@ namespace TextPaint
                 {
                     if (__AnsiLineOccupy2_Use)
                     {
-                        if (__AnsiScrollLast == (AnsiMaxY - 1))
+                        if (AnsiState_.__AnsiScrollLast == (AnsiMaxY - 1))
                         {
-                            while (__AnsiLineOccupy.Count <= (AnsiMaxY - 1))
+                            while (AnsiState_.__AnsiLineOccupy.Count <= (AnsiMaxY - 1))
                             {
-                                __AnsiLineOccupy.Add(new List<int>());
+                                AnsiState_.__AnsiLineOccupy.Add(new List<int>());
                             }
-                            __AnsiLineOccupy2.Add(__AnsiLineOccupy[AnsiMaxY - 1]);
+                            AnsiState_.__AnsiLineOccupy2.Add(AnsiState_.__AnsiLineOccupy[AnsiMaxY - 1]);
                         }
                     }
 
-                    if (__AnsiLineOccupy.Count > __AnsiScrollLast)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiLineOccupy.RemoveAt(__AnsiScrollLast);
+                        AnsiState_.__AnsiLineOccupy.RemoveAt(AnsiState_.__AnsiScrollLast);
                     }
-                    if (__AnsiLineOccupy.Count > __AnsiScrollFirst)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiScrollFirst)
                     {
-                        __AnsiLineOccupy.Insert(__AnsiScrollFirst, new List<int>());
+                        AnsiState_.__AnsiLineOccupy.Insert(AnsiState_.__AnsiScrollFirst, new List<int>());
                     }
                 }
                 else
                 {
-                    while (__AnsiLineOccupy.Count <= __AnsiScrollLast)
+                    while (AnsiState_.__AnsiLineOccupy.Count <= AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiLineOccupy.Add(new List<int>());
+                        AnsiState_.__AnsiLineOccupy.Add(new List<int>());
                     }
-                    for (int YY = __AnsiScrollLast; YY > __AnsiScrollFirst; YY--)
+                    for (int YY = AnsiState_.__AnsiScrollLast; YY > AnsiState_.__AnsiScrollFirst; YY--)
                     {
-                        while (__AnsiLineOccupy[YY].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
+                        while (AnsiState_.__AnsiLineOccupy[YY].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
                         {
-                            __AnsiLineOccupy[YY].Add(32);
-                            __AnsiLineOccupy[YY].Add(__AnsiBackScroll);
-                            __AnsiLineOccupy[YY].Add(__AnsiForeScroll);
-                            __AnsiLineOccupy[YY].Add(0);
-                            __AnsiLineOccupy[YY].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(32);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(0);
                         }
-                        while (__AnsiLineOccupy[YY - 1].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
+                        while (AnsiState_.__AnsiLineOccupy[YY - 1].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
                         {
-                            __AnsiLineOccupy[YY - 1].Add(32);
-                            __AnsiLineOccupy[YY - 1].Add(__AnsiBackScroll);
-                            __AnsiLineOccupy[YY - 1].Add(__AnsiForeScroll);
-                            __AnsiLineOccupy[YY - 1].Add(0);
-                            __AnsiLineOccupy[YY - 1].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY - 1].Add(32);
+                            AnsiState_.__AnsiLineOccupy[YY - 1].Add(AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[YY - 1].Add(AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[YY - 1].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY - 1].Add(0);
                         }
                         for (int XX = ScrollMarginL; XX < ScrollMarginR; XX++)
                         {
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 0] = __AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 0];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 1] = __AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 1];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 2] = __AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 2];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 3] = __AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 3];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 4] = __AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 4];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 0] = AnsiState_.__AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 0];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 1] = AnsiState_.__AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 1];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 2] = AnsiState_.__AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 2];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 3] = AnsiState_.__AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 3];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 4] = AnsiState_.__AnsiLineOccupy[YY - 1][XX * __AnsiLineOccupyFactor + 4];
                         }
                     }
                 }
-                if (__AnsiScrollLast > __AnsiScrollFirst)
+                if (AnsiState_.__AnsiScrollLast > AnsiState_.__AnsiScrollFirst)
                 {
-                    Screen_.Move(ScrollMarginL, __AnsiScrollFirst, ScrollMarginL, __AnsiScrollFirst + 1, ScrollMarginR - ScrollMarginL, __AnsiScrollLast - __AnsiScrollFirst);
+                    if (__AnsiScreen)
+                    {
+                        Screen_.Move(ScrollMarginL, AnsiState_.__AnsiScrollFirst, ScrollMarginL, AnsiState_.__AnsiScrollFirst + 1, ScrollMarginR - ScrollMarginL, AnsiState_.__AnsiScrollLast - AnsiState_.__AnsiScrollFirst);
+                    }
                 }
 
-                for (int i = __AnsiScrollLast; i > __AnsiScrollFirst; i--)
+                for (int i = AnsiState_.__AnsiScrollLast; i > AnsiState_.__AnsiScrollFirst; i--)
                 {
                     AnsiSetFontSize(i, AnsiGetFontSize(i - 1), false);
                 }
-                AnsiSetFontSize(__AnsiScrollFirst, 0, true);
+                AnsiSetFontSize(AnsiState_.__AnsiScrollFirst, 0, true);
 
                 for (int i = ScrollMarginL; i < ScrollMarginR; i++)
                 {
-                    AnsiChar(i, __AnsiScrollFirst, 32, __AnsiBackScroll, __AnsiForeScroll, 0, 0);
+                    AnsiChar(i, AnsiState_.__AnsiScrollFirst, 32, AnsiState_.__AnsiBackScroll, AnsiState_.__AnsiForeScroll, 0, 0);
                 }
 
-                for (int i = (WinH - 1); i <= __AnsiScrollLast; i++)
+                for (int i = (WinH - 1); i <= AnsiState_.__AnsiScrollLast; i++)
                 {
                     AnsiRepaintLine(i);
                 }
@@ -418,76 +403,79 @@ namespace TextPaint
                 {
                     if (__AnsiLineOccupy1_Use)
                     {
-                        if (__AnsiScrollFirst == 0)
+                        if (AnsiState_.__AnsiScrollFirst == 0)
                         {
-                            while (__AnsiLineOccupy.Count <= 0)
+                            while (AnsiState_.__AnsiLineOccupy.Count <= 0)
                             {
-                                __AnsiLineOccupy.Add(new List<int>());
+                                AnsiState_.__AnsiLineOccupy.Add(new List<int>());
                             }
-                            __AnsiLineOccupy1.Add(__AnsiLineOccupy[0]);
+                            AnsiState_.__AnsiLineOccupy1.Add(AnsiState_.__AnsiLineOccupy[0]);
                         }
                     }
 
-                    if (__AnsiLineOccupy.Count > __AnsiScrollFirst)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiScrollFirst)
                     {
-                        __AnsiLineOccupy.RemoveAt(__AnsiScrollFirst);
+                        AnsiState_.__AnsiLineOccupy.RemoveAt(AnsiState_.__AnsiScrollFirst);
                     }
-                    if (__AnsiLineOccupy.Count > __AnsiScrollLast)
+                    if (AnsiState_.__AnsiLineOccupy.Count > AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiLineOccupy.Insert(__AnsiScrollLast, new List<int>());
+                        AnsiState_.__AnsiLineOccupy.Insert(AnsiState_.__AnsiScrollLast, new List<int>());
                     }
                 }
                 else
                 {
-                    while (__AnsiLineOccupy.Count <= __AnsiScrollLast)
+                    while (AnsiState_.__AnsiLineOccupy.Count <= AnsiState_.__AnsiScrollLast)
                     {
-                        __AnsiLineOccupy.Add(new List<int>());
+                        AnsiState_.__AnsiLineOccupy.Add(new List<int>());
                     }
-                    for (int YY = __AnsiScrollFirst; YY < __AnsiScrollLast; YY++)
+                    for (int YY = AnsiState_.__AnsiScrollFirst; YY < AnsiState_.__AnsiScrollLast; YY++)
                     {
-                        while (__AnsiLineOccupy[YY].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
+                        while (AnsiState_.__AnsiLineOccupy[YY].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
                         {
-                            __AnsiLineOccupy[YY].Add(32);
-                            __AnsiLineOccupy[YY].Add(__AnsiBackScroll);
-                            __AnsiLineOccupy[YY].Add(__AnsiForeScroll);
-                            __AnsiLineOccupy[YY].Add(0);
-                            __AnsiLineOccupy[YY].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(32);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY].Add(0);
                         }
-                        while (__AnsiLineOccupy[YY + 1].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
+                        while (AnsiState_.__AnsiLineOccupy[YY + 1].Count <= (ScrollMarginR * __AnsiLineOccupyFactor))
                         {
-                            __AnsiLineOccupy[YY + 1].Add(32);
-                            __AnsiLineOccupy[YY + 1].Add(__AnsiBackScroll);
-                            __AnsiLineOccupy[YY + 1].Add(__AnsiForeScroll);
-                            __AnsiLineOccupy[YY + 1].Add(0);
-                            __AnsiLineOccupy[YY + 1].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY + 1].Add(32);
+                            AnsiState_.__AnsiLineOccupy[YY + 1].Add(AnsiState_.__AnsiBackScroll);
+                            AnsiState_.__AnsiLineOccupy[YY + 1].Add(AnsiState_.__AnsiForeScroll);
+                            AnsiState_.__AnsiLineOccupy[YY + 1].Add(0);
+                            AnsiState_.__AnsiLineOccupy[YY + 1].Add(0);
                         }
                         for (int XX = ScrollMarginL; XX < ScrollMarginR; XX++)
                         {
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 0] = __AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 0];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 1] = __AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 1];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 2] = __AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 2];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 3] = __AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 3];
-                            __AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 4] = __AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 4];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 0] = AnsiState_.__AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 0];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 1] = AnsiState_.__AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 1];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 2] = AnsiState_.__AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 2];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 3] = AnsiState_.__AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 3];
+                            AnsiState_.__AnsiLineOccupy[YY][XX * __AnsiLineOccupyFactor + 4] = AnsiState_.__AnsiLineOccupy[YY + 1][XX * __AnsiLineOccupyFactor + 4];
                         }
                     }
                 }
-                if (__AnsiScrollLast > __AnsiScrollFirst)
+                if (AnsiState_.__AnsiScrollLast > AnsiState_.__AnsiScrollFirst)
                 {
-                    Screen_.Move(ScrollMarginL, __AnsiScrollFirst + 1, ScrollMarginL, __AnsiScrollFirst, ScrollMarginR - ScrollMarginL, __AnsiScrollLast - __AnsiScrollFirst);
+                    if (__AnsiScreen)
+                    {
+                        Screen_.Move(ScrollMarginL, AnsiState_.__AnsiScrollFirst + 1, ScrollMarginL, AnsiState_.__AnsiScrollFirst, ScrollMarginR - ScrollMarginL, AnsiState_.__AnsiScrollLast - AnsiState_.__AnsiScrollFirst);
+                    }
                 }
 
-                for (int i = __AnsiScrollFirst; i < __AnsiScrollLast; i++)
+                for (int i = AnsiState_.__AnsiScrollFirst; i < AnsiState_.__AnsiScrollLast; i++)
                 {
                     AnsiSetFontSize(i, AnsiGetFontSize(i + 1), false);
                 }
-                AnsiSetFontSize(__AnsiScrollLast, 0, true);
+                AnsiSetFontSize(AnsiState_.__AnsiScrollLast, 0, true);
 
                 for (int i = ScrollMarginL; i < ScrollMarginR; i++)
                 {
-                    AnsiChar(i, __AnsiScrollLast, 32, __AnsiBackScroll, __AnsiForeScroll, 0, 0);
+                    AnsiChar(i, AnsiState_.__AnsiScrollLast, 32, AnsiState_.__AnsiBackScroll, AnsiState_.__AnsiForeScroll, 0, 0);
                 }
 
-                for (int i = (WinH - 1); i <= __AnsiScrollLast; i++)
+                for (int i = (WinH - 1); i <= AnsiState_.__AnsiScrollLast; i++)
                 {
                     AnsiRepaintLine(i);
                 }
@@ -508,10 +496,10 @@ namespace TextPaint
         {
             int TabLimitL = 0;
             int TabLimitR = AnsiMaxX;
-            if (__AnsiMarginLeftRight)
+            if (AnsiState_.__AnsiMarginLeftRight)
             {
-                TabLimitL = __AnsiMarginLeft;
-                TabLimitR = __AnsiMarginRight;
+                TabLimitL = AnsiState_.__AnsiMarginLeft;
+                TabLimitR = AnsiState_.__AnsiMarginRight;
             }
 
 
@@ -520,46 +508,46 @@ namespace TextPaint
             {
                 while (TabTimes > 0)
                 {
-                    if (__AnsiX > (TabLimitR - 1))
+                    if (AnsiState_.__AnsiX > (TabLimitR - 1))
                     {
-                        __AnsiX = TabLimitL;
-                        __AnsiY++;
-                        if ((AnsiMaxY > 0) && (__AnsiY > __AnsiScrollLast))
+                        AnsiState_.__AnsiX = TabLimitL;
+                        AnsiState_.__AnsiY++;
+                        if ((AnsiMaxY > 0) && (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast))
                         {
-                            AnsiScrollInit(__AnsiY - __AnsiScrollLast, AnsiScrollCommandDef.Tab, TabTimes - 1, 0, 0);
-                            __AnsiY = __AnsiScrollLast;
+                            AnsiScrollInit(AnsiState_.__AnsiY - AnsiState_.__AnsiScrollLast, AnsiState.AnsiScrollCommandDef.Tab, TabTimes - 1, 0, 0);
+                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
                             return;
                         }
                     }
                     else
                     {
-                        __AnsiX++;
-                        if (__AnsiTabs[__AnsiTabs.Count - 1] > __AnsiX)
+                        AnsiState_.__AnsiX++;
+                        if (AnsiState_.__AnsiTabs[AnsiState_.__AnsiTabs.Count - 1] > AnsiState_.__AnsiX)
                         {
-                            while (!__AnsiTabs.Contains(__AnsiX))
+                            while (!AnsiState_.__AnsiTabs.Contains(AnsiState_.__AnsiX))
                             {
-                                __AnsiX++;
+                                AnsiState_.__AnsiX++;
                             }
                         }
                         else
                         {
-                            while ((__AnsiX % 8) > 0)
+                            while ((AnsiState_.__AnsiX % 8) > 0)
                             {
-                                __AnsiX++;
+                                AnsiState_.__AnsiX++;
                             }
                         }
-                        if (AnsiGetFontSize(__AnsiY) > 0)
+                        if (AnsiGetFontSize(AnsiState_.__AnsiY) > 0)
                         {
-                            if (__AnsiX >= (TabLimitR / 2))
+                            if (AnsiState_.__AnsiX >= (TabLimitR / 2))
                             {
-                                __AnsiX = (TabLimitR / 2) - 1;
+                                AnsiState_.__AnsiX = (TabLimitR / 2) - 1;
                             }
                         }
                         else
                         {
-                            if (__AnsiX >= TabLimitR)
+                            if (AnsiState_.__AnsiX >= TabLimitR)
                             {
-                                __AnsiX = TabLimitR - 1;
+                                AnsiState_.__AnsiX = TabLimitR - 1;
                             }
                         }
                     }
@@ -570,24 +558,24 @@ namespace TextPaint
             {
                 while (TabTimes < 0)
                 {
-                    __AnsiX--;
-                    if (__AnsiTabs[__AnsiTabs.Count - 1] > __AnsiX)
+                    AnsiState_.__AnsiX--;
+                    if (AnsiState_.__AnsiTabs[AnsiState_.__AnsiTabs.Count - 1] > AnsiState_.__AnsiX)
                     {
-                        while ((!__AnsiTabs.Contains(__AnsiX)) && (__AnsiX > TabLimitL))
+                        while ((!AnsiState_.__AnsiTabs.Contains(AnsiState_.__AnsiX)) && (AnsiState_.__AnsiX > TabLimitL))
                         {
-                            __AnsiX--;
+                            AnsiState_.__AnsiX--;
                         }
                     }
                     else
                     {
-                        while (((__AnsiX % 8) > 0) && (__AnsiX > TabLimitL))
+                        while (((AnsiState_.__AnsiX % 8) > 0) && (AnsiState_.__AnsiX > TabLimitL))
                         {
-                            __AnsiX--;
+                            AnsiState_.__AnsiX--;
                         }
                     }
-                    if (__AnsiX < TabLimitL)
+                    if (AnsiState_.__AnsiX < TabLimitL)
                     {
-                        __AnsiX = TabLimitL;
+                        AnsiState_.__AnsiX = TabLimitL;
                     }
                     TabTimes++;
                 }

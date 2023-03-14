@@ -48,7 +48,7 @@ namespace TextPaint
             Screen_.Refresh();
         }
 
-        public void CoreEvent_Server(string KeyName, char KeyChar, int KeyCharI)
+        public void CoreEvent_Server(string KeyName, char KeyChar, int KeyCharI, bool ModShift, bool ModCtrl, bool ModAlt)
         {
             switch (KeyName)
             {
@@ -57,144 +57,39 @@ namespace TextPaint
                         Monitor.Enter(TelnetMutex);
                         Core_.AnsiTerminalResize(Core_.Screen_.WinW, Core_.Screen_.WinH);
                         Monitor.Exit(TelnetMutex);
-                        switch (WorkState)
+                        switch (WorkStateS)
                         {
-                            case 1:
+                            case WorkStateSDef.WaitForKey:
+                            case WorkStateSDef.DisplayInfo:
                                 Screen_Refresh();
-                                break;
-                        }
-                    }
-                    break;
-                case "Enter":
-                    {
-                        switch (WorkState)
-                        {
-                            case 1:
-                                {
-                                    Screen_Clear();
-                                    WorkState = 2;
-                                }
-                                break;
-                            case 3:
-                            case 4:
-                                {
-                                    DisplayPaused = !DisplayPaused;
-                                    if (!DisplayPaused)
-                                    {
-                                        WorkState = 5;
-                                        FileTimerOffset = FileTimer.ElapsedMilliseconds;
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                    break;
-                case "Oemtilde":
-                    {
-                        switch (WorkState)
-                        {
-                            case 1:
-                                NewFileName.Add(KeyCharI);
-                                Screen_WriteText(TextWork.IntToStr(KeyCharI));
-                                Screen_Refresh();
-                                break;
-                            default:
-                                {
-                                    if (Monitor.TryEnter(StatusMutex))
-                                    {
-                                        if ((DisplayStatus < 9))
-                                        {
-                                            DisplayStatus += 3;
-                                        }
-                                        else
-                                        {
-                                            DisplayStatus -= 9;
-                                        }
-                                        Monitor.Exit(StatusMutex);
-                                    }
-                                }
-                                break;
-                        }
-                    }
-                    break;
-                case "Tab":
-                    {
-                        switch (WorkState)
-                        {
-                            case 1:
-                                {
-                                    Screen_.CloseApp(Core_.TextNormalBack, Core_.TextNormalFore);
-                                    WorkState = 99;
-                                }
-                                break;
-                            default:
-                                {
-                                    if (Monitor.TryEnter(StatusMutex))
-                                    {
-                                        DisplayStatus++;
-                                        if ((DisplayStatus % 3) == 0)
-                                        {
-                                            DisplayStatus -= 3;
-                                        }
-                                        Monitor.Exit(StatusMutex);
-                                    }
-                                }
                                 break;
                         }
                     }
                     break;
                 case "Space":
                     {
-                        switch (WorkState)
+                        switch (WorkStateS)
                         {
-                            case 1:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
                                 {
-                                    NewFileName.Add(KeyCharI);
-                                    Screen_WriteText(TextWork.IntToStr(KeyCharI));
-                                    Screen_Refresh();
+                                    ActionRequest = 5;
                                 }
                                 break;
-                            case 4:
-                                {
-                                    WorkState = 6;
-                                }
-                                break;
-                        }
-                    }
-                    break;
-                case "WindowClose":
-                    {
-                        switch (WorkState)
-                        {
-                            case 1:
-                            case 3:
-                            case 4:
-                                {
-                                    Screen_.AppWorking = false;
-                                    WorkState = 99;
-                                }
-                                break;
-                        }
-                    }
-                    break;
-                case "Escape":
-                    {
-                        switch (WorkState)
-                        {
-                            case 3:
-                            case 4:
-                                {
-                                    EscapeRequest = true;
-                                }
+                            case WorkStateSDef.DisplayInfo:
+                                ExitInfo();
                                 break;
                         }
                     }
                     break;
                 case "Backspace":
                     {
-                        switch (WorkState)
+                        switch (WorkStateS)
                         {
-                            case 1:
+                            case WorkStateSDef.WaitForKey:
                                 {
                                     if (NewFileName.Count > 0)
                                     {
@@ -204,18 +99,309 @@ namespace TextPaint
                                     Screen_Refresh();
                                 }
                                 break;
-                            case 4:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
                                 {
-                                    WorkState = 5;
+                                    DisplayPaused = !DisplayPaused;
+                                    if (!DisplayPaused)
+                                    {
+                                        WorkSeekAdvance = FileDelayStep__;
+                                        WorkStateS = WorkStateSDef.DisplayRev;
+                                        FileTimerOffset = FileTimer.ElapsedMilliseconds;
+                                    }
+                                }
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                ExitInfo();
+                                break;
+                        }
+                    }
+                    break;
+                case "Enter":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.WaitForKey:
+                                {
+                                    Screen_Clear();
+                                    FileListPrepare();
+                                    WorkStateS = WorkStateSDef.FileOpen;
+                                }
+                                break;
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
+                                {
+                                    DisplayPaused = !DisplayPaused;
+                                    if (!DisplayPaused)
+                                    {
+                                        WorkSeekAdvance = FileDelayStep__;
+                                        WorkStateS = WorkStateSDef.DisplayFwd;
+                                        FileTimerOffset = FileTimer.ElapsedMilliseconds;
+                                    }
+                                }
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                ExitInfo();
+                                break;
+                        }
+                    }
+                    break;
+                case "Tab":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.WaitForKey:
+                                {
+                                    Screen_.CloseApp(Core_.TextNormalBack, Core_.TextNormalFore);
+                                    WorkStateS = WorkStateSDef.None;
+                                }
+                                break;
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                {
+                                    if (Monitor.TryEnter(StatusMutex))
+                                    {
+                                        DisplayStatus++;
+                                        if ((DisplayStatus % 3) == 0)
+                                        {
+                                            DisplayStatus -= 3;
+                                        }
+                                        ForceRepaint = true;
+                                        Monitor.Exit(StatusMutex);
+                                    }
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "UpArrow":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = -1;
+                                ActionRequest = 4;
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                InfoPosV--;
+                                DisplayInfoRepaint = true;
+                                break;
+                        }
+                    }
+                    break;
+                case "DownArrow":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = 1;
+                                ActionRequest = 4;
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                InfoPosV++;
+                                DisplayInfoRepaint = true;
+                                break;
+                        }
+                    }
+                    break;
+                case "LeftArrow":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = -2;
+                                ActionRequest = 4;
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                InfoPosH--;
+                                DisplayInfoRepaint = true;
+                                break;
+                        }
+                    }
+                    break;
+                case "RightArrow":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = 2;
+                                ActionRequest = 4;
+                                break;
+                            case WorkStateSDef.DisplayInfo:
+                                InfoPosH++;
+                                DisplayInfoRepaint = true;
+                                break;
+                        }
+                    }
+                    break;
+                case "Home":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = -3;
+                                ActionRequest = 4;
+                                break;
+                        }
+                    }
+                    break;
+                case "End":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                                ActionRequestParam = 3;
+                                ActionRequest = 4;
+                                break;
+                        }
+                    }
+                    break;
+                case "WindowClose":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.WaitForKey:
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
+                            case WorkStateSDef.DisplayInfo:
+                                {
+                                    Screen_.AppWorking = false;
+                                    WorkStateS = WorkStateSDef.None;
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "Escape":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayInfo:
+                                {
+                                    ExitInfo();
+                                }
+                                break;
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
+                                {
+                                    ActionRequest = 2;
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "PageUp":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
+                                {
+                                    if (PlaylistFiles.Count > 0)
+                                    {
+                                        if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
+                                        {
+                                            PlaylistFiles.RemoveAt(PlaylistIdx);
+                                            if (PlaylistIdx > 0)
+                                            {
+                                                PlaylistIdx--;
+                                            }
+                                            else
+                                            {
+                                                PlaylistIdx = PlaylistFiles.Count - 1;
+                                            }
+                                        }
+
+                                        if (PlaylistIdx > 0)
+                                        {
+                                            PlaylistIdx--;
+                                        }
+                                        else
+                                        {
+                                            PlaylistIdx = PlaylistFiles.Count - 1;
+                                        }
+                                    }
+                                    Core_.CurrentFileName = PlaylistFiles[PlaylistIdx];
+                                    ActionRequest = 1;
+                                }
+                                break;
+                        }
+                    }
+                    break;
+                case "PageDown":
+                    {
+                        switch (WorkStateS)
+                        {
+                            case WorkStateSDef.DisplayFwd:
+                            case WorkStateSDef.DisplayRev:
+                            case WorkStateSDef.DisplayPlayFwd:
+                            case WorkStateSDef.DisplayPlayRev:
+                            case WorkStateSDef.DisplayPause:
+                                {
+                                    if (PlaylistFiles.Count > 0)
+                                    {
+                                        if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
+                                        {
+                                            PlaylistFiles.RemoveAt(PlaylistIdx);
+                                        }
+                                        else
+                                        {
+                                            PlaylistIdx++;
+                                            if (PlaylistIdx == PlaylistFiles.Count)
+                                            {
+                                                PlaylistIdx = 0;
+                                            }
+                                        }
+                                    }
+                                    Core_.CurrentFileName = PlaylistFiles[PlaylistIdx];
+                                    ActionRequest = 1;
                                 }
                                 break;
                         }
                     }
                     break;
                 default:
-                    switch (WorkState)
+                    switch (WorkStateS)
                     {
-                        case 1:
+                        case WorkStateSDef.WaitForKey:
                             if (KeyChar >= 32)
                             {
                                 NewFileName.Add(KeyCharI);
@@ -223,107 +409,289 @@ namespace TextPaint
                             }
                             Screen_Refresh();
                             break;
+                        case WorkStateSDef.DisplayPause:
+                        case WorkStateSDef.DisplayFwd:
+                        case WorkStateSDef.DisplayRev:
+                        case WorkStateSDef.DisplayPlayFwd:
+                        case WorkStateSDef.DisplayPlayRev:
+                            {
+                                switch (KeyChar)
+                                {
+                                    case '+':
+                                    case '=':
+                                        FileDelayStepFactor++;
+                                        if ((FileDelayStep__ * 2) < 1)
+                                        {
+                                            FileDelayStepFactor--;
+                                        }
+                                        ActionRequest = 3;
+                                        break;
+                                    case '-':
+                                    case '_':
+                                        if (FileDelayStep__ > 1)
+                                        {
+                                            FileDelayStepFactor--;
+                                        }
+                                        ActionRequest = 3;
+                                        break;
+                                    case '*':
+                                    case '/':
+                                        FileDelayStepFactor = 0;
+                                        ActionRequest = 3;
+                                        break;
+                                    case '`':
+                                    case '~':
+                                        {
+                                            if (Monitor.TryEnter(StatusMutex))
+                                            {
+                                                if ((DisplayStatus < 12))
+                                                {
+                                                    DisplayStatus += 3;
+                                                }
+                                                else
+                                                {
+                                                    DisplayStatus -= 12;
+                                                }
+                                                ForceRepaint = true;
+                                                Monitor.Exit(StatusMutex);
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                            break;
                     }
                     break;
             }
         }
 
+
+
+
         public bool ForceRepaint = false;
         long FileTimerOffset = 0;
         long FileDelayTimeL = 0;
         Stopwatch FileTimer = new Stopwatch();
-        bool EscapeRequest = false;
+        int ActionRequestParam = 0;
+        int ActionRequest = 0;
+        int WorkSeekAdvance = 1;
+        bool WorkSeekOneChar = false;
+
+        int MoviePos = 0;
+        int MovieLength = 0;
+
+        int FileDelayStep__ = 1;
+        int FileDelayStepFactor = 0;
+
+        List<string> PlaylistFiles = new List<string>();
+        int PlaylistIdx = 0;
+
+        void FileListPrepare()
+        {
+            DisplayStatus_ = -1;
+            string NewFileNameS = Core.PrepareFileName(NewFileName);
+            if (!("".Equals(NewFileNameS)))
+            {
+                Core_.CurrentFileName = NewFileNameS;
+            }
+            PlaylistFiles = Core.GetFileList(Core_.CurrentFileName, ANSIBrowseWildcard);
+            PlaylistIdx = Core.GetFileListIdx;
+        }
+
+        AnsiSauce AnsiSauce_ = new AnsiSauce();
+
+        void FileOpenCalc()
+        {
+            Monitor.Enter(TelnetMutex);
+            Core_.AnsiTerminalResize(Core_.Screen_.WinW, Core_.Screen_.WinH);
+
+            try
+            {
+                Core_.AnsiProcessReset(true, false, 1);
+                Core_.AnsiProcessSupply(FileCtX);
+                MovieLength = Core_.AnsiProcess(-1);
+            }
+            catch (Exception E)
+            {
+                FileCtX = TextWork.StrToInt(E.Message);
+                Core_.AnsiProcessReset(true, false, 1);
+                Core_.AnsiProcessSupply(FileCtX);
+                MovieLength = Core_.AnsiProcess(-1);
+            }
+            MoviePos = 0;
+            Core_.AnsiProcessReset(true, true, 2);
+            Core_.AnsiProcessSupply(FileCtX);
+
+
+            Monitor.Exit(TelnetMutex);
+            DisplayStatusText(new List<int>());
+            FileTimerOffset = FileTimer.ElapsedMilliseconds;
+
+            if (Server_ != null)
+            {
+                Server_.Send(UniConn.HexToRaw(TerminalResetCommand));
+            }
+
+            if (FileDelayOffset < 0)
+            {
+                WorkSeekAdvance = MovieLength + FileDelayOffset;
+                if (WorkSeekAdvance < 0)
+                {
+                    WorkSeekAdvance = 0;
+                }
+            }
+            else
+            {
+                WorkSeekAdvance = FileDelayOffset;
+                if (WorkSeekAdvance > MovieLength)
+                {
+                    WorkSeekAdvance = MovieLength;
+                }
+            }
+            WorkStateS = WorkStateSDef.DisplayPlayFwd;
+            DisplayPaused = true;
+        }
 
         public void ServerFile()
         {
-            WorkState = 0;
+            WorkStateS = WorkStateSDef.InfoScreen;
             List<int> DispBuffer = new List<int>();
             int DispBufferLen = 1000;
             int FilePos = 0;
-            long FileDisp = 0;
-            long FileDispPause = 0;
             List<int> PX = new List<int>();
-            Socket SPX = null;
-            int FileDelayStep__ = 0;
+            if (ServerPort > 0)
+            {
+                Server_ = new Server();
+                if (!Server_.Start(ServerPort, ServerTelnet))
+                {
+                    Server_ = null;
+                }
+            }
+            else
+            {
+                Server_ = null;
+            }
             byte[] DummyBuf = new byte[1024];
             FileTimer.Start();
             int FileDelayTime_ = FileDelayTime / 5;
             FileDelayTimeL = FileDelayTime;
-            EscapeRequest = false;
+            ActionRequest = 0;
+            FileDelayStep__ = FileDelayStep;
             while (Screen_.AppWorking)
             {
-                if (EscapeRequest)
+                if (ActionRequest > 0)
                 {
-                    WorkState = 0;
-                    EscapeRequest = false;
+                    switch (ActionRequest)
+                    {
+                        case 1:
+                            WorkStateS = WorkStateSDef.FileOpen;
+                            break;
+                        case 2:
+                            WorkStateS = WorkStateSDef.InfoScreen;
+                            break;
+                        case 3:
+                            {
+                                FileDelayStep__ = FileDelayStep;
+                                int T = FileDelayStepFactor;
+                                while (T > 0)
+                                {
+                                    FileDelayStep__ = FileDelayStep__ * 2;
+                                    T--;
+                                }
+                                while (T < 0)
+                                {
+                                    FileDelayStep__ = FileDelayStep__ / 2;
+                                    T++;
+                                }
+                                if (FileDelayStep__ < 1)
+                                {
+                                    FileDelayStep__ = 1;
+                                }
+                                if (!WorkSeekOneChar)
+                                {
+                                    WorkSeekAdvance = FileDelayStep__;
+                                }
+                                ForceRepaint = true;
+                            }
+                            break;
+                        case 4:
+                            {
+                                switch (WorkStateS)
+                                {
+                                    case WorkStateSDef.DisplayFwd:
+                                    case WorkStateSDef.DisplayRev:
+                                    case WorkStateSDef.DisplayPlayFwd:
+                                    case WorkStateSDef.DisplayPlayRev:
+                                    case WorkStateSDef.DisplayPause:
+                                        {
+                                            DisplayPaused = true;
+                                            switch (ActionRequestParam)
+                                            {
+                                                case -1:
+                                                case 1:
+                                                    WorkSeekAdvance = 1;
+                                                    WorkSeekOneChar = true;
+                                                    break;
+                                                case -2:
+                                                case 2:
+                                                    WorkSeekAdvance = FileDelayStep__;
+                                                    break;
+                                                case -3:
+                                                    WorkSeekAdvance = MovieLength;
+                                                    break;
+                                                case 3:
+                                                    WorkSeekAdvance = MovieLength - MoviePos;
+                                                    break;
+                                            }
+                                            if (ActionRequestParam > 0)
+                                            {
+                                                WorkStateS = WorkStateSDef.DisplayFwd;
+                                            }
+                                            if (ActionRequestParam < 0)
+                                            {
+                                                WorkStateS = WorkStateSDef.DisplayRev;
+                                            }
+                                        }
+                                        break;
+                                }
+                            }
+                            break;
+                        case 5:
+                            {
+                                DisplayPaused = true;
+                                ForceRepaint = true;
+                                InfoPosH = 0;
+                                InfoPosV = 0;
+                                WorkStateS = WorkStateSDef.DisplayInfo;
+                                DisplayInfo(true);
+                            }
+                            break;
+                    }
+                    ActionRequest = 0;
                 }
+
                 if (ForceRepaint)
                 {
-                    if (WorkState >= 2)
+                    switch (WorkStateS)
                     {
-                        Core_.AnsiRepaint(false);
+                        case WorkStateSDef.DisplayPause:
+                        case WorkStateSDef.DisplayFwd:
+                        case WorkStateSDef.DisplayRev:
+                        case WorkStateSDef.DisplayPlayFwd:
+                        case WorkStateSDef.DisplayPlayRev:
+                            Core_.AnsiRepaint(false);
+                            DisplayStatusText(DispBuffer);
+                            break;
                     }
                     ForceRepaint = false;
                 }
-                if (SPX != null)
+                switch (WorkStateS)
                 {
-                    try
-                    {
-                        if (SPX.Available > 0)
+                    case WorkStateSDef.InfoScreen: // Information screen before file opening
                         {
-                            SPX.Receive(DummyBuf, SocketFlags.None);
-                        }
-                    }
-                    catch
-                    {
-
-                    }
-                }
-                switch (WorkState)
-                {
-                    case 0: // Information screen before file opening
-                        {
-                            FileDelayStep__ = FileDelayOffset;
-                            if (FileDelayStep__ == 0)
-                            {
-                                FileDelayStep__ = FileDelayStep;
-                            }
                             Screen_.Clear(Core_.TextNormalBack, Core_.TextNormalFore);
                             Screen_.SetCursorPositionNoRefresh(0, 0);
-                            if (ServerPort > 0)
-                            {
-                                if (SPX != null)
-                                {
-                                    try
-                                    {
-                                        SPX.Close();
-                                    }
-                                    catch
-                                    {
-
-                                    }
-                                }
-                                SPX = null;
-                                try
-                                {
-                                    Screen_WriteText("Waiting for connection on " + ServerPort.ToString() + "...");
-                                    Screen_WriteLine();
-                                    Screen_Refresh();
-                                    TcpListener TXL = new TcpListener(ServerPort);
-                                    TXL.Start();
-                                    SPX = TXL.AcceptSocket();
-                                    TXL.Stop();
-                                    Screen_WriteText("Connected");
-                                    Screen_WriteLine();
-                                    Screen_Refresh();
-                                }
-                                catch
-                                {
-                                    Screen_WriteText("Port listening error");
-                                    Screen_WriteLine();
-                                    SPX = null;
-                                }
-                            }
+                            Screen_Clear();
                             NewFileName.Clear();
                             Screen_WriteText("During displaying:");
                             Screen_WriteLine();
@@ -331,41 +699,62 @@ namespace TextPaint
                             Screen_WriteLine();
                             Screen_WriteText("Tab - Show/hide status");
                             Screen_WriteLine();
-                            Screen_WriteText("~` - Change status information");
+                            Screen_WriteText("[~][`] - Change status information");
                             Screen_WriteLine();
-                            Screen_WriteText("Enter - Start/stop autodisplay");
+                            Screen_WriteText("Space - Show SAUCE info");
                             Screen_WriteLine();
-                            Screen_WriteText("Space - Process 1 step");
+                            Screen_WriteText("Enter - Play/stop forward");
                             Screen_WriteLine();
-                            Screen_WriteText("Backspace - Process " + FileDelayStep.ToString() + " steps");
+                            Screen_WriteText("Backspace - Play/stop backward");
+                            Screen_WriteLine();
+                            Screen_WriteText("Up/Down arrow - Move 1 step");
+                            Screen_WriteLine();
+                            Screen_WriteText("Left/Right arrow - Move " + FileDelayStep__.ToString() + " steps");
+                            Screen_WriteLine();
+                            Screen_WriteText("Home - Move to begin of animation");
+                            Screen_WriteLine();
+                            Screen_WriteText("End - Move to end of animation");
+                            Screen_WriteLine();
+                            Screen_WriteText("[+][=] - Increase playing speed");
+                            Screen_WriteLine();
+                            Screen_WriteText("[-][_] - Decrease playing speed");
+                            Screen_WriteLine();
+                            Screen_WriteText("[*][/] - Reset playing speed");
+                            Screen_WriteLine();
+                            Screen_WriteText("Page Up/Page Down - Previous/Next file");
                             Screen_WriteLine();
                             Screen_WriteLine();
                             Screen_WriteLine();
                             Screen_WriteText("Press Enter to start displaying or Tab to quit application.");
                             Screen_WriteLine();
                             Screen_Refresh();
-                            WorkState = 1;
+                            WorkStateS = WorkStateSDef.WaitForKey;
                         }
                         break;
-                    case 1: // Waiting for user key press before opening file
+                    case WorkStateSDef.WaitForKey: // Waiting for user key press before opening file
                         {
                             Thread.Sleep(100);
                         }
                         break;
-                    case 2: // Opening file
+                    case WorkStateSDef.FileOpen: // Opening file
                         {
+                            WorkSeekOneChar = false;
                             Screen_Clear();
                             Screen_Refresh();
                             DispBuffer.Clear();
-                            DisplayStatus_ = -1;
-                            string NewFileNameS = Core_.PrepareFileName(NewFileName);
-                            if (!("".Equals(NewFileNameS)))
-                            {
-                                Core_.CurrentFileName = NewFileNameS;
-                            }
+
+                            AnsiSauce_.Info.Clear();
                             try
                             {
-                                FileStream FS = new FileStream(Core_.CurrentFileName, FileMode.Open, FileAccess.Read);
+                                FileStream FS;
+                                if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
+                                {
+                                    FS = new FileStream(PlaylistFiles[PlaylistIdx].Substring(Core.GetFileListExtraInfo.Length), FileMode.Open, FileAccess.Read);
+                                }
+                                else
+                                {
+                                    FS = new FileStream(PlaylistFiles[PlaylistIdx], FileMode.Open, FileAccess.Read);
+                                }
                                 StreamReader SR;
                                 if ("".Equals(Core_.FileREnc))
                                 {
@@ -378,159 +767,342 @@ namespace TextPaint
                                 FileCtX = TextWork.StrToInt(SR.ReadToEnd());
                                 SR.Close();
                                 FS.Close();
+
+                                if (PlaylistFiles[PlaylistIdx].StartsWith(Core.GetFileListExtraInfo, StringComparison.Ordinal))
+                                {
+                                    FS = new FileStream(PlaylistFiles[PlaylistIdx].Substring(Core.GetFileListExtraInfo.Length), FileMode.Open, FileAccess.Read);
+                                }
+                                else
+                                {
+                                    FS = new FileStream(PlaylistFiles[PlaylistIdx], FileMode.Open, FileAccess.Read);
+                                }
+                                BinaryReader BR = new BinaryReader(FS);
+                                AnsiSauce_.LoadRaw(BR.ReadBytes((int)FS.Length));
+                                BR.Close();
+                                FS.Close();
                             }
                             catch (Exception E)
                             {
                                 FileCtX = TextWork.StrToInt(E.Message);
                             }
                             Screen_.Clear(Core_.TextNormalBack, Core_.TextNormalFore);
-                            WorkState = 3;
-                            DisplayPaused = true;
-                            Monitor.Enter(TelnetMutex);
-                            Core_.AnsiTerminalResize(Core_.Screen_.WinW, Core_.Screen_.WinH);
-                            Core_.AnsiProcessReset(true);
-                            Core_.AnsiProcessSupply(FileCtX);
-                            Monitor.Exit(TelnetMutex);
+
                             FilePos = 0;
-                            FileDisp = 0;
-                            FileDispPause = 0;
-                            DisplayStatusText(DispBuffer, FilePos);
-                            Core_.AnsiRepaintCursor();
-                            FileTimerOffset = FileTimer.ElapsedMilliseconds;
+                            WorkStateS = WorkStateSDef.FileOpenWait;
+                            Thread Thr = new Thread(FileOpenCalc);
+                            Thr.Start();
                         }
                         break;
-                    case 3: // Display running
+                    case WorkStateSDef.FileOpenWait:
                         {
-                            if (FileDisp >= FileDispPause)
+                            Screen_Clear();
+                            Screen_WriteText(Core_.AnsiState_.AnsiBufferI + "/" + FileCtX.Count);
+                            Screen_Refresh();
+                            Thread.Sleep(100);
+                        }
+                        break;
+                    case WorkStateSDef.DisplayPlayFwd: // Play forward
+                        {
+                            if (WorkSeekAdvance > (MovieLength - MoviePos))
                             {
-                                DisplayStatusText(DispBuffer, FilePos);
-                                Core_.AnsiRepaintCursor();
-                                if (FileDelayTime > 0)
-                                {
-                                    FileTimerOffset += FileDelayTimeL;
-                                    while (FileTimer.ElapsedMilliseconds < FileTimerOffset)
-                                    {
-                                        Thread.Sleep(FileDelayTime_);
-                                    }
-                                }
-                                if (DisplayPaused)
-                                {
-                                    WorkState = 4;
-                                }
-                                else
-                                {
-                                    WorkState = 5;
-                                }
+                                WorkSeekAdvance = (MovieLength - MoviePos);
                             }
-                            else
+
+                            bool NeedRepaint = false;
+                            if (WorkSeekAdvance > 0)
                             {
                                 Monitor.Enter(TelnetMutex);
-                                int CharsToSend = Core_.AnsiProcess(1);
+                                int CharsToSend = Core_.AnsiState_.AnsiBufferI;
+                                NeedRepaint = Core_.AnsiSeek(WorkSeekAdvance);
+                                CharsToSend = Core_.AnsiState_.AnsiBufferI - CharsToSend;
                                 Monitor.Exit(TelnetMutex);
-                                FileDisp++;
 
+                                if (Server_ != null)
+                                {
+                                    Server_.Send(ServerEncoding.GetBytes(TextWork.IntToStr(FileCtX.GetRange(FilePos, CharsToSend))));
+                                }
                                 while (CharsToSend > 0)
                                 {
-                                    while (DispBuffer.Count > (DispBufferLen + DispBufferLen))
-                                    {
-                                        DispBuffer.RemoveRange(0, DispBufferLen);
-                                    }
                                     DispBuffer.Add(FileCtX[FilePos]);
-                                    if (SPX != null)
-                                    {
-                                        SPX.Send(ServerEncoding.GetBytes(TextWork.IntToStr(FileCtX[FilePos])));
-                                    }
                                     FilePos++;
                                     CharsToSend--;
                                 }
+                                while (DispBuffer.Count > (DispBufferLen + DispBufferLen))
+                                {
+                                    DispBuffer.RemoveRange(0, DispBufferLen);
+                                }
+                                MoviePos += WorkSeekAdvance;
                             }
-                        }
-                        break;
-                    case 4: // Display paused or finished
-                        {
-                            DisplayStatusText(DispBuffer, FilePos);
-                            Thread.Sleep(20);
-                            if (FileDispPause > FileDisp)
+                            else
                             {
-                                WorkState = 3;
+                                DisplayPaused = true;
                             }
+
+                            if (NeedRepaint)
+                            {
+                                Core_.AnsiRepaint(false);
+                            }
+                            DisplayStatusText(DispBuffer);
+                            if (FileDelayTime > 0)
+                            {
+                                FileTimerOffset += FileDelayTimeL;
+                                while (FileTimer.ElapsedMilliseconds < FileTimerOffset)
+                                {
+                                    Thread.Sleep(FileDelayTime_);
+                                    if (DisplayPaused)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (DisplayPaused)
+                            {
+                                WorkStateS = WorkStateSDef.DisplayPause;
+                                Core_.AnsiRepaint(false);
+                                DisplayStatusText(DispBuffer);
+                            }
+                            else
+                            {
+                                WorkStateS = WorkStateSDef.DisplayFwd;
+                            }
+                            WorkSeekOneChar = false;
                         }
                         break;
-                    case 5: // Advance X characters
-                        FileDispPause = FileDisp + FileDelayStep__;
-                        FileDelayStep__ = FileDelayStep;
-                        WorkState = 4;
+                    case WorkStateSDef.DisplayPlayRev: // Play backward
+                        {
+                            if (WorkSeekAdvance > MoviePos)
+                            {
+                                WorkSeekAdvance = MoviePos;
+                            }
+
+                            bool NeedRepaint = false;
+                            if (WorkSeekAdvance > 0)
+                            {
+                                Monitor.Enter(TelnetMutex);
+                                int CharsToSend = Core_.AnsiState_.AnsiBufferI;
+                                int BufI = Core_.AnsiState_.AnsiBufferI;
+                                NeedRepaint = Core_.AnsiSeek(0 - WorkSeekAdvance);
+                                CharsToSend = CharsToSend - Core_.AnsiState_.AnsiBufferI;
+                                Monitor.Exit(TelnetMutex);
+
+                                int BufL = WorkSeekAdvance + DispBufferLen; 
+                                if (BufL >= BufI)
+                                {
+                                    BufL = BufI - 1;
+                                }
+                                BufI = BufI - DispBuffer.Count - 1;
+                                while (DispBuffer.Count <= BufL)
+                                {
+                                    DispBuffer.Insert(0, FileCtX[BufI]);
+                                    BufI--;
+                                }
+                                while (CharsToSend > 0)
+                                {
+                                    DispBuffer.RemoveAt(DispBuffer.Count - 1);
+                                    FilePos--;
+                                    CharsToSend--;
+                                }
+                                if (Server_ != null)
+                                {
+                                    Server_.Send(UniConn.HexToRaw(TerminalResetCommand));
+                                    Server_.Send(ServerEncoding.GetBytes(TextWork.IntToStr(FileCtX.GetRange(0, FilePos))));
+                                }
+                                MoviePos -= WorkSeekAdvance;
+                            }
+                            else
+                            {
+                                DisplayPaused = true;
+                            }
+
+                            if (NeedRepaint)
+                            {
+                                Core_.AnsiRepaint(false);
+                            }
+                            DisplayStatusText(DispBuffer);
+                            if (FileDelayTime > 0)
+                            {
+                                FileTimerOffset += FileDelayTimeL;
+                                while (FileTimer.ElapsedMilliseconds < FileTimerOffset)
+                                {
+                                    Thread.Sleep(FileDelayTime_);
+                                    if (DisplayPaused)
+                                    {
+                                        break;
+                                    }
+                                }
+                            }
+                            if (DisplayPaused)
+                            {
+                                WorkStateS = WorkStateSDef.DisplayPause;
+                                Core_.AnsiRepaint(false);
+                                DisplayStatusText(DispBuffer);
+                            }
+                            else
+                            {
+                                WorkStateS = WorkStateSDef.DisplayRev;
+                            }
+                            WorkSeekOneChar = false;
+                        }
                         break;
-                    case 6: // Advance 1 character
-                        FileDispPause = FileDisp + 1;
-                        WorkState = 4;
+                    case WorkStateSDef.DisplayPause: // Display paused
+                        {
+                            Thread.Sleep(20);
+                        }
+                        break;
+                    case WorkStateSDef.DisplayInfo: // Sauce info
+                        {
+                            DisplayInfo(false);
+                            Thread.Sleep(20);
+                        }
+                        break;
+                    case WorkStateSDef.DisplayFwd: // Advance forward
+                        WorkStateS = WorkStateSDef.DisplayPlayFwd;
+                        break;
+                    case WorkStateSDef.DisplayRev: // Advance backward
+                        WorkStateS = WorkStateSDef.DisplayPlayRev;
                         break;
                 }
 
 
 
+            }
+            if (Server_ != null)
+            {
+                Server_.Stop();
             }
             Screen_.CloseApp(Core_.TextNormalBack, Core_.TextNormalFore);
         }
 
 
+        int InfoPosH = 0;
+        int InfoPosV = 0;
 
+        void ExitInfo()
+        {
+            DisplayPaused = true;
+            WorkStateS = WorkStateSDef.DisplayPause;
+            ForceRepaint = true;
+        }
 
         int DisplayStatus_ = 0;
+        bool DisplayInfoRepaint = false;
 
-        void DisplayStatusText(List<int> DispBuffer, int i)
+        void DisplayInfo(bool Forced)
+        {
+            if (Forced)
+            {
+                DisplayInfoRepaint = true;
+            }
+
+            if (DisplayInfoRepaint)
+            {
+                if (InfoPosH < 0) { InfoPosH = 0; }
+                if (InfoPosH > 80) { InfoPosH = 80; }
+                if (InfoPosV < 0) { InfoPosV = 0; }
+                if (InfoPosV >= AnsiSauce_.Info.Count) { InfoPosV = AnsiSauce_.Info.Count - 1; }
+                Screen_Clear();
+                for (int i = InfoPosV; i < AnsiSauce_.Info.Count; i++)
+                {
+                    string T = AnsiSauce_.Info[i];
+                    if (InfoPosH > 0)
+                    {
+                        if (T.Length >= InfoPosH)
+                        {
+                            T = T.Substring(InfoPosH);
+                        }
+                        else
+                        {
+                            T = "";
+                        }
+                    }
+                    Screen_WriteText(T);
+                    Screen_WriteLine();
+                }
+                Screen_Refresh();
+                DisplayInfoRepaint = false;
+            }
+        }
+
+        void DisplayStatusText(List<int> DispBuffer)
         {
             Monitor.Enter(StatusMutex);
             int DisplayStatus0 = DisplayStatus;
             Monitor.Exit(StatusMutex);
             string CharMsg = "  ";
-            if (DisplayStatus_ != DisplayStatus0)
+            int DisplayStatusMod = (DisplayStatus0 % 3);
+            int DisplayStatusDiv = (DisplayStatus0 / 3);
+            if ((DisplayStatus_ != DisplayStatus0) || (DisplayStatusMod > 0))
             {
                 Core_.AnsiRepaint(false);
             }
-            int DisplayStatusMod = (DisplayStatus0 % 3);
-            int DisplayStatusDiv = (DisplayStatus0 / 3);
             if (DisplayStatusMod != 0)
             {
                 CharMsg = "";
-                if (DisplayStatusDiv <= 2)
+                switch (DisplayStatusDiv)
                 {
-                    string CharCounter = (i).ToString() + "/" + FileCtX.Count.ToString() + ": ";
-                    for (int iii = DispBuffer.Count - 1; iii >= 0; iii--)
-                    {
-                        string CharMsg_ = TextWork.CharCode(DispBuffer[iii], 0) + " ";
-                        switch (DisplayStatusDiv)
+                    case 0:
                         {
-                            case 0:
-                                if (DispBuffer[iii] >= 33)
-                                {
-                                    CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
-                                }
-                                break;
-                            case 1:
-                                if ((DispBuffer[iii] >= 33) && (DispBuffer[iii] <= 126))
-                                {
-                                    CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
-                                }
-                                break;
+                            string CharMsgIdx = MoviePos.ToString() + "/" + MovieLength.ToString();
+                            CharMsgIdx = CharMsgIdx + " | " + Core_.AnsiState_.PrintCharCounterOver + "/" + Core_.AnsiState_.PrintCharCounter + " " + Core_.AnsiState_.PrintCharInsDel + " " + Core_.AnsiState_.PrintCharScroll;
+                            CharMsgIdx = CharMsgIdx + " | " + (PlaylistIdx + 1) + "/" + PlaylistFiles.Count + (AnsiSauce_.Exists ? "= " : ": ");
+
+                            CharMsg = PlaylistFiles[PlaylistIdx];
+                            int MaxS = (Screen_.WinW - CharMsgIdx.Length);
+                            if (CharMsg.Length > MaxS)
+                            {
+                                CharMsg = "..." + CharMsg.Substring(CharMsg.Length - MaxS + 3);
+                            }
+                            CharMsg = CharMsgIdx + CharMsg + " ";
                         }
-                        if ((CharCounter.Length + CharMsg.Length + CharMsg_.Length - 1) < Screen_.WinW)
+                        break;
+                    case 1:
                         {
-                            CharMsg = CharMsg_ + CharMsg;
+                            CharMsg = MoviePos.ToString() + "/" + MovieLength.ToString();
+                            CharMsg = CharMsg + " | " + Core_.AnsiState_.PrintCharCounterOver + "/" + Core_.AnsiState_.PrintCharCounter + " " + Core_.AnsiState_.PrintCharInsDel + " " + Core_.AnsiState_.PrintCharScroll;
+                            CharMsg = CharMsg + " | " + TextWork.NumPlusMinus(FileDelayStepFactor);
+                            CharMsg = CharMsg + " | " + FileDelayStep__;
+
+                            if (Core_.AnsiState_.__AnsiProcessDelayMin > Core_.AnsiState_.__AnsiProcessDelayMax)
+                            {
+                                CharMsg = CharMsg + " | ? ?  ";
+                            }
+                            else
+                            {
+                                CharMsg = CharMsg + " | " + Core_.AnsiState_.__AnsiProcessDelayMin + " " + Core_.AnsiState_.__AnsiProcessDelayMax + "  ";
+                            }
                         }
-                    }
-                    CharMsg = CharCounter + CharMsg;
-                }
-                else
-                {
-                    if (Core_.__AnsiProcessDelayMin > Core_.__AnsiProcessDelayMax)
-                    {
-                        CharMsg = "Step: " + Core_.__AnsiProcessStep + "  Min: ?  Max: ?  ";
-                    }
-                    else
-                    {
-                        CharMsg = "Step: " + Core_.__AnsiProcessStep + "  Min: " + Core_.__AnsiProcessDelayMin + "  Max: " + Core_.__AnsiProcessDelayMax + "  ";
-                    }
+                        break;
+                    case 2:
+                    case 3:
+                    case 4:
+                        {
+                            string CharCounter = MoviePos.ToString() + "/" + MovieLength.ToString() + " | " + Core_.AnsiState_.AnsiBufferI.ToString() + "/" + FileCtX.Count.ToString() + ": ";
+                            for (int iii = DispBuffer.Count - 1; iii >= 0; iii--)
+                            {
+                                string CharMsg_ = TextWork.CharCode(DispBuffer[iii], 0) + " ";
+                                switch (DisplayStatusDiv)
+                                {
+                                    case 2:
+                                        if (DispBuffer[iii] >= 33)
+                                        {
+                                            CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
+                                        }
+                                        break;
+                                    case 3:
+                                        if ((DispBuffer[iii] >= 33) && (DispBuffer[iii] <= 126))
+                                        {
+                                            CharMsg_ = TextWork.IntToStr(DispBuffer[iii]) + " ";
+                                        }
+                                        break;
+                                }
+                                if ((CharCounter.Length + CharMsg.Length + CharMsg_.Length - 1) < Screen_.WinW)
+                                {
+                                    CharMsg = CharMsg_ + CharMsg;
+                                }
+                            }
+                            CharMsg = CharCounter + CharMsg.PadLeft(Screen_.WinW - CharCounter.Length, ' ');
+                        }
+                        break;
                 }
                 CharMsg = CharMsg.Substring(0, CharMsg.Length - 1).PadRight(Screen_.WinW, ' ');
                 if (DisplayStatusMod == 1)

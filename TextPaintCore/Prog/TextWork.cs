@@ -41,7 +41,23 @@ namespace TextPaint
             }
         }
 
+        public static string NumDecimal(double Num, int Points)
+        {
+            return Num.ToString("F2", CultureInfo.InvariantCulture);
+        }
 
+        public static string NumPlusMinus(long Num)
+        {
+            if (Num > 0)
+            {
+                return "+" + Num.ToString();
+            }
+            if (Num < 0)
+            {
+                return Num.ToString();
+            }
+            return "+" + Num.ToString();
+        }
 
         public static int FullUTF8(List<byte> Data, int DataCount)
         {
@@ -201,7 +217,7 @@ namespace TextPaint
             {
                 return Encoding.Default;
             }
-            string FName = Core.PrepareFileNameStr(Name);
+            string FName = Core.PrepareFileName(Name);
             if (System.IO.File.Exists(FName))
             {
                 OneByteEncoding OneByteEncoding_ = new OneByteEncoding();

@@ -1,36 +1,19 @@
 ﻿using System;
+using System.Threading;
 using System.Drawing;
 using System.Drawing.Imaging;
-using System.Threading;
 
 namespace TextPaint
 {
-    public class LowLevelBitmap
+    public class LowLevelBitmap : LowLevelBitmapBase
     {
-        int ColorDataFactor = 4;
         PixelFormat ColorDataFormat = PixelFormat.Format32bppArgb;
-
-        public static Brush GetBrush(byte R, byte G, byte B)
-        {
-            return new SolidBrush(Color.FromArgb(R, G, B));
-        }
-
-        private void Create(int W, int H)
-        {
-            Width = W;
-            Height = H;
-            Data = new byte[W * H * ColorDataFactor];
-            DataLength = Data.Length;
-            ToBitmapBmp = new Bitmap(Width, Height, ColorDataFormat);
-            ToBitmapChanged = true;
-        }
 
         public LowLevelBitmap(string FileName)
         {
             Bitmap Bmp = new Bitmap(FileName);
-            Create(Bmp.Width, Bmp.Height);
+            CreateBase(Bmp.Width, Bmp.Height, 0);
 
-            // !!!!!!!!!!!!!!!!!!!
             int P = 0;
             for (int Y = 0; Y < Height; Y++)
             {
@@ -44,39 +27,16 @@ namespace TextPaint
                     P += ColorDataFactor;
                 }
             }
+        }
+
+        public LowLevelBitmap(int W, int H, byte R, byte G, byte B)
+        {
+            CreateBase(W, H, R, G, B);
         }
 
         public LowLevelBitmap(int W, int H, byte Val)
         {
-            Create(W, H);
-            for (int i = 0; i < DataLength; i++)
-            {
-                Data[i] = Val;
-                if ((i % 4) == 3)
-                {
-                    Data[i] = (byte)255;
-                }
-            }
-        }
-
-        public LowLevelBitmap(Bitmap Bmp)
-        {
-            Create(Bmp.Width, Bmp.Height);
-
-            // !!!!!!!!!!!!!!!!!!!
-            int P = 0;
-            for (int Y = 0; Y < Height; Y++)
-            {
-                for (int X = 0; X < Width; X++)
-                {
-                    Color Color_ = Bmp.GetPixel(X, Y);
-                    Data[P + 0] = Color_.B;
-                    Data[P + 1] = Color_.G;
-                    Data[P + 2] = Color_.R;
-                    Data[P + 3] = (byte)255;
-                    P += ColorDataFactor;
-                }
-            }
+            CreateBase(W, H, Val);
         }
 
         public Bitmap ToBitmap()
@@ -99,7 +59,7 @@ namespace TextPaint
             return ToBitmapBmp;
         }
 
-        public Bitmap ToBitmapStretch(int W, int H)
+        public Bitmap ToBitmap(int W, int H)
         {
             if ((W == Width) && (H == Height))
             {
@@ -109,44 +69,9 @@ namespace TextPaint
             Monitor.Enter(Data);
             if (ToBitmapChanged)
             {
-                if ((StretchW != W) || (StretchH != H))
+                if (PrepareStretch(W, H))
                 {
                     ToBitmapBmp = new Bitmap(W, H, ColorDataFormat);
-                    StretchW = W;
-                    StretchH = H;
-                    StretchDataL = W * H * ColorDataFactor;
-                    StretchData = new byte[StretchDataL];
-
-                    StretchX = new int[W];
-                    for (int I = 0; I < W; I++)
-                    {
-                        StretchX[I] = (I * Width) / W;
-                        if (StretchX[I] >= Width)
-                        {
-                            StretchX[I] = Width - 1;
-                        }
-                    }
-                    StretchY = new int[H];
-                    for (int I = 0; I < H; I++)
-                    {
-                        StretchY[I] = (I * Height) / H;
-                        if (StretchY[I] >= Height)
-                        {
-                            StretchY[I] = Height - 1;
-                        }
-                    }
-                }
-                for (int Y = 0; Y < H; Y++)
-                {
-                    for (int X = 0; X < W; X++)
-                    {
-                        int PtrI = (StretchY[Y] * Width + StretchX[X]) * ColorDataFactor;
-                        int PtrO = (Y * W + X) * ColorDataFactor;
-                        StretchData[PtrO + 0] = Data[PtrI + 0];
-                        StretchData[PtrO + 1] = Data[PtrI + 1];
-                        StretchData[PtrO + 2] = Data[PtrI + 2];
-                        StretchData[PtrO + 3] = (byte)255;
-                    }
                 }
                 BitmapData Bmp_ = ToBitmapBmp.LockBits(new Rectangle(0, 0, W, H), ImageLockMode.ReadWrite, ColorDataFormat);
                 System.Runtime.InteropServices.Marshal.Copy(StretchData, 0, Bmp_.Scan0, StretchDataL);
@@ -157,111 +82,74 @@ namespace TextPaint
             return ToBitmapBmp;
         }
 
-        public bool GetPixelBinary(int X, int Y)
+        public void SaveToFile(string FileName)
         {
-            Monitor.Enter(Data);
-            int B = Data[(Y * Width + X) * ColorDataFactor + 0];
-            int G = Data[(Y * Width + X) * ColorDataFactor + 1];
-            int R = Data[(Y * Width + X) * ColorDataFactor + 2];
-            Monitor.Exit(Data);
-            return ((R + G + B) >= 383);
+            Bitmap Bmp = ToBitmap();
+            Bmp.Save(FileName, ImageFormat.Png);
         }
 
-        public void GetPixel(int X, int Y, out byte R, out byte G, out byte B)
+        public void SetTextFont(string FontName, int FontSize, int CharRender)
         {
-            Monitor.Enter(Data);
-            B = Data[(Y * Width + X) * ColorDataFactor + 0];
-            G = Data[(Y * Width + X) * ColorDataFactor + 1];
-            R = Data[(Y * Width + X) * ColorDataFactor + 2];
-            Monitor.Exit(Data);
-        }
-
-        public void SetPixel(int X, int Y, byte R, byte G, byte B)
-        {
-            Monitor.Enter(Data);
-            ToBitmapChanged = true;
-            Data[(Y * Width + X) * ColorDataFactor + 0] = B;
-            Data[(Y * Width + X) * ColorDataFactor + 1] = G;
-            Data[(Y * Width + X) * ColorDataFactor + 2] = R;
-            Monitor.Exit(Data);
-        }
-
-        public void SetPixel(int X, int Y, Color C)
-        {
-            Monitor.Enter(Data);
-            ToBitmapChanged = true;
-            Data[(Y * Width + X) * ColorDataFactor + 0] = C.B;
-            Data[(Y * Width + X) * ColorDataFactor + 1] = C.G;
-            Data[(Y * Width + X) * ColorDataFactor + 2] = C.R;
-            Monitor.Exit(Data);
-        }
-
-        public void Clear(byte R, byte G, byte B)
-        {
-            Monitor.Enter(Data);
-            ToBitmapChanged = true;
-            int P = 0;
-            for (int Y = 0; Y < Height; Y++)
+            WinCharRender = CharRender;
+            switch (FontName)
             {
-                for (int X = 0; X < Width; X++)
-                {
-                    Data[P + 0] = B;
-                    Data[P + 1] = G;
-                    Data[P + 2] = R;
-                    Data[P + 3] = (byte)255;
-                    P += ColorDataFactor;
-                }
+                case "GenericSerif":
+                    WinFont = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Regular);
+                    break;
+                case "GenericSansSerif":
+                    WinFont = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Regular);
+                    break;
+                case "GenericMonospace":
+                    WinFont = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Regular);
+                    break;
+                default:
+                    WinFont = new Font(FontName, FontSize, FontStyle.Regular);
+                    break;
             }
-            Monitor.Exit(Data);
+            WinStrFormat = new StringFormat();
+            WinStrFormat.LineAlignment = StringAlignment.Center;
+            WinStrFormat.Alignment = StringAlignment.Center;
+            WinStrFormat.Trimming = StringTrimming.None;
+            WinStrFormat.FormatFlags = StringFormatFlags.NoWrap;
         }
 
-        public void DrawImage(LowLevelBitmap Bmp, int SrcX, int SrcY, int DstX, int DstY, int W, int H)
+        public void DrawText(float X, float Y, float W, float H, float ScaleH, float ScaleV, string T, byte R, byte G, byte B)
         {
-            Monitor.Enter(Data);
-            ToBitmapChanged = true;
-            int W_ = W * ColorDataFactor;
-            int Width0 = Bmp.Width * ColorDataFactor;
-            int Width_ = Width * ColorDataFactor;
-            int SrcP = (((SrcY) * Bmp.Width) + SrcX) * ColorDataFactor;
-            int DstP = (((DstY) * Width) + DstX) * ColorDataFactor;
-            if (SrcP > DstP)
+            try
             {
-                for (int Y = 0; Y < H; Y++)
+                X = 0 - (X / ScaleH);
+                Y = 0 - (Y / ScaleV);
+                W = W / ScaleH;
+                H = H / ScaleV;
+                Graphics BmpG = Graphics.FromImage(ToBitmap());
+                BmpG.ScaleTransform(ScaleH, ScaleV);
+                switch (WinCharRender)
                 {
-                    Array.Copy(Bmp.Data, SrcP, Data, DstP, W_);
-                    SrcP += Width0;
-                    DstP += Width_;
+                    default:
+                        BmpG.TextRenderingHint = System.Drawing.Text.TextRenderingHint.SingleBitPerPixelGridFit;
+                        break;
+                    case 1:
+                        BmpG.TextRenderingHint = System.Drawing.Text.TextRenderingHint.AntiAliasGridFit;
+                        break;
+                    case 2:
+                        BmpG.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
+                        break;
                 }
-            }
-            else
-            {
-                SrcP += (Width0 * (H - 1));
-                DstP += (Width_ * (H - 1));
+                BmpG.DrawString(T, WinFont, new SolidBrush(Color.FromArgb(R, G, B)), new RectangleF(X, Y, W, H), WinStrFormat);
 
-                for (int Y = 0; Y < H; Y++)
-                {
-                    Array.Copy(Bmp.Data, SrcP, Data, DstP, W_);
-                    SrcP -= Width0;
-                    DstP -= Width_;
-                }
+                BitmapData Bmp_ = ToBitmapBmp.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadWrite, ColorDataFormat);
+                System.Runtime.InteropServices.Marshal.Copy(Bmp_.Scan0, Data, 0, DataLength);
+                ToBitmapBmp.UnlockBits(Bmp_);
+                ToBitmapChanged = true;
             }
-            Monitor.Exit(Data);
+            catch (Exception E)
+            {
+            }
         }
 
-
-
-        public int Width;
-        public int Height;
-        private byte[] Data;
-        private int DataLength;
-
+        int WinCharRender = 0;
+        private Font WinFont;
+        private StringFormat WinStrFormat;
         private Bitmap ToBitmapBmp;
-        private bool ToBitmapChanged;
-        private byte[] StretchData;
-        private int StretchDataL;
-        private int StretchW = -1;
-        private int StretchH = -1;
-        private int[] StretchX;
-        private int[] StretchY;
     }
 }

@@ -33,5 +33,9 @@
     <Reference Include="SshNet.Security.Cryptography">
       <HintPath>Lib/SshNet.Security.Cryptography.dll</HintPath>
     </Reference>
+    <Reference Include="System.Text.Encoding.CodePages">
+      <HintPath>Lib/System.Text.Encoding.CodePages.dll</HintPath>
+    </Reference>
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
   </ItemGroup>
 </Project>

@@ -43,7 +43,7 @@ namespace TextPaint
             {
                 if ((((int)TerminalName[i]) >= 32) && (((int)TerminalName[i]) <= 126))
                 {
-                    TerminalNameHex = TerminalNameHex + H((byte)TerminalName[i]);
+                    TerminalNameHex = TerminalNameHex + UniConn.H((byte)TerminalName[i]);
                 }
             }
 
@@ -430,6 +430,5 @@ namespace TextPaint
             }
             return CmdDesc + " (" + Cmd + ")";
         }
-
     }
 }

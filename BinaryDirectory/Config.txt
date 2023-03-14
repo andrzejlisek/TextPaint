@@ -13,6 +13,7 @@ WinCellW=8
 WinCellH=16
 WinFontName=Fonts/Dos08x16.png
 WinFontSize=10
+WinCharRender=1
 WinFixed=2
 WinSteadyCursor=0
 
@@ -46,7 +47,7 @@ Space=20,A0,2800
 
 FileReadEncoding=utf-8
 FileWriteEncoding=utf-8
-FileReadChars=0
+FileReadSteps=0
 
 CipherMode=0
 CipherBegin=005B
@@ -126,6 +127,7 @@ ANSIIgnoreBold=0
 ANSIReverseMode=0
 ANSIIgnoreConcealed=0
 ANSIPrintBackspace=0
+ANSIPrintTab=0
 ANSIWrite=0
 ANSIWriteBlink=0
 ANSIWriteBold=0
@@ -140,12 +142,17 @@ ANSICharsDOS=0020,263A,263B,2665,2666,2663,2660,2022,25D8,25CB,25D9,2642,2640,26
 ANSICharsVT100=0020,2666,2592,2409,240C,240D,240A,00B0,00B1,2424,240B,2518,2510,250C,2514,253C,23BA,23BB,2500,23BC,23BD,251C,2524,2534,252C,2502,2264,2265,03C0,2260,00A3,00B7
 ANSICharsVT52=0020,0020,2588,00B9,00B3,2075,2077,00B0,00B1,2192,2026,00F7,2193,2594,1FB76,1FB77,1FB78,1FB79,1FB7A,1FB7B,2581,2080,2081,2082,2083,2084,2085,2086,2087,2088,2089,00B6
 
+ANSIColorThresholdBlackWhite=48
+ANSIColorThresholdGray=20
+
 FileDelayStep=100
-FileDelayOffset=0
+FileDelayOffset=1000000000
 FileDelayTime=40
 FileDelayFrame=200
+FileBrowseWildcard=*.txt;*.ans;*.vt;*.nfo;*.diz
 ServerPort=0
 ServerEncoding=utf-8
+ServerTelnet=1
 
 TerminalEncoding=utf-8
 TerminalName=xterm-256color
@@ -155,7 +162,8 @@ TerminalVTArrowKeys=0
 TerminalFile=
 TerminalTimeResolution=80
 TerminalStep=200
-TerminalKeys=1101
+TerminalKeys=1101000
+TerminalAnswerBack=TextPaint
 
 RenderType=PNG
 RenderFile=File.png
@@ -163,4 +171,8 @@ RenderStep=50
 RenderOffset=0
 RenderCursor=1
 RenderFrame=200
+RenderSliceX=0
+RenderSliceY=0
+RenderSliceW=0
+RenderSliceH=0
 

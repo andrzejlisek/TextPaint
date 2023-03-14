@@ -1,6 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 using System;
+using System.Text;
 
 namespace TextPaint;
 
@@ -11,11 +12,13 @@ class Program
     // yet and stuff might break.
 
 
-    public static ScreenWindowAvalonia ScreenWindowAvalonia_ = null;
+    public static ScreenWindowGUI ScreenWindowGUI_ = null;
 
     [STAThread]
     public static void Main(string[] args)
     {
+        Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+
         Core Core_ = new Core();
         if (args.Length > 0)
         {

@@ -15,22 +15,9 @@ namespace TextPaint
         }
 
         Process App = null;
-        bool FlagEnter = false;
-        bool FlagBackspace = false;
 
         public override void Open(string Addr, int Port, string TerminalName_, int TerminalW, int TerminalH)
         {
-            FlagEnter = false;
-            FlagBackspace = false;
-            if ((Port & 1) > 0)
-            {
-                FlagEnter = true;
-            }
-            if ((Port & 2) > 0)
-            {
-                FlagBackspace = true;
-            }
-
             App = new Process();
             int ParamPos = Addr.IndexOf(' ');
             if (ParamPos > 0)
@@ -89,17 +76,6 @@ namespace TextPaint
 
         public override void Send(byte[] Raw)
         {
-            for (int i = 0; i < Raw.Length; i++)
-            {
-                if (FlagEnter && (Raw[i] == 13))
-                {
-                    Raw[i] = 10;
-                }
-                if (FlagBackspace && (Raw[i] == 127))
-                {
-                    Raw[i] = 8;
-                }
-            }
             try
             {
                 App.StandardInput.Write(TerminalEncoding.GetString(Raw));
@@ -114,13 +90,8 @@ namespace TextPaint
 
         public override void Receive(MemoryStream ms)
         {
-            while (StreamText.Count > 0)
-            {
-                ms.WriteByte(StreamText.Dequeue());
-            }
+            LoopReceive(ms);
         }
-
-        Queue<byte> StreamText = new Queue<byte>();
 
         private void ReadO()
         {
@@ -131,7 +102,7 @@ namespace TextPaint
                     int BufL = App.StandardOutput.BaseStream.Read(StreamBufO, 0, StreamBufO.Length);
                     for (int i = 0; i < BufL; i++)
                     {
-                        StreamText.Enqueue(StreamBufO[i]);
+                        LoopSend(StreamBufO[i]);
                     }
                     if ((IsConnected() == 0) && (BufL == 0))
                     {
@@ -154,7 +125,7 @@ namespace TextPaint
                     int BufL = App.StandardError.BaseStream.Read(StreamBufE, 0, StreamBufE.Length);
                     for (int i = 0; i < BufL; i++)
                     {
-                        StreamText.Enqueue(StreamBufE[i]);
+                        LoopSend(StreamBufE[i]);
                     }
                     if ((IsConnected() == 0) && (BufL == 0))
                     {

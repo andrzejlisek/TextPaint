@@ -5,11 +5,11 @@ using System.Windows.Forms;
 
 namespace TextPaint
 {
-    public class ScreenWindowWinForms : ScreenWindow
+    public class ScreenWindowGUI : ScreenWindow
     {
         bool BitmapStretch = false;
 
-        public ScreenWindowWinForms(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
+        public ScreenWindowGUI(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
         {
             if (!DummyScreen)
             {
@@ -47,6 +47,8 @@ namespace TextPaint
                     ConsoleScreen_ = ConsoleScreen_PictureBox;
                 }
                 ConsoleScreen_.DoubleClick += Ctrl_DoubleClick;
+                Form_.ResizeBegin += Form__ResizeBegin;
+                Form_.ResizeEnd += Form__ResizeEnd;
                 Form_.Controls.Add(ConsoleScreen_);
 
                 Core_.WindowResize();
@@ -57,6 +59,16 @@ namespace TextPaint
                 AppWorking = true;
             }
         }
+
+        void Form__ResizeBegin(object sender, EventArgs e)
+        {
+        }
+
+        void Form__ResizeEnd(object sender, EventArgs e)
+        {
+            DuringResizeEnd = true;
+        }
+
 
         void Form__Shown(object sender, EventArgs e)
         {
@@ -77,14 +89,31 @@ namespace TextPaint
 
         Form Form_;
         Timer DispTimer;
+        int DuringResize = 0;
+        bool DuringResizeEnd = false;
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
+            if (DuringResize > 0)
+            {
+                DuringResize--;
+                if (DuringResizeEnd || (DuringResize == 1))
+                {
+                    //Console.WriteLine("Zmiana rozmiaru stop 1___" + XWidth + "__" + Form_.ClientSize.Width);
+                    //Console.WriteLine("Zmiana rozmiaru stop 2");
+                    XWidth = Form_.ClientSize.Width;
+                    XHeight = Form_.ClientSize.Height;
+                    CursorTimerEvent(true);
+                    DuringResizeEnd = false;
+                    DuringResize = 0;
+                }
+                return;
+            }
             if ((XWidth != Form_.ClientSize.Width) || (XHeight != Form_.ClientSize.Height))
             {
-                XWidth = Form_.ClientSize.Width;
-                XHeight = Form_.ClientSize.Height;
-                CursorTimerEvent(true);
+                //Console.WriteLine("Zmiana rozmiaru start 1___" + XWidth + "__" + Form_.ClientSize.Width);
+                DuringResize = 6;
+                //Console.WriteLine("Zmiana rozmiaru start 2");
             }
             else
             {
@@ -214,10 +243,13 @@ namespace TextPaint
 
         protected override void RefreshFuncCtrl()
         {
-            ConsoleCursor_.Invoke((D)delegate
+            if (DuringResize == 0)
             {
-                RefreshFunc();
-            });
+                Form_.Invoke((D)delegate
+                {
+                    RefreshFunc();
+                });
+            }
         }
 
         public override void FormCtrlSetBitmap(LowLevelBitmap Bmp)

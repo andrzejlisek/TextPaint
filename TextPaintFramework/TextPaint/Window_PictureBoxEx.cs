@@ -25,7 +25,7 @@ namespace TextPaint
             {
                 if (BitmapStretch)
                 {
-                    Image = Image_.ToBitmapStretch(DrawW, DrawH);
+                    Image = Image_.ToBitmap(DrawW, DrawH);
                 }
                 else
                 {

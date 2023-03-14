@@ -14,11 +14,29 @@ namespace TextPaint
         protected byte[] data = new byte[20];
         protected string TerminalName = "";
 
-        public string H(byte B)
+        public static string H(byte B)
         {
             int X = B;
             string XX = X.ToString("X");
             return XX.PadLeft(2, '0');
+        }
+
+        public static byte[] HexToRaw(string STR)
+        {
+            byte[] Raw = new byte[STR.Length / 2];
+            for (int i = 0; i < Raw.Length; i++)
+            {
+                string STR_Byte = STR.Substring(i * 2, 2);
+                if (STR_Byte[0] == '_')
+                {
+                    Raw[i] = (byte)Encoding.UTF8.GetBytes(STR_Byte)[1];
+                }
+                else
+                {
+                    Raw[i] = (byte)int.Parse(STR_Byte, System.Globalization.NumberStyles.HexNumber);
+                }
+            }
+            return Raw;
         }
 
         public void SendHex(string STR)
@@ -33,26 +51,12 @@ namespace TextPaint
             if (STR[0] == '-')
             {
                 //Console.WriteLine("< " + STR.Substring(1));
-                byte[] Raw = Encoding.UTF8.GetBytes(STR.Substring(1));
-                Send(Raw);
+                Send(Encoding.UTF8.GetBytes(STR.Substring(1)));
             }
             else
             {
                 //Console.WriteLine("< " + STR);
-                byte[] Raw = new byte[STR.Length / 2];
-                for (int i = 0; i < Raw.Length; i++)
-                {
-                    string STR_Byte = STR.Substring(i * 2, 2);
-                    if (STR_Byte[0] == '_')
-                    {
-                        Raw[i] = (byte)Encoding.UTF8.GetBytes(STR_Byte)[1];
-                    }
-                    else
-                    {
-                        Raw[i] = (byte)int.Parse(STR_Byte, System.Globalization.NumberStyles.HexNumber);
-                    }
-                }
-                Send(Raw);
+                Send(HexToRaw(STR));
             }
 
 

@@ -94,7 +94,13 @@
     <Compile Include="UniConnSSH.cs" />
     <Compile Include="UniConnLoopback.cs" />
     <Compile Include="UniConnApp.cs" />
-    <Compile Include="ScreenWindowWinForms.cs" />
+    <Compile Include="ScreenWindowGUI.cs" />
+    <Compile Include="AnsiState.cs" />
+    <Compile Include="UniConnRaw.cs" />
+    <Compile Include="UniConnSerial.cs" />
+    <Compile Include="AnsiSauce.cs" />
+    <Compile Include="Server.cs" />
+    <Compile Include="LowLevelBitmapBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

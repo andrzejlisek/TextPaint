@@ -10,7 +10,7 @@ using Avalonia.Threading;
 
 namespace TextPaint
 {
-    public class ScreenWindowAvalonia : ScreenWindow
+    public class ScreenWindowGUI : ScreenWindow
     {
         Avalonia.Controls.Image ConsoleScreen = null;
         Avalonia.Controls.Shapes.Rectangle ConsoleCursor = null;
@@ -23,7 +23,7 @@ namespace TextPaint
 
         bool LowLevelStretch = false;
 
-        public ScreenWindowAvalonia(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
+        public ScreenWindowGUI(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
         {
             if (!DummyScreen)
             {
@@ -31,7 +31,7 @@ namespace TextPaint
                 LowLevelStretch = (WinFixed == 2);
                 XWidth = ConsoleW * CellW;
                 XHeight = ConsoleH * CellH;
-                Program.ScreenWindowAvalonia_ = this;
+                Program.ScreenWindowGUI_ = this;
                 FormAllowClose = false;
                 Core_.WindowResize();
                 Core_.ScreenRefresh(true);
@@ -208,11 +208,11 @@ namespace TextPaint
                 {
                     if (LowLevelStretch)
                     {
-                        ConsoleScreen.Source = ScreenBmp.ToBitmapAvaloniaStretch(XWidth, XHeight);
+                        ConsoleScreen.Source = ScreenBmp.ToBitmap(XWidth, XHeight);
                     }
                     else
                     {
-                        ConsoleScreen.Source = ScreenBmp.ToBitmapAvalonia();
+                        ConsoleScreen.Source = ScreenBmp.ToBitmap();
                     }
                 }
                 catch

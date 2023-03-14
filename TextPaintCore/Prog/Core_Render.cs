@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Text;
 
@@ -15,13 +14,18 @@ namespace TextPaint
         enum RenderTypeDef { PNG, XBIN, BIN, TEXT, ANSI, ANSIDOS, CONVERT };
         RenderTypeDef RenderType;
         int RenderBufOffset = 0;
+        int RenderSliceX = 0;
+        int RenderSliceY = 0;
+        int RenderSliceW = 0;
+        int RenderSliceH = 0;
+        int RenderSliceL = 4;
 
         string RenderFileName(int RenderCounterI)
         {
-            string FileExt = "";
+            string FileExt = ".xxx";
             switch (RenderType)
             {
-                default:
+                case RenderTypeDef.PNG:
                     FileExt = ".png";
                     break;
                 case RenderTypeDef.TEXT:
@@ -117,7 +121,7 @@ namespace TextPaint
 
             switch (RenderType_.ToUpperInvariant())
             {
-                default:
+                case "PNG":
                     RenderType = RenderTypeDef.PNG;
                     break;
                 case "TXT":
@@ -144,6 +148,9 @@ namespace TextPaint
                 case "CONVERT":
                     RenderType = RenderTypeDef.CONVERT;
                     break;
+                default:
+                    Console.WriteLine("Valid render types: PNG, TEXT, ANSI, DOS, BIN, XBIN, CONV");
+                    return;
             }
 
             if ((RenderType == RenderTypeDef.XBIN) || (RenderType == RenderTypeDef.BIN))
@@ -167,14 +174,7 @@ namespace TextPaint
                     {
                         FileI = new StreamReader(FileI_, TextWork.EncodingFromName(FileREnc));
                     }
-                    string RenderFile_D = Path.GetDirectoryName(RenderFile_);
-                    if (!("".Equals(RenderFile_D)))
-                    {
-                        if (!Directory.Exists(RenderFile_D))
-                        {
-                            Directory.CreateDirectory(RenderFile_D);
-                        }
-                    }
+                    SaveFileDirectory(RenderFile_);
                     FileStream FileO_ = new FileStream(RenderFile_, FileMode.Create, FileAccess.Write);
                     StreamWriter FileO;
                     if ("".Equals(FileWEnc))
@@ -239,7 +239,7 @@ namespace TextPaint
                     SR = new StreamReader(FS, TextWork.EncodingFromName(FileREnc));
                 }
 
-                AnsiProcessReset(true);
+                AnsiProcessReset(true, true, 0);
                 Screen_.Clear(TextNormalBack, TextNormalFore);
 
                 List<int> BellList = new List<int>();
@@ -265,7 +265,7 @@ namespace TextPaint
                         }
 
                         RenderSave(RenderFileName(RenderCounterI));
-                        Console.WriteLine("Frame " + RenderCounterI + " - " + (AnsiBufferI * 100 / AnsiBuffer.Count) + "%");
+                        Console.WriteLine("Frame " + RenderCounterI + " - " + (AnsiState_.AnsiBufferI * 100 / AnsiBuffer.Count) + "%");
                         int RenderStep___ = RenderStep;
                         if (RenderOffset_ > 0)
                         {
@@ -279,7 +279,7 @@ namespace TextPaint
                             AnsiRepaint(false);
                             RenderStep___ = RenderStep;
                             RenderCounterI++;
-                            Console.WriteLine("Frame " + RenderCounterI + " - " + (AnsiBufferI * 100 / AnsiBuffer.Count) + "%");
+                            Console.WriteLine("Frame " + RenderCounterI + " - " + (AnsiState_.AnsiBufferI * 100 / AnsiBuffer.Count) + "%");
                             if (Screen_.BellOccured)
                             {
                                 BellList.Add(RenderCounterI);
@@ -288,16 +288,16 @@ namespace TextPaint
                         }
                         if (RenderCursor_)
                         {
-                            ScrMaxX = Math.Max(__ScreenMaxX, __AnsiX) + 1;
-                            ScrMaxY = Math.Max(__ScreenMaxY, __AnsiY) + 1;
+                            ScrMaxX = Math.Max(__ScreenMaxX, AnsiState_.__AnsiX) + 1;
+                            ScrMaxY = Math.Max(__ScreenMaxY, AnsiState_.__AnsiY) + 1;
                         }
                         else
                         {
                             ScrMaxX = __ScreenMaxX + 1;
                             ScrMaxY = __ScreenMaxY + 1;
                         }
-                        ScrMaxX = Math.Max(__ScreenMaxX, __AnsiX) + 1;
-                        ScrMaxY = Math.Max(__ScreenMaxY, __AnsiY) + 1;
+                        ScrMaxX = Math.Max(__ScreenMaxX, AnsiState_.__AnsiX) + 1;
+                        ScrMaxY = Math.Max(__ScreenMaxY, AnsiState_.__AnsiY) + 1;
                         if (BellList.Count > 0)
                         {
                             Console.WriteLine("Bell signal occurred within " + BellList.Count + " frames:");
@@ -321,14 +321,14 @@ namespace TextPaint
                         {
                             AnsiProcess(-1);
                         }
-                        int ScrRealH = __AnsiLineOccupy.Count + __AnsiLineOccupy1.Count + __AnsiLineOccupy2.Count;
-                        RenderBufOffset = __AnsiLineOccupy1.Count;
-                        ((ScreenWindow)Screen_).DummyResize(Screen_.WinW, Math.Max(ScrRealH, __AnsiY + RenderBufOffset + 1));
+                        int ScrRealH = AnsiState_.__AnsiLineOccupy.Count + AnsiState_.__AnsiLineOccupy1.Count + AnsiState_.__AnsiLineOccupy2.Count;
+                        RenderBufOffset = AnsiState_.__AnsiLineOccupy1.Count;
+                        ((ScreenWindow)Screen_).DummyResize(Screen_.WinW, Math.Max(ScrRealH, AnsiState_.__AnsiY + RenderBufOffset + 1));
                         AnsiRepaint(true);
                         if (RenderCursor_)
                         {
-                            ScrMaxX = Math.Max(__ScreenMaxX, __AnsiX) + 1;
-                            ScrMaxY = Math.Max(__ScreenMaxY, __AnsiY + RenderBufOffset) + 1;
+                            ScrMaxX = Math.Max(__ScreenMaxX, AnsiState_.__AnsiX) + 1;
+                            ScrMaxY = Math.Max(__ScreenMaxY, AnsiState_.__AnsiY + RenderBufOffset) + 1;
                         }
                         else
                         {
@@ -356,12 +356,12 @@ namespace TextPaint
                         ScrMaxY++;
                         Buf = SR.ReadLine();
                     }
-                    __AnsiX = 0;
-                    __AnsiY = 0;
+                    AnsiState_.__AnsiX = 0;
+                    AnsiState_.__AnsiY = 0;
                     if (TextBuffer.Count > 0)
                     {
-                        __AnsiY = TextBuffer.Count - 1;
-                        __AnsiX = TextBuffer[__AnsiY].Count;
+                        AnsiState_.__AnsiY = TextBuffer.Count - 1;
+                        AnsiState_.__AnsiX = TextBuffer[AnsiState_.__AnsiY].Count;
                     }
                     ((ScreenWindow)Screen_).DummyResize(ScrMaxX, ScrMaxY);
                     Screen_.Clear(TextNormalBack, TextNormalFore);
@@ -381,10 +381,10 @@ namespace TextPaint
                 UndoBufferClear();
                 Console.WriteLine("Rendering canvas size: " + Screen_.WinW + "x" + Screen_.WinH);
                 Console.WriteLine("Used text area: " + ScrMaxX + "x" + ScrMaxY);
-                if (__AnsiProcessDelayMin <= __AnsiProcessDelayMax)
+                if (AnsiState_.__AnsiProcessDelayMin <= AnsiState_.__AnsiProcessDelayMax)
                 {
-                    Console.WriteLine("Minimum time marker dummy steps: " + __AnsiProcessDelayMin);
-                    Console.WriteLine("Maximum time marker dummy steps: " + __AnsiProcessDelayMax);
+                    Console.WriteLine("Minimum time marker dummy steps: " + AnsiState_.__AnsiProcessDelayMin);
+                    Console.WriteLine("Maximum time marker dummy steps: " + AnsiState_.__AnsiProcessDelayMax);
                 }
             }
             catch (Exception E)
@@ -395,6 +395,136 @@ namespace TextPaint
 
         void RenderSave(string FileName)
         {
+            int ExtPos = FileName.LastIndexOf('.');
+            int SliceX = 0;
+            int SliceY = 0;
+            int SliceW = Screen_.WinW;
+            int SliceH = Screen_.WinH;
+            int SliceNumX = 1;
+            int SliceNumY = 1;
+            string FileNameS = FileName;
+
+            // No slice
+            if ((RenderSliceW <= 0) && (RenderSliceH <= 0))
+            {
+                RenderSaveOneFile(FileName, SliceX, SliceY, SliceW, SliceH);
+            }
+
+            // Slice horizontally
+            if ((RenderSliceW > 0) && (RenderSliceH <= 0))
+            {
+                SliceX = RenderSliceX;
+                SliceW = RenderSliceW;
+                while (SliceX < 0)
+                {
+                    SliceX += RenderSliceW;
+                }
+                while (SliceX > 0)
+                {
+                    SliceX -= RenderSliceW;
+                }
+                while (SliceX < Screen_.WinW)
+                {
+                    string SliceNumber = "_" + SliceNumX.ToString().PadLeft(RenderSliceL, '0');
+                    if (ExtPos > 0)
+                    {
+                        FileNameS= FileName.Insert(ExtPos, SliceNumber);
+                    }
+                    else
+                    {
+                        FileNameS = FileName + SliceNumber;
+                    }
+                    RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                    SliceX += RenderSliceW;
+                    SliceNumX++;
+                }
+            }
+
+            // Slice vertically
+            if ((RenderSliceW <= 0) && (RenderSliceH > 0))
+            {
+                SliceY = RenderSliceY;
+                SliceH = RenderSliceH;
+                while (SliceY < 0)
+                {
+                    SliceY += RenderSliceH;
+                }
+                while (SliceY > 0)
+                {
+                    SliceY -= RenderSliceH;
+                }
+                while (SliceY < Screen_.WinH)
+                {
+                    string SliceNumber = "_" + SliceNumY.ToString().PadLeft(RenderSliceL, '0');
+                    if (ExtPos > 0)
+                    {
+                        FileNameS = FileName.Insert(ExtPos, SliceNumber);
+                    }
+                    else
+                    {
+                        FileNameS = FileName + SliceNumber;
+                    }
+                    RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                    SliceY += RenderSliceH;
+                    SliceNumY++;
+                }
+            }
+
+            // Slice horizontally and vertically
+            if ((RenderSliceW > 0) && (RenderSliceH > 0))
+            {
+                SliceX = RenderSliceX;
+                SliceW = RenderSliceW;
+                while (SliceX < 0)
+                {
+                    SliceX += RenderSliceW;
+                }
+                while (SliceX > 0)
+                {
+                    SliceX -= RenderSliceW;
+                }
+                SliceY = RenderSliceY;
+                SliceH = RenderSliceH;
+                while (SliceY < 0)
+                {
+                    SliceY += RenderSliceH;
+                }
+                while (SliceY > 0)
+                {
+                    SliceY -= RenderSliceH;
+                }
+                int SliceX0 = SliceX;
+                while (SliceY < Screen_.WinH)
+                {
+                    SliceX = SliceX0;
+                    SliceNumX = 1;
+                    while (SliceX < Screen_.WinW)
+                    {
+                        string SliceNumber = "_" + SliceNumY.ToString().PadLeft(RenderSliceL, '0');
+                        SliceNumber = SliceNumber + "_" + SliceNumX.ToString().PadLeft(RenderSliceL, '0');
+                        if (ExtPos > 0)
+                        {
+                            FileNameS = FileName.Insert(ExtPos, SliceNumber);
+                        }
+                        else
+                        {
+                            FileNameS = FileName + SliceNumber;
+                        }
+                        RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                        SliceX += RenderSliceW;
+                        SliceNumX++;
+                    }
+                    SliceY += RenderSliceH;
+                    SliceNumY++;
+                }
+            }
+        }
+
+        void RenderSaveOneFile(string FileName, int X, int Y, int W, int H)
+        {
+            //string FileNameDisp = FileName;
+            //if (FileNameDisp.Length > 30) { FileNameDisp = FileNameDisp.Substring(FileNameDisp.Length - 30); }
+            //Console.WriteLine(FileNameDisp + "    " + X + "_" + Y + "__" + W + "_" + H);
             string FileNameD = Path.GetDirectoryName(FileName);
             if (!("".Equals(FileNameD)))
             {
@@ -403,12 +533,12 @@ namespace TextPaint
                     Directory.CreateDirectory(FileNameD);
                 }
             }
-            Screen_.SetCursorPositionNoRefresh(__AnsiX, __AnsiY + RenderBufOffset);
+            Screen_.SetCursorPositionNoRefresh(AnsiState_.__AnsiX, AnsiState_.__AnsiY + RenderBufOffset);
             switch (RenderType)
             {
                 default:
-                    Bitmap Bmp = ((ScreenWindow)Screen_).DummyGetScreenBitmap(RenderCursor);
-                    Bmp.Save(FileName, System.Drawing.Imaging.ImageFormat.Png);
+                    LowLevelBitmap Bmp = ((ScreenWindow)Screen_).DummyGetScreenBitmap(RenderCursor, TextNormalBack, TextNormalFore, X, Y, W, H);
+                    Bmp.SaveToFile(FileName);
                     break;
                 case RenderTypeDef.TEXT:
                 case RenderTypeDef.ANSI:
@@ -416,7 +546,7 @@ namespace TextPaint
                     int IsAnsi = 0;
                     if (RenderType == RenderTypeDef.ANSI) IsAnsi = 1;
                     if (RenderType == RenderTypeDef.ANSIDOS) IsAnsi = 2;
-                    string StrX = ((ScreenWindow)Screen_).DummyGetScreenText(IsAnsi, TextNormalBack, TextNormalFore);
+                    string StrX = ((ScreenWindow)Screen_).DummyGetScreenText(IsAnsi, TextNormalBack, TextNormalFore, X, Y, W, H);
                     File.WriteAllText(FileName, StrX);
                     break;
             }

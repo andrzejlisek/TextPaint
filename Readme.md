@@ -493,7 +493,7 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 * **Space** \- Characters \(hexadecimal numbers\), which will be treated as space\. The first character in the list is used as character being outside actual text\.
 * **FileReadEncoding** \- Encoding used in file reading, in most cases, it should be **FileReadEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
 * **FileWriteEncoding** \- Encoding used in file writing, in most cases, it should be **FileWriteEncoding=utf\-8**\. You can display all supported encodings using **WorkMode=3**\.
-* **FileReadChars** \- If provided greater than **0**, there is number of first characters \(not bytes\), which will be read from file, it is useful, when you want to create text/picture based on ANSI animation\. The parameter works only in **WorkMode=0**\.
+* **FileReadSteps** \- If provided greater than **0**, there is number of first steps \(not bytes and not characters, especially in VTxxx files\), which will be read from file, it is useful, when you want to create text/picture based on ANSI animation\. The parameter works only in **WorkMode=0**\.
 * **Frame1\_x** \- Character set for rectangle frame, the **x** is the number of set, starting from 0\. The value consists of 12 items separated by comma\.
   * The first item is the set name\.
   * The other items are the hexadecimal character codes, which are the frame elements\.
@@ -823,14 +823,16 @@ TextPaint can use custom 1\-byte encoding\. In the Encodings subfolder, there ar
 
 
 * **ASCII\.txt** \- The base ASCII\-compatible encoding, where the character number equals to byte balue\. You can create copy of the file and use it to create own encoding\. The encoding is the same as ISO\-8859\-1\.
+* **STD437\.txt** \- The standard DOS code page 437, suitable for use with font other than DOS font\. The encoding is identical with built\-in 437 encoding, the 437 encoding is required for read most old ANSI files\.
 * **DOS437\.txt** \- The slightly modified standard DOS code page 437\. The modification are changing few characters to match to **Dos** font\. The ambiguous characters are listed an the end of the file \(lines without **=** sign are ignored\)\. The file or standard 437 code page should be used to open most old ANSI and ASCII files\.
 * **VT220\.txt** \- Encoding very similar to ASCII \(only few characters changed\), intended to view original VT100 files from [http://artscene\.textfiles\.com/vt100/](http://artscene.textfiles.com/vt100/ "http://artscene.textfiles.com/vt100/"), which uses 8\-bit characters supported on VT220 terminal and successors\.
 
 There are another 2 encodings, which are designed for converting BIN or XBIN file to ANSI file\. The only difference are in assignment to values from **00h** to **1Fh**:
 
 
-* **BIN\_ASCII\.txt** \- Encoding based on **ASCII\.txt**, the control characters are remaped to from **2400h** to **241Fh**, the characters are printable equivalents to control characters\.
-* **BIN\_DOS437\.txt** \- Encoding based on **DOS437\.txt**, the control characters are mapped to standard DOS glyphs\.
+* **ASCII\_BIN\.txt** \- Encoding based on **ASCII\.txt**, the control characters are remaped to from **2400h** to **241Fh**, the characters are printable equivalents to control characters\.
+* **STD437\_BIN\.txt** \- Encoding based on **STD437\.txt**, the control characters are mapped to standard DOS glyphs\.
+* **DOS437\_BIN\.txt** \- Encoding based on **DOS437\.txt**, the control characters are mapped to standard DOS glyphs\.
 
 ## Palettes
 
@@ -859,11 +861,14 @@ There are samples for demonstration and test purposes in **WorkMode=0**\. Files 
 * **ColorWheel\.ans** \- Demonstration of all 16 colors, uses Unicode characters\.
 * **ColorBlend\.ans** \- Color blending demonstration\.
 
-There are also samples, which are not created with **TextPaint**, but can be loaded into **TextPaint** or other terminal emulator:
+There are also samples, which are not created with **TextPaint**, but can be loaded into **TextPaint** or other terminal emulator or any ANSI file viewer:
 
 
 * **Colors16\.ans** \- Two ways to use all 16 standard colors\. If bold and blink is not ignored, **TextPaint** shows the same result in both ways\.
-* **Colors256\.ans** \- The 256\-color palette, **TextPaint** can read 256\-color codes, but converts such colors into standard 16 colors\.
+* **Colors256\.ans** \- The 256\-color palette, **TextPaint** reada 256\-color codes, but converts such colors into standard 16 colors\. The file uses both semicolon and colon commands\.
+* **RGB\_R\.ans** \- The 24\-bit RGB color demonstration, red variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
+* **RGB\_G\.ans** \- The 24\-bit RGB color demonstration, green variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
+* **RGB\_B\.ans** \- The 24\-bit RGB color demonstration, blue variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
 * **TextFormat\.ans** \- Test of all VT100 text format flags \(bold, blink, negative, underline\)\. **TextPaint** ignores underline flag, but the file can be used for test other terminals\.
 
 

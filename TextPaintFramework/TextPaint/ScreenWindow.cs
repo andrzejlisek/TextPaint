@@ -7,7 +7,6 @@
  */
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Text;
 using System.Threading;
@@ -27,6 +26,8 @@ namespace TextPaint
 
 
         LowLevelBitmap BitmapX_;
+        LowLevelBitmap Glyph_;
+        object BitmapX_mutex = new object();
 
         int MaxFontSize = 9;
         int MaxFontSizeDraw = 527;
@@ -112,41 +113,76 @@ namespace TextPaint
         int[] FontW_Num_Min;
         int[] FontW_Num_Max;
 
-        float GetRectPos(int FontSize, float CellSize)
+        float GetRectPos(int FontSize)
         {
-            float FontSize_ = 0;
-            if ((FontSize >= 1) && (FontSize <= 2)) { FontSize_ = (FontSize - 1); return 0 - ((CellSize * FontSize_) / 2.0f); }
-            if ((FontSize >= 3) && (FontSize <= 5)) { FontSize_ = (FontSize - 3); return 0 - ((CellSize * FontSize_) / 3.0f); }
-            if ((FontSize >= 6) && (FontSize <= 9)) { FontSize_ = (FontSize - 6); return 0 - ((CellSize * FontSize_) / 4.0f); }
-            if ((FontSize >= 10) && (FontSize <= 14)) { FontSize_ = (FontSize - 10); return 0 - ((CellSize * FontSize_) / 5.0f); }
-            if ((FontSize >= 15) && (FontSize <= 20)) { FontSize_ = (FontSize - 15); return 0 - ((CellSize * FontSize_) / 6.0f); }
-            if ((FontSize >= 21) && (FontSize <= 27)) { FontSize_ = (FontSize - 21); return 0 - ((CellSize * FontSize_) / 7.0f); }
-            if ((FontSize >= 28) && (FontSize <= 35)) { FontSize_ = (FontSize - 28); return 0 - ((CellSize * FontSize_) / 8.0f); }
-            if ((FontSize >= 36) && (FontSize <= 44)) { FontSize_ = (FontSize - 36); return 0 - ((CellSize * FontSize_) / 9.0f); }
-            if ((FontSize >= 45) && (FontSize <= 54)) { FontSize_ = (FontSize - 45); return 0 - ((CellSize * FontSize_) / 10.0f); }
-            if ((FontSize >= 55) && (FontSize <= 65)) { FontSize_ = (FontSize - 55); return 0 - ((CellSize * FontSize_) / 11.0f); }
-            if ((FontSize >= 66) && (FontSize <= 77)) { FontSize_ = (FontSize - 66); return 0 - ((CellSize * FontSize_) / 12.0f); }
-            if ((FontSize >= 78) && (FontSize <= 90)) { FontSize_ = (FontSize - 78); return 0 - ((CellSize * FontSize_) / 13.0f); }
-            if ((FontSize >= 91) && (FontSize <= 104)) { FontSize_ = (FontSize - 91); return 0 - ((CellSize * FontSize_) / 14.0f); }
-            if ((FontSize >= 105) && (FontSize <= 119)) { FontSize_ = (FontSize - 105); return 0 - ((CellSize * FontSize_) / 15.0f); }
-            if ((FontSize >= 120) && (FontSize <= 135)) { FontSize_ = (FontSize - 120); return 0 - ((CellSize * FontSize_) / 16.0f); }
-            if ((FontSize >= 136) && (FontSize <= 152)) { FontSize_ = (FontSize - 136); return 0 - ((CellSize * FontSize_) / 17.0f); }
-            if ((FontSize >= 153) && (FontSize <= 170)) { FontSize_ = (FontSize - 153); return 0 - ((CellSize * FontSize_) / 18.0f); }
-            if ((FontSize >= 171) && (FontSize <= 189)) { FontSize_ = (FontSize - 171); return 0 - ((CellSize * FontSize_) / 19.0f); }
-            if ((FontSize >= 190) && (FontSize <= 209)) { FontSize_ = (FontSize - 190); return 0 - ((CellSize * FontSize_) / 20.0f); }
-            if ((FontSize >= 210) && (FontSize <= 230)) { FontSize_ = (FontSize - 210); return 0 - ((CellSize * FontSize_) / 21.0f); }
-            if ((FontSize >= 231) && (FontSize <= 252)) { FontSize_ = (FontSize - 231); return 0 - ((CellSize * FontSize_) / 22.0f); }
-            if ((FontSize >= 253) && (FontSize <= 275)) { FontSize_ = (FontSize - 253); return 0 - ((CellSize * FontSize_) / 23.0f); }
-            if ((FontSize >= 276) && (FontSize <= 299)) { FontSize_ = (FontSize - 276); return 0 - ((CellSize * FontSize_) / 24.0f); }
-            if ((FontSize >= 300) && (FontSize <= 324)) { FontSize_ = (FontSize - 300); return 0 - ((CellSize * FontSize_) / 25.0f); }
-            if ((FontSize >= 325) && (FontSize <= 350)) { FontSize_ = (FontSize - 325); return 0 - ((CellSize * FontSize_) / 26.0f); }
-            if ((FontSize >= 351) && (FontSize <= 377)) { FontSize_ = (FontSize - 351); return 0 - ((CellSize * FontSize_) / 27.0f); }
-            if ((FontSize >= 378) && (FontSize <= 405)) { FontSize_ = (FontSize - 378); return 0 - ((CellSize * FontSize_) / 28.0f); }
-            if ((FontSize >= 406) && (FontSize <= 434)) { FontSize_ = (FontSize - 406); return 0 - ((CellSize * FontSize_) / 29.0f); }
-            if ((FontSize >= 435) && (FontSize <= 464)) { FontSize_ = (FontSize - 435); return 0 - ((CellSize * FontSize_) / 30.0f); }
-            if ((FontSize >= 465) && (FontSize <= 495)) { FontSize_ = (FontSize - 465); return 0 - ((CellSize * FontSize_) / 31.0f); }
-            if ((FontSize >= 496) && (FontSize <= 527)) { FontSize_ = (FontSize - 496); return 0 - ((CellSize * FontSize_) / 32.0f); }
+            if ((FontSize >= 1) && (FontSize <= 2)) { return (FontSize - 1); }
+            if ((FontSize >= 3) && (FontSize <= 5)) { return (FontSize - 3); }
+            if ((FontSize >= 6) && (FontSize <= 9)) { return (FontSize - 6); }
+            if ((FontSize >= 10) && (FontSize <= 14)) { return (FontSize - 10); }
+            if ((FontSize >= 15) && (FontSize <= 20)) { return (FontSize - 15); }
+            if ((FontSize >= 21) && (FontSize <= 27)) { return (FontSize - 21); }
+            if ((FontSize >= 28) && (FontSize <= 35)) { return (FontSize - 28); }
+            if ((FontSize >= 36) && (FontSize <= 44)) { return (FontSize - 36); }
+            if ((FontSize >= 45) && (FontSize <= 54)) { return (FontSize - 45); }
+            if ((FontSize >= 55) && (FontSize <= 65)) { return (FontSize - 55); }
+            if ((FontSize >= 66) && (FontSize <= 77)) { return (FontSize - 66); }
+            if ((FontSize >= 78) && (FontSize <= 90)) { return (FontSize - 78); }
+            if ((FontSize >= 91) && (FontSize <= 104)) { return (FontSize - 91); }
+            if ((FontSize >= 105) && (FontSize <= 119)) { return (FontSize - 105); }
+            if ((FontSize >= 120) && (FontSize <= 135)) { return (FontSize - 120); }
+            if ((FontSize >= 136) && (FontSize <= 152)) { return (FontSize - 136); }
+            if ((FontSize >= 153) && (FontSize <= 170)) { return (FontSize - 153); }
+            if ((FontSize >= 171) && (FontSize <= 189)) { return (FontSize - 171); }
+            if ((FontSize >= 190) && (FontSize <= 209)) { return (FontSize - 190); }
+            if ((FontSize >= 210) && (FontSize <= 230)) { return (FontSize - 210); }
+            if ((FontSize >= 231) && (FontSize <= 252)) { return (FontSize - 231); }
+            if ((FontSize >= 253) && (FontSize <= 275)) { return (FontSize - 253); }
+            if ((FontSize >= 276) && (FontSize <= 299)) { return (FontSize - 276); }
+            if ((FontSize >= 300) && (FontSize <= 324)) { return (FontSize - 300); }
+            if ((FontSize >= 325) && (FontSize <= 350)) { return (FontSize - 325); }
+            if ((FontSize >= 351) && (FontSize <= 377)) { return (FontSize - 351); }
+            if ((FontSize >= 378) && (FontSize <= 405)) { return (FontSize - 378); }
+            if ((FontSize >= 406) && (FontSize <= 434)) { return (FontSize - 406); }
+            if ((FontSize >= 435) && (FontSize <= 464)) { return (FontSize - 435); }
+            if ((FontSize >= 465) && (FontSize <= 495)) { return (FontSize - 465); }
+            if ((FontSize >= 496) && (FontSize <= 527)) { return (FontSize - 496); }
             return 0;
+        }
+
+        int GetRectSize(int FontSize)
+        {
+            if ((FontSize >= 1) && (FontSize <= 2)) { return 2; }
+            if ((FontSize >= 3) && (FontSize <= 5)) { return 3; }
+            if ((FontSize >= 6) && (FontSize <= 9)) { return 4; }
+            if ((FontSize >= 10) && (FontSize <= 14)) { return 5; }
+            if ((FontSize >= 15) && (FontSize <= 20)) { return 6; }
+            if ((FontSize >= 21) && (FontSize <= 27)) { return 7; }
+            if ((FontSize >= 28) && (FontSize <= 35)) { return 8; }
+            if ((FontSize >= 36) && (FontSize <= 44)) { return 9; }
+            if ((FontSize >= 45) && (FontSize <= 54)) { return 10; }
+            if ((FontSize >= 55) && (FontSize <= 65)) { return 11; }
+            if ((FontSize >= 66) && (FontSize <= 77)) { return 12; }
+            if ((FontSize >= 78) && (FontSize <= 90)) { return 13; }
+            if ((FontSize >= 91) && (FontSize <= 104)) { return 14; }
+            if ((FontSize >= 105) && (FontSize <= 119)) { return 15; }
+            if ((FontSize >= 120) && (FontSize <= 135)) { return 16; }
+            if ((FontSize >= 136) && (FontSize <= 152)) { return 17; }
+            if ((FontSize >= 153) && (FontSize <= 170)) { return 18; }
+            if ((FontSize >= 171) && (FontSize <= 189)) { return 19; }
+            if ((FontSize >= 190) && (FontSize <= 209)) { return 20; }
+            if ((FontSize >= 210) && (FontSize <= 230)) { return 21; }
+            if ((FontSize >= 231) && (FontSize <= 252)) { return 22; }
+            if ((FontSize >= 253) && (FontSize <= 275)) { return 23; }
+            if ((FontSize >= 276) && (FontSize <= 299)) { return 24; }
+            if ((FontSize >= 300) && (FontSize <= 324)) { return 25; }
+            if ((FontSize >= 325) && (FontSize <= 350)) { return 26; }
+            if ((FontSize >= 351) && (FontSize <= 377)) { return 27; }
+            if ((FontSize >= 378) && (FontSize <= 405)) { return 28; }
+            if ((FontSize >= 406) && (FontSize <= 434)) { return 29; }
+            if ((FontSize >= 435) && (FontSize <= 464)) { return 30; }
+            if ((FontSize >= 465) && (FontSize <= 495)) { return 31; }
+            if ((FontSize >= 496) && (FontSize <= 527)) { return 32; }
+            return 1;
         }
 
         void SetTextRectangles()
@@ -187,21 +223,18 @@ namespace TextPaint
             FontW_Num_Min[32] = 496; FontW_Num_Max[32] = 527;
 
 
-            FormCtrlR = new RectangleF[MaxFontSizeDraw + 1, MaxFontSizeDraw + 1];
+            FormCtrlR_X = new float[MaxFontSizeDraw + 1];
+            FormCtrlR_Y = new float[MaxFontSizeDraw + 1];
+            FormCtrlR_W = new float[MaxFontSizeDraw + 1];
+            FormCtrlR_H = new float[MaxFontSizeDraw + 1];
             FormCtrlR_Trans = new int[MaxFontSizeDraw + 1];
-            for (int W = 0; W <= MaxFontSizeDraw; W++)
+            for (int i = 0; i <= MaxFontSizeDraw; i++)
             {
-                FormCtrlR_Trans[W] = 1;
-                for (int i = 1; i < FontW_Num_Min.Length; i++)
-                {
-                    if ((W >= FontW_Num_Min[i]) && (W <= FontW_Num_Max[i])) FormCtrlR_Trans[W] = i;
-                }
-                for (int H = 0; H <= MaxFontSizeDraw; H++)
-                {
-                    float RectX = GetRectPos(W, CellW);
-                    float RectY = GetRectPos(H, CellH);
-                    FormCtrlR[W, H] = new RectangleF(RectX, RectY, CellW, CellH);
-                }
+                FormCtrlR_Trans[i] = GetRectSize(i);
+                FormCtrlR_X[i] = GetRectPos(i) * CellW;
+                FormCtrlR_Y[i] = GetRectPos(i) * CellH;
+                FormCtrlR_W[i] = GetRectSize(i) * CellW;
+                FormCtrlR_H[i] = GetRectSize(i) * CellH;
             }
         }
 
@@ -284,6 +317,7 @@ namespace TextPaint
             CellH = CF.ParamGetI("WinCellH");
             WinFontName = CF.ParamGetS("WinFontName");
             WinFontSize = CF.ParamGetI("WinFontSize");
+            WinCharRender = CF.ParamGetI("WinCharRender");
             WinPicturePanel = (CF.ParamGetI("WinUse") == 2);
 
             if (File.Exists(Core.FullPath(WinFontName)))
@@ -355,26 +389,8 @@ namespace TextPaint
             else
             {
                 WinIsBitmapFont = false;
-                switch (WinFontName)
-                {
-                    case "GenericSerif":
-                        WinFont = new Font(FontFamily.GenericSerif, WinFontSize, FontStyle.Regular);
-                        break;
-                    case "GenericSansSerif":
-                        WinFont = new Font(FontFamily.GenericSansSerif, WinFontSize, FontStyle.Regular);
-                        break;
-                    case "GenericMonospace":
-                        WinFont = new Font(FontFamily.GenericMonospace, WinFontSize, FontStyle.Regular);
-                        break;
-                    default:
-                        WinFont = new Font(WinFontName, WinFontSize, FontStyle.Regular);
-                        break;
-                }
-                WinStrFormat = new StringFormat();
-                WinStrFormat.LineAlignment = StringAlignment.Center;
-                WinStrFormat.Alignment = StringAlignment.Center;
-                WinStrFormat.Trimming = StringTrimming.None;
-                WinStrFormat.FormatFlags = StringFormatFlags.NoWrap;
+                Glyph_ = new LowLevelBitmap(CellW, CellH, 0);
+                Glyph_.SetTextFont(WinFontName, WinFontSize, WinCharRender);
             }
 
             CursorThick = (((CellH + 7) / 8));
@@ -429,6 +445,7 @@ namespace TextPaint
         int CellH_F;
         string WinFontName;
         int WinFontSize;
+        int WinCharRender;
 
         int[,] FormCtrlB;
         int[,] FormCtrlF;
@@ -439,10 +456,11 @@ namespace TextPaint
         int[] LineOffsetBack;
         int[] LineOffsetFore;
         public bool[] LineOffsetBlank;
-        RectangleF[,] FormCtrlR;
+        float[] FormCtrlR_X;
+        float[] FormCtrlR_Y;
+        float[] FormCtrlR_W;
+        float[] FormCtrlR_H;
         int[] FormCtrlR_Trans;
-        Font WinFont;
-        StringFormat WinStrFormat;
         protected bool WinPicturePanel = false;
         byte CursorColorR = 0;
         byte CursorColorG = 0;
@@ -460,6 +478,7 @@ namespace TextPaint
         /// <param name="H">H.</param>
         public void DummyResize(int W, int H)
         {
+            Monitor.Enter(BitmapX_mutex);
             WinW = W;
             WinH = H;
 
@@ -490,43 +509,63 @@ namespace TextPaint
             }
             CursorB = -1;
             CursorF = -1;
+            Monitor.Exit(BitmapX_mutex);
         }
 
-        public string DummyGetScreenText(int IsANSI, int DefBack, int DefFore)
+        public string DummyGetScreenText(int IsANSI, int DefBack, int DefFore, int X, int Y, int W, int H)
         {
-            List<int>[] S_Text = new List<int>[WinH];
-            List<int>[] S_Colo = new List<int>[WinH];
-            List<int>[] S_Font = new List<int>[WinH];
+            //Console.WriteLine(X + "_" + Y + "___" + W + "_" + H);
+            List<int>[] S_Text = new List<int>[H];
+            List<int>[] S_Colo = new List<int>[H];
+            List<int>[] S_Font = new List<int>[H];
 
             StringBuilder S = new StringBuilder();
-            for (int Y = 0; Y < WinH; Y++)
+            int Y0 = 0;
+            for (int YY = Y; YY < (H + Y); YY++)
             {
-                S_Text[Y] = new List<int>();
-                S_Colo[Y] = new List<int>();
-                S_Font[Y] = new List<int>();
-                for (int X = 0; X < WinW; X++)
+                S_Text[Y0] = new List<int>();
+                S_Colo[Y0] = new List<int>();
+                S_Font[Y0] = new List<int>();
+                if ((YY >= 0) && (YY < WinH))
                 {
-                    if (FormCtrlC[X, Y] >= 32)
+                    for (int XX = X; XX < (W + X); XX++)
                     {
-                        S_Text[Y].Add(FormCtrlC[X, Y]);
-                        int TempB = FormCtrlB[X, Y];
-                        int TempF = FormCtrlF[X, Y];
-                        if (TempB == DefBack) { TempB = -1; }
-                        if (TempF == DefFore) { TempF = -1; }
-                        S_Colo[Y].Add(Core.ColorToInt(TempB, TempF));
-                        S_Font[Y].Add(Core.FontSToInt(FormCtrlFontW[X, Y], FormCtrlFontH[X, Y]));
+                        if ((XX >= 0) && (XX < WinW))
+                        {
+                            if (FormCtrlC[XX, YY] >= 32)
+                            {
+                                S_Text[Y0].Add(FormCtrlC[XX, YY]);
+                            }
+                            else
+                            {
+                                S_Text[Y0].Add(' ');
+                            }
+                            int TempB = FormCtrlB[XX, YY];
+                            int TempF = FormCtrlF[XX, YY];
+                            if (TempB == DefBack) { TempB = -1; }
+                            if (TempF == DefFore) { TempF = -1; }
+                            S_Colo[Y0].Add(Core.ColorToInt(TempB, TempF));
+                            S_Font[Y0].Add(Core.FontSToInt(FormCtrlFontW[XX, YY], FormCtrlFontH[XX, YY]));
+                        }
+                        else
+                        {
+                            S_Text[Y0].Add(' ');
+                            S_Colo[Y0].Add(Core.ColorToInt(-1, -1));
+                            S_Font[Y0].Add(Core.FontSToInt(0, 0));
+                        }
+                    }
+                    if (IsANSI == 0)
+                    {
+                        while ((S_Text[Y0].Count > 0) && TextWork.SpaceChars.Contains(S_Text[Y0][S_Text[Y0].Count - 1]))
+                        {
+                            S_Text[Y0].RemoveAt(S_Text[Y0].Count - 1);
+                        }
                     }
                 }
-                if (IsANSI == 0)
-                {
-                    while ((S_Text[Y].Count > 0) && TextWork.SpaceChars.Contains(S_Text[Y][S_Text[Y].Count - 1]))
-                    {
-                        S_Text[Y].RemoveAt(S_Text[Y].Count - 1);
-                    }
-                }
+                Y0++;
             }
             S = new StringBuilder();
-            int LastLine = (WinH - 1);
+            int LastLine = (H - 1);
             if (IsANSI == 0)
             {
                 while ((LastLine >= 0) && (S_Text[LastLine].Count == 0))
@@ -561,19 +600,22 @@ namespace TextPaint
             return S.ToString();
         }
 
-        public Bitmap DummyGetScreenBitmap(bool DrawCursor)
+        public LowLevelBitmap DummyGetScreenBitmap(bool DrawCursor, int DefBack, int DefFore, int X, int Y, int W, int H)
         {
-            Bitmap BmpExp = BitmapX_.ToBitmap();
-            Graphics BmpExpG = Graphics.FromImage(BmpExp);
+            LowLevelBitmap BmpExp = BitmapX_.Clone();
             if (DrawCursor)
             {
                 CursorColorR = DrawColor_R[FormCtrlF[CursorX, CursorY]];
                 CursorColorG = DrawColor_G[FormCtrlF[CursorX, CursorY]];
                 CursorColorB = DrawColor_B[FormCtrlF[CursorX, CursorY]];
-                Brush CursorColor_ = new SolidBrush(Color.FromArgb(CursorColorR, CursorColorG, CursorColorB));
-                BmpExpG.FillRectangle(CursorColor_, CursorX * CellW, CursorY * CellH + CursorDispOffset, CellW, CursorThick);
+                BmpExp.DrawRectangle(CursorX * CellW, CursorY * CellH + CursorDispOffset, CellW, CursorThick, CursorColorR, CursorColorG, CursorColorB);
             }
-            return BmpExp;
+            byte Draw_R = DrawColor_R[DefBack];
+            byte Draw_G = DrawColor_G[DefBack];
+            byte Draw_B = DrawColor_B[DefBack];
+            LowLevelBitmap BmpScr = new LowLevelBitmap(W * CellW, H * CellH, Draw_R, Draw_G, Draw_B);
+            BmpScr.DrawImageCtrl(BmpExp, 0, 0, 0 - (X * CellW), 0 - (Y * CellH), BmpExp.Width, BmpExp.Height);
+            return BmpScr;
         }
 
         protected bool WindowResizeForce = false;
@@ -712,9 +754,9 @@ namespace TextPaint
                 {
                     for (int X = 0; X < WinW; X++)
                     {
-                        FormCtrlB[X, Y] = -1;
-                        FormCtrlF[X, Y] = -1;
-                        FormCtrlC[X, Y] = ' ';
+                        FormCtrlB[X, Y] = Core_.TextNormalBack;
+                        FormCtrlF[X, Y] = Core_.TextNormalFore;
+                        FormCtrlC[X, Y] = -1;
                         FormCtrlFontW[X, Y] = 0;
                         FormCtrlFontH[X, Y] = 0;
                     }
@@ -879,7 +921,7 @@ namespace TextPaint
                     }
                 }
 
-                if (MultiThread) Monitor.Enter(BitmapX_);
+                if (MultiThread) Monitor.Enter(BitmapX_mutex);
 
                 if (OffsetMode == 0)
                 {
@@ -923,7 +965,7 @@ namespace TextPaint
                     }
                 }
 
-                if (MultiThread) Monitor.Exit(BitmapX_);
+                if (MultiThread) Monitor.Exit(BitmapX_mutex);
             }
         }
 
@@ -958,9 +1000,9 @@ namespace TextPaint
             LowLevelBitmap TempGlyph = GlyphBankGet(ColorBack, ColorFore, C_, FontWH);
             if (TempGlyph == null)
             {
-                TempGlyph = new LowLevelBitmap(CellW, CellH, 0);
                 if (WinIsBitmapFont)
                 {
+                    TempGlyph = new LowLevelBitmap(CellW, CellH, 0);
                     int C__ = C;
                     int CP_ = C__ >> 8;
                     C__ = C__ & 255;
@@ -1020,22 +1062,12 @@ namespace TextPaint
                 }
                 else
                 {
-                    try
+                    Glyph_.DrawRectangle(0, 0, CellW, CellH, DrawBack_R, DrawBack_G, DrawBack_B);
+                    if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
                     {
-                        Bitmap TempGlyphB = TempGlyph.ToBitmap();
-                        Graphics TempGlyphG = Graphics.FromImage(TempGlyphB);
-                        TempGlyphG.FillRectangle(LowLevelBitmap.GetBrush(DrawBack_R, DrawBack_G, DrawBack_B), 0, 0, CellW, CellH);
-                        if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
-                        {
-                            TempGlyphG.ScaleTransform(FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH]);
-                            TempGlyphG.DrawString(char.ConvertFromUtf32(C), WinFont, LowLevelBitmap.GetBrush(DrawFore_R, DrawFore_G, DrawFore_B), FormCtrlR[FontW, FontH], WinStrFormat);
-                        }
-                        TempGlyph = new LowLevelBitmap(TempGlyphB);
+                        Glyph_.DrawText(FormCtrlR_X[FontW], FormCtrlR_Y[FontH], FormCtrlR_W[FontW], FormCtrlR_H[FontH], FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH], char.ConvertFromUtf32(C), DrawFore_R, DrawFore_G, DrawFore_B);
                     }
-                    catch
-                    {
-
-                    }
+                    TempGlyph = Glyph_.Clone();
                 }
                 GlyphBankSet(ColorBack, ColorFore, C_, TempGlyph, FontWH);
             }

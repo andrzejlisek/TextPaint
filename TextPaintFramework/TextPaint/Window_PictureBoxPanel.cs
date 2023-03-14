@@ -44,7 +44,7 @@ namespace TextPaint
                 Bitmap Bmp;
                 if (BitmapStretch)
                 {
-                    Bmp = Image_0.ToBitmapStretch(DrawW, DrawH);
+                    Bmp = Image_0.ToBitmap(DrawW, DrawH);
                 }
                 else
                 {

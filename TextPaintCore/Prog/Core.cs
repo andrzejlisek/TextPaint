@@ -31,6 +31,7 @@ namespace TextPaint
         public Telnet Telnet_;
 
         public Stack<int> TempMemo = new Stack<int>();
+        public Stack<bool> TempMemoB = new Stack<bool>();
 
         public bool ToggleDrawText = true;
         public bool ToggleDrawColo = true;
@@ -125,14 +126,29 @@ namespace TextPaint
             return Dir;
         }
 
-        public Core()
+        void CreateColor256()
         {
-            CommandEndChar = TextWork.StrToInt(CommandEndChar_);
-
-            for (int i = 0; i < 16; i++)
-            {
-                Color256[i] = i;
-            }
+            int C11 = 63 - 1;
+            int C12 = 64 + 1;
+            int C21 = 191 - 1;
+            int C22 = 192 + 2;
+            int[] Val6 = new int[] { 0, 51, 102, 153, 204, 255 };
+            Color256[0] = AnsiColor16(0, 0, 0);
+            Color256[1] = AnsiColor16(255, C11, C11);
+            Color256[2] = AnsiColor16(C11, 255, C11);
+            Color256[3] = AnsiColor16(C21, C21, 0);
+            Color256[4] = AnsiColor16(C11, C11, 255);
+            Color256[5] = AnsiColor16(C21, 0, C21);
+            Color256[6] = AnsiColor16(0, C21, C21);
+            Color256[7] = AnsiColor16(128, 128, 128);
+            Color256[8] = AnsiColor16(127, 127, 127);
+            Color256[9] = AnsiColor16(255, C12, C12);
+            Color256[10] = AnsiColor16(C12, 255, C12);
+            Color256[11] = AnsiColor16(C22, C22, 0);
+            Color256[12] = AnsiColor16(C12, C12, 255);
+            Color256[13] = AnsiColor16(C22, 0, C22);
+            Color256[14] = AnsiColor16(0, C22, C22);
+            Color256[15] = AnsiColor16(255, 255, 255);
             for (int i_R = 0; i_R < 6; i_R++)
             {
                 for (int i_G = 0; i_G < 6; i_G++)
@@ -140,33 +156,40 @@ namespace TextPaint
                     for (int i_B = 0; i_B < 6; i_B++)
                     {
                         int i_ = i_R * 36 + i_G * 6 + i_B + 16;
-                        Color256[i_] = 0;
-                        if (i_B >= 3)
-                        {
-                            Color256[i_] = Color256[i_] + 4;
-                        }
-                        if (i_G >= 3)
-                        {
-                            Color256[i_] = Color256[i_] + 2;
-                        }
-                        if (i_R >= 3)
-                        {
-                            Color256[i_] = Color256[i_] + 1;
-                        }
-                        if ((i_R + i_G + i_B) >= 8)
-                        {
-                            Color256[i_] += 8;
-                        }
+                        Color256[i_] = AnsiColor16(Val6[i_R], Val6[i_G], Val6[i_B]);
                     }
                 }
             }
-            for (int i = 0; i < 6; i++)
-            {
-                Color256[232 + i] = 0;
-                Color256[238 + i] = 8;
-                Color256[244 + i] = 7;
-                Color256[250 + i] = 15;
-            }
+            Color256[232 + 0] = AnsiColor16(0, 0, 0);
+            Color256[232 + 1] = AnsiColor16(11, 11, 11);
+            Color256[232 + 2] = AnsiColor16(22, 22, 22);
+            Color256[232 + 3] = AnsiColor16(33, 33, 33);
+            Color256[232 + 4] = AnsiColor16(44, 44, 44);
+            Color256[232 + 5] = AnsiColor16(55, 55, 55);
+            Color256[232 + 6] = AnsiColor16(67, 67, 67);
+            Color256[232 + 7] = AnsiColor16(78, 78, 78);
+            Color256[232 + 8] = AnsiColor16(89, 89, 89);
+            Color256[232 + 9] = AnsiColor16(100, 100, 100);
+            Color256[232 + 10] = AnsiColor16(111, 111, 111);
+            Color256[232 + 11] = AnsiColor16(122, 122, 122);
+            Color256[232 + 12] = AnsiColor16(133, 133, 133);
+            Color256[232 + 13] = AnsiColor16(144, 144, 144);
+            Color256[232 + 14] = AnsiColor16(155, 155, 155);
+            Color256[232 + 15] = AnsiColor16(166, 166, 166);
+            Color256[232 + 16] = AnsiColor16(177, 177, 177);
+            Color256[232 + 17] = AnsiColor16(188, 188, 188);
+            Color256[232 + 18] = AnsiColor16(200, 200, 200);
+            Color256[232 + 19] = AnsiColor16(211, 211, 211);
+            Color256[232 + 20] = AnsiColor16(222, 222, 222);
+            Color256[232 + 21] = AnsiColor16(233, 233, 233);
+            Color256[232 + 22] = AnsiColor16(244, 244, 244);
+            Color256[232 + 23] = AnsiColor16(255, 255, 255);
+        }
+
+        public Core()
+        {
+            CommandEndChar = TextWork.StrToInt(CommandEndChar_);
+            //TestAttributeToColor();
         }
 
         List<List<int>> TextBuffer = new List<List<int>>();
@@ -1186,7 +1209,7 @@ namespace TextPaint
 
             TextCipher_ = new TextCipher(CF, this);
 
-            CurrentFileName_ = PrepareFileNameStr(CurrentFileName_);
+            CurrentFileName_ = PrepareFileName(CurrentFileName_);
 
             if ("".Equals(CurrentFileName_))
             {
@@ -1274,7 +1297,7 @@ namespace TextPaint
             TextColBuf.Clear();
             FileREnc = CF.ParamGetS("FileReadEncoding");
             FileWEnc = CF.ParamGetS("FileWriteEncoding");
-            FileReadChars = CF.ParamGetI("FileReadChars");
+            FileReadSteps = CF.ParamGetI("FileReadSteps");
             UseAnsiLoad = CF.ParamGetB("ANSIRead");
             UseAnsiSave = CF.ParamGetB("ANSIWrite");
             AnsiMaxX = CF.ParamGetI("ANSIWidth");
@@ -1289,12 +1312,17 @@ namespace TextPaint
 
             ANSIDOS = CF.ParamGetB("ANSIDOS");
             ANSIPrintBackspace = CF.ParamGetB("ANSIPrintBackspace");
+            ANSIPrintTab = CF.ParamGetB("ANSIPrintTab");
 
             AnsiTerminalResize(AnsiMaxX, AnsiMaxY);
 
             ANSIScrollChars = CF.ParamGetI("ANSIScrollChars");
             ANSIScrollBuffer = CF.ParamGetI("ANSIScrollBuffer");
             ANSIScrollSmooth = CF.ParamGetI("ANSIScrollSmooth");
+
+            ColorThresholdBlackWhite = CF.ParamGetI("ANSIColorThresholdBlackWhite");
+            ColorThresholdGray = CF.ParamGetI("ANSIColorThresholdGray");
+            CreateColor256();
 
             if (WorkMode == 2)
             {
@@ -1361,7 +1389,7 @@ namespace TextPaint
                         WinH__ = Console.WindowHeight;
                         if (WinH__ < 1) { WinH__ = 25; }
                     }
-                    Screen_ = new ScreenWindowAvalonia(this, CF.ParamGetI("WinFixed"), CF, WinW__, WinH__, ColorBlending, ColorBlendingConfig, false);
+                    Screen_ = new ScreenWindowGUI(this, CF.ParamGetI("WinFixed"), CF, WinW__, WinH__, ColorBlending, ColorBlendingConfig, false);
                     ((ScreenWindow)Screen_).SteadyCursor = CF.ParamGetB("WinSteadyCursor");
                 }
                 else
@@ -1411,6 +1439,24 @@ namespace TextPaint
                         EncodingListL = EncName.Length;
                     }
                 }
+                for (int _1 = 0; _1 < EncodingList.Count; _1++)
+                {
+                    for (int _2 = 0; _2 < EncodingList.Count; _2++)
+                    {
+                        if (EncodingCodePage[_1] < EncodingCodePage[_2])
+                        {
+                            int I = EncodingCodePage[_1];
+                            EncodingCodePage[_1] = EncodingCodePage[_2];
+                            EncodingCodePage[_2] = I;
+                            string S = EncodingList[_1];
+                            EncodingList[_1] = EncodingList[_2];
+                            EncodingList[_2] = S;
+                            List<int> L = EncodingInfo[_1];
+                            EncodingInfo[_1] = EncodingInfo[_2];
+                            EncodingInfo[_2] = L;
+                        }
+                    }
+                }
                 EncodingList.Insert(0, ("Items: " + EncodingList.Count).PadRight(EncodingListL));
                 EncodingInfo.Insert(0, null);
                 EncodingCodePage.Insert(0, -1);
@@ -1437,7 +1483,11 @@ namespace TextPaint
             }
             else
             {
-                Screen_ = new ScreenWindowAvalonia(this, 0, CF, 1, 1, ColorBlending, ColorBlendingConfig, true);
+                Screen_ = new ScreenWindowGUI(this, 0, CF, 1, 1, ColorBlending, ColorBlendingConfig, true);
+                RenderSliceX = CF.ParamGetI("RenderSliceX");
+                RenderSliceY = CF.ParamGetI("RenderSliceY");
+                RenderSliceW = CF.ParamGetI("RenderSliceW");
+                RenderSliceH = CF.ParamGetI("RenderSliceH");
                 RenderStart(CF.ParamGetS("RenderFile"), CF.ParamGetI("RenderStep"), CF.ParamGetI("RenderOffset"), CF.ParamGetI("RenderFrame"), CF.ParamGetB("RenderCursor"), CF.ParamGetS("RenderType"));
             }
         }
@@ -1839,7 +1889,7 @@ namespace TextPaint
             {
                 if ((WorkMode == 1) || (WorkMode == 2))
                 {
-                    Telnet_.CoreEvent(KeyName, KeyChar);
+                    Telnet_.CoreEvent(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
                 }
                 if (WorkMode == 3)
                 {
@@ -3011,57 +3061,6 @@ namespace TextPaint
         public void FileSave0_()
         {
             FileSave(CurrentFileName);
-        }
-
-        public static string PrepareFileNameStr(string NewFile_)
-        {
-            while ((NewFile_.Length > 0) && (TextWork.SpaceChars.Contains(NewFile_[0])))
-            {
-                NewFile_ = NewFile_.Substring(1);
-            }
-            while ((NewFile_.Length > 0) && (TextWork.SpaceChars.Contains(NewFile_[NewFile_.Length - 1])))
-            {
-                NewFile_ = NewFile_.Substring(0, NewFile_.Length - 1);
-            }
-            if (NewFile_.Length > 2)
-            {
-                if (((NewFile_[0] == '\"') && (NewFile_[NewFile_.Length - 1] == '\"')) || ((NewFile_[0] == '\'') && (NewFile_[NewFile_.Length - 1] == '\'')))
-                {
-                    NewFile_ = NewFile_.Substring(1);
-                    NewFile_ = NewFile_.Substring(0, NewFile_.Length - 1);
-                }
-                return NewFile_;
-            }
-            return "";
-        }
-
-        public string PrepareFileName(List<int> NewFile_)
-        {
-            while ((NewFile_.Count > 0) && (TextWork.SpaceChars.Contains(NewFile_[0])))
-            {
-                NewFile_.RemoveAt(0);
-            }
-            while ((NewFile_.Count > 0) && (TextWork.SpaceChars.Contains(NewFile_[NewFile_.Count - 1])))
-            {
-                NewFile_.RemoveAt(NewFile_.Count - 1);
-            }
-            if (NewFile_.Count > 2)
-            {
-                if (((NewFile_[0] == 34) && (NewFile_[NewFile_.Count - 1] == 34)) || ((NewFile_[0] == 39) && (NewFile_[NewFile_.Count - 1] == 39)))
-                {
-                    NewFile_.RemoveAt(0);
-                    NewFile_.RemoveAt(NewFile_.Count - 1);
-                }
-            }
-            if (NewFile_.Count > 0)
-            {
-                string NewFile = TextWork.IntToStr(NewFile_);
-                if (File.Exists(NewFile))
-                {
-                    return NewFile;
-                }
-            }
-            return "";
         }
 
         void FileLoad0()

@@ -52,7 +52,7 @@ namespace TextPaint
             }
         }
 
-        public int FontSizeCode(int S, int N)
+        public static int FontSizeCode(int S, int N)
         {
             switch (S)
             {

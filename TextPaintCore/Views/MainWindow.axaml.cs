@@ -28,7 +28,7 @@ public partial class MainWindow : Window
 
     void WinShown(object sender, EventArgs e)
     {
-        Program.ScreenWindowAvalonia_.StartAppFormFinish(this);
+        Program.ScreenWindowGUI_.StartAppFormFinish(this);
         ConsoleKeyCapture.AddHandler(KeyDownEvent, WinKey1, RoutingStrategies.Tunnel);
         ConsoleKeyCapture.AddHandler(TextInputEvent, WinKey2, RoutingStrategies.Tunnel);
         this.DoubleTapped += DbClick;
@@ -107,19 +107,19 @@ public partial class MainWindow : Window
             case "Pause":
             case "PageUp":
             case "PageDown":
-                Program.ScreenWindowAvalonia_.WinKey(KeyCode_, '\0', KeyShift_, KeyCtrl_, KeyAlt_);
+                Program.ScreenWindowGUI_.WinKey(KeyCode_, '\0', KeyShift_, KeyCtrl_, KeyAlt_);
                 break;
             case "Escape":
-                Program.ScreenWindowAvalonia_.WinKey(KeyCode_, (char)27, KeyShift_, KeyCtrl_, KeyAlt_);
+                Program.ScreenWindowGUI_.WinKey(KeyCode_, (char)27, KeyShift_, KeyCtrl_, KeyAlt_);
                 break;
             case "Tab":
-                Program.ScreenWindowAvalonia_.WinKey(KeyCode_, (char)9, KeyShift_, KeyCtrl_, KeyAlt_);
+                Program.ScreenWindowGUI_.WinKey(KeyCode_, (char)9, KeyShift_, KeyCtrl_, KeyAlt_);
                 break;
             case "Back":
-                Program.ScreenWindowAvalonia_.WinKey(KeyCode_, (char)8, KeyShift_, KeyCtrl_, KeyAlt_);
+                Program.ScreenWindowGUI_.WinKey(KeyCode_, (char)8, KeyShift_, KeyCtrl_, KeyAlt_);
                 break;
             case "Return":
-                Program.ScreenWindowAvalonia_.WinKey(KeyCode_, (char)13, KeyShift_, KeyCtrl_, KeyAlt_);
+                Program.ScreenWindowGUI_.WinKey(KeyCode_, (char)13, KeyShift_, KeyCtrl_, KeyAlt_);
                 break;
         }
     }
@@ -130,7 +130,7 @@ public partial class MainWindow : Window
         ConsoleKeyCapture.Text = "";
         for (int I = 0; I < Txt.Length; I++)
         {
-            Program.ScreenWindowAvalonia_.WinKey(KeyCode_, Txt[I], KeyShift_, KeyCtrl_, KeyAlt_);
+            Program.ScreenWindowGUI_.WinKey(KeyCode_, Txt[I], KeyShift_, KeyCtrl_, KeyAlt_);
         }
     }
 
