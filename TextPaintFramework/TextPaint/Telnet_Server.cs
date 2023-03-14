@@ -821,15 +821,32 @@ namespace TextPaint
                                 {
                                     Server_.Send(ServerEncoding.GetBytes(TextWork.IntToStr(FileCtX.GetRange(FilePos, CharsToSend))));
                                 }
-                                while (CharsToSend > 0)
+                                if (CharsToSend <= (DispBufferLen + DispBufferLen))
                                 {
-                                    DispBuffer.Add(FileCtX[FilePos]);
-                                    FilePos++;
-                                    CharsToSend--;
+                                    while (CharsToSend > 0)
+                                    {
+                                        DispBuffer.Add(FileCtX[FilePos]);
+                                        FilePos++;
+                                        CharsToSend--;
+                                    }
+                                    while (DispBuffer.Count > (DispBufferLen + DispBufferLen))
+                                    {
+                                        DispBuffer.RemoveRange(0, DispBufferLen);
+                                    }
                                 }
-                                while (DispBuffer.Count > (DispBufferLen + DispBufferLen))
+                                else
                                 {
-                                    DispBuffer.RemoveRange(0, DispBufferLen);
+                                    DispBuffer.Clear();
+                                    int StartI = Core_.AnsiState_.AnsiBufferI - DispBufferLen;
+                                    if (StartI < 0)
+                                    {
+                                        StartI = 0;
+                                    }
+                                    for (int i = StartI; i < Core_.AnsiState_.AnsiBufferI; i++)
+                                    {
+                                        DispBuffer.Add(FileCtX[i]);
+                                    }
+                                    FilePos = FilePos + CharsToSend;
                                 }
                                 MoviePos += WorkSeekAdvance;
                             }
@@ -891,16 +908,33 @@ namespace TextPaint
                                     BufL = BufI - 1;
                                 }
                                 BufI = BufI - DispBuffer.Count - 1;
-                                while (DispBuffer.Count <= BufL)
+                                if (CharsToSend <= (DispBufferLen + DispBufferLen))
                                 {
-                                    DispBuffer.Insert(0, FileCtX[BufI]);
-                                    BufI--;
+                                    while (DispBuffer.Count <= BufL)
+                                    {
+                                        DispBuffer.Insert(0, FileCtX[BufI]);
+                                        BufI--;
+                                    }
+                                    while (CharsToSend > 0)
+                                    {
+                                        DispBuffer.RemoveAt(DispBuffer.Count - 1);
+                                        FilePos--;
+                                        CharsToSend--;
+                                    }
                                 }
-                                while (CharsToSend > 0)
+                                else
                                 {
-                                    DispBuffer.RemoveAt(DispBuffer.Count - 1);
-                                    FilePos--;
-                                    CharsToSend--;
+                                    DispBuffer.Clear();
+                                    int StartI = Core_.AnsiState_.AnsiBufferI - DispBufferLen;
+                                    if (StartI < 0)
+                                    {
+                                        StartI = 0;
+                                    }
+                                    for (int i = StartI; i < Core_.AnsiState_.AnsiBufferI; i++)
+                                    {
+                                        DispBuffer.Add(FileCtX[i]);
+                                    }
+                                    FilePos = FilePos - CharsToSend;
                                 }
                                 if (Server_ != null)
                                 {
