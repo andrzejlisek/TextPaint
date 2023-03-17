@@ -67,7 +67,14 @@ namespace TextPaint
             }
             else
             {
-                return "_";
+                if (X == 0)
+                {
+                    return " ";
+                }
+                else
+                {
+                    return "#";
+                }
             }
         }
 
@@ -138,20 +145,9 @@ namespace TextPaint
             Ptr += 1;
             Field14TFlags += GetByte(Ptr);
             Ptr += 1;
-            bool NotZero = true;
             for (int i = 0; i < 22; i++)
             {
-                if (GetByte(Ptr) > 0)
-                {
-                    if (NotZero)
-                    {
-                        Field15TInfoS = Field15TInfoS + GetChar(Ptr);
-                    }
-                }
-                else
-                {
-                    NotZero = false;
-                }
+                Field15TInfoS = Field15TInfoS + GetChar(Ptr);
                 Ptr++;
             }
         }
@@ -186,10 +182,23 @@ namespace TextPaint
         public List<string> Info = new List<string>();
         public byte[] InfoRaw = null;
 
-        public void LoadRaw(byte[] Raw_)
+        List<string> NonSauceInfo1 = new List<string>();
+        List<string> NonSauceInfo2 = new List<string>();
+
+        public void NonSauceInfo(string Label, long Value)
+        {
+            NonSauceInfo(Label, Value.ToString());
+        }
+
+        public void NonSauceInfo(string Label, string Value)
+        {
+            NonSauceInfo1.Add(Label);
+            NonSauceInfo2.Add(Value);
+        }
+
+        public void CreateInfo()
         {
             InfoRaw = null;
-            Raw = Raw_;
             Exists = false;
             SauceIdx = -1;
             CommentIdx = -1;
@@ -222,6 +231,12 @@ namespace TextPaint
             Field15TInfoS = "";
             Comment.Clear();
             Info.Clear();
+
+            for (int i = 0; i < NonSauceInfo1.Count; i++)
+            {
+                Info.Add(NonSauceInfo1[i] + ": " + NonSauceInfo2[i]);
+            }
+            Info.Add("");
 
             if (SauceIdx >= 0)
             {
@@ -295,13 +310,13 @@ namespace TextPaint
                     case 0:
                         Info_ = Info_ + "AR:none, ";
                         break;
-                    case 1:
+                    case 8:
                         Info_ = Info_ + "AR:legacy, ";
                         break;
-                    case 2:
+                    case 16:
                         Info_ = Info_ + "AR:modern, ";
                         break;
-                    case 3:
+                    case 24:
                         Info_ = Info_ + "AR:unknown, ";
                         break;
                 }
@@ -310,13 +325,13 @@ namespace TextPaint
                     case 0:
                         Info_ = Info_ + "Sp:legacy, ";
                         break;
-                    case 1:
+                    case 2:
                         Info_ = Info_ + "Sp:8px, ";
                         break;
-                    case 2:
+                    case 4:
                         Info_ = Info_ + "Sp:9px, ";
                         break;
-                    case 3:
+                    case 6:
                         Info_ = Info_ + "Sp:unknown, ";
                         break;
                 }
@@ -340,6 +355,13 @@ namespace TextPaint
             {
                 Info.Add("SAUCE information not exists");
             }
+        }
+
+        public void LoadRaw(byte[] Raw_)
+        {
+            NonSauceInfo1.Clear();
+            NonSauceInfo2.Clear();
+            Raw = Raw_;
         }
     }
 }

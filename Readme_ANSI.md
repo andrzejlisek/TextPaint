@@ -249,7 +249,7 @@ You can use the following keys while animation display:
 * **Esc** \- Return to information screen\.
 * **Tab** \- Show or hide status bar\.
 * **\`** or **~** \- Change information displayed on the status bar\.
-* **Space** \- Show the SAUCE information\. For return, you have to press one of the following keys: **Space**, **Esc**, **Enter**, **Backspace**\.
+* **Space** \- Show the file information including SAUCE\. For return, you have to press one of the following keys: **Space**, **Esc**, **Enter**, **Backspace**\.
 * **Enter** \- Start or stop playing forward, according the **FileDelaySteps** and **FileDelayTime** parameters\.
 * **Backspace** \- Start or stop playing backward, according the **FileDelaySteps** and **FileDelayTime** parameters\.
 * **Up Arrow** and **Down Arrow** \- Move animation position by one step\.
@@ -537,7 +537,7 @@ When **ANSIDOS=0**, every character between **01h** to **1Fh** will be ignored i
 
 ## The standard sequences
 
-Every standard sequence begins with **1Bh** followed by \[ character and ends with any letter or one of the characters: **@** **\`** **\{** **\}** **~**\.
+Every standard sequence begins with **1Bh** followed by **\[** character and ends with any letter or one of the characters: **@** **\`** **\{** **\}** **~** **&#124;**\.
 
 The standard sequences with **?** charater and without parameters:
 
@@ -621,6 +621,8 @@ The standard sequences without **?** character and may contains parameters\. Whe
 | 1Bh \[ P1 ; P2 ; P3 ; P4 ; P5 $t | DECRARA | Change bold or blink or reverse in \(P1,P2,P3,P4\) rectangle to opposite state\. |
 | 1Bh \[ P1 ; P2 ; P3 ; P4 $\{ | DECSERA | Erase \(P1,P2,P3,P4\) rectangle \(unprotected characters only\)\. |
 | 1Bh \[ P1 " q | DECSCA | Enable \(P1=1\) or disable \(P1<>1\) character protection against DECSED, DECSEL, DECSERA\. |
+| 1Bh \[ 1 $ \} | DECSASD | Enter in "status bar" mode, character printing and CUP, HVP, SGR, HPA, HPR will be ignored\. |
+| 1Bh \[ 0 $ \} | DECSASD | Exit from "status bar" mode\. |
 
 ## The request\-response sequences
 
@@ -897,8 +899,8 @@ There is the TextPaint compatibility with VTTEST\. Some features, which will not
 | 11\.2\.5\.6 | Window Report \(DECRPDE\) | Fail |   |
 | 11\.2\.6 | Screen\-display functions |   |   |
 | 11\.2\.6\.2 | Status line \(DECSASD/DECSSDT\) |   |   |
-| 11\.2\.6\.2\.1 | Simple Status line Test | Fail | Status text displays on main screen\. |
-| 11\.2\.6\.2\.2 | Test Graphic\-Rendition in Status line | Fail | Status text displays on main screen\. |
+| 11\.2\.6\.2\.1 | Simple Status line Test | Pass | Status bar is not implemented and status bar commands are ignored\. |
+| 11\.2\.6\.2\.2 | Test Graphic\-Rendition in Status line | Pass | Status bar is not implemented and status bar commands are ignored\. |
 | 11\.3 | VT420 features |   |   |
 | 11\.3\.2 | Cursor\-movement |   |   |
 | 11\.3\.2\.7 | Back Index \(DECBI\) | Pass |   |

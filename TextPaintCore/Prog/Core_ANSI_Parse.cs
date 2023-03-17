@@ -973,6 +973,13 @@ namespace TextPaint
                 case "[0c": // Primary DA
                     __AnsiResponse.Add("[0c");
                     break;
+                case "[$}": // DECSASD
+                case "[0$}": // DECSASD
+                    AnsiState_.StatusBar = false;
+                    break;
+                case "[1$}": // DECSASD
+                    AnsiState_.StatusBar = true;
+                    break;
                 default:
                     AnsiProcess_CSI(AnsiCmd_);
                     break;
@@ -1065,47 +1072,49 @@ namespace TextPaint
                     break;
                 case 'H': // CUP
                 case 'f': // HVP
-                    if (AnsiParams.Length == 1)
+                    if (!AnsiState_.StatusBar)
                     {
-                        AnsiParams = new string[] { AnsiParams[0], "1" };
-                    }
-                    if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    if ("".Equals(AnsiParams[1])) { AnsiParams[1] = "1"; }
-                    AnsiState_.__AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
-                    AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
-                    if (AnsiState_.__AnsiY < 0)
-                    {
-                        AnsiState_.__AnsiY = 0;
-                    }
-                    if (AnsiState_.__AnsiX < 0)
-                    {
-                        AnsiState_.__AnsiX = 0;
-                    }
-                    if (AnsiState_.__AnsiOrigin)
-                    {
-                        AnsiState_.__AnsiY += AnsiState_.__AnsiScrollFirst;
-                    }
-                    AnsiState_.__AnsiX += AnsiProcessGetXMin(true);
-                    if (AnsiState_.__AnsiX >= AnsiMaxX)
-                    {
-                        AnsiState_.__AnsiX = AnsiMaxX - 1;
-                    }
-                    if (AnsiState_.__AnsiY >= AnsiMaxY)
-                    {
-                        AnsiState_.__AnsiY = AnsiMaxY - 1;
-                    }
-                    if (AnsiState_.__AnsiOrigin)
-                    {
-                        if (AnsiState_.__AnsiMarginLeftRight && (AnsiState_.__AnsiX >= AnsiState_.__AnsiMarginRight))
+                        if (AnsiParams.Length == 1)
                         {
-                            AnsiState_.__AnsiX = AnsiState_.__AnsiMarginRight - 1;
+                            AnsiParams = new string[] { AnsiParams[0], "1" };
                         }
-                        if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
+                        if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
+                        if ("".Equals(AnsiParams[1])) { AnsiParams[1] = "1"; }
+                        AnsiState_.__AnsiY = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1;
+                        AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[1], AnsiCmd_) - 1;
+                        if (AnsiState_.__AnsiY < 0)
                         {
-                            AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
+                            AnsiState_.__AnsiY = 0;
+                        }
+                        if (AnsiState_.__AnsiX < 0)
+                        {
+                            AnsiState_.__AnsiX = 0;
+                        }
+                        if (AnsiState_.__AnsiOrigin)
+                        {
+                            AnsiState_.__AnsiY += AnsiState_.__AnsiScrollFirst;
+                        }
+                        AnsiState_.__AnsiX += AnsiProcessGetXMin(true);
+                        if (AnsiState_.__AnsiX >= AnsiMaxX)
+                        {
+                            AnsiState_.__AnsiX = AnsiMaxX - 1;
+                        }
+                        if (AnsiState_.__AnsiY >= AnsiMaxY)
+                        {
+                            AnsiState_.__AnsiY = AnsiMaxY - 1;
+                        }
+                        if (AnsiState_.__AnsiOrigin)
+                        {
+                            if (AnsiState_.__AnsiMarginLeftRight && (AnsiState_.__AnsiX >= AnsiState_.__AnsiMarginRight))
+                            {
+                                AnsiState_.__AnsiX = AnsiState_.__AnsiMarginRight - 1;
+                            }
+                            if (AnsiState_.__AnsiY > AnsiState_.__AnsiScrollLast)
+                            {
+                                AnsiState_.__AnsiY = AnsiState_.__AnsiScrollLast;
+                            }
                         }
                     }
-
                     break;
                 case 'A': // CUU // SR
                     if (AnsiCmd_[AnsiCmd_.Length - 2] == ' ')
@@ -1180,12 +1189,18 @@ namespace TextPaint
                     break;
 
                 case '`': // HPA
-                    if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1 + AnsiProcessGetXMin(true);
+                    if (!AnsiState_.StatusBar)
+                    {
+                        if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
+                        AnsiState_.__AnsiX = AnsiProcess_Int(AnsiParams[0], AnsiCmd_) - 1 + AnsiProcessGetXMin(true);
+                    }
                     break;
                 case 'a': // HPR
-                    if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
-                    AnsiState_.__AnsiX += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    if (!AnsiState_.StatusBar)
+                    {
+                        if ("".Equals(AnsiParams[0])) { AnsiParams[0] = "1"; }
+                        AnsiState_.__AnsiX += AnsiProcess_Int(AnsiParams[0], AnsiCmd_);
+                    }
                     break;
 
                 case 'E': // CNL
@@ -1921,6 +1936,11 @@ namespace TextPaint
 
         void AnsiProcess_CSI_m(string[] AnsiParams)
         {
+            if (AnsiState_.StatusBar)
+            {
+                return;
+            }
+
             for (int i_ = 0; i_ < AnsiParams.Length; i_++)
             {
                 switch (AnsiParams[i_])
@@ -2177,40 +2197,45 @@ namespace TextPaint
 
         private void AnsiCharPrint(int TextFileLine_i)
         {
-            if (TextFileLine_i == 127)
+            if (AnsiState_.StatusBar)
             {
-                if (!ANSIDOS)
-                {
-                    return;
-                }
+                return;
             }
 
-            if ((!AnsiState_.__AnsiMusic) && (TextFileLine_i < 32) && (ANSIDOS))
-            {
-                switch (TextFileLine_i)
+                if (TextFileLine_i == 127)
                 {
-                    case 13:
-                    case 10:
-                    case 26:
-                        break;
-                    case 8:
-                        if (ANSIPrintBackspace)
-                        {
-                            TextFileLine_i = DosControl[TextFileLine_i];
-                        }
-                        break;
-                    case 9:
-                        if (ANSIPrintTab)
-                        {
-                            TextFileLine_i = DosControl[TextFileLine_i];
-                        }
-                        break;
-                    default:
-                        TextFileLine_i = DosControl[TextFileLine_i];
-                        break;
+                    if (!ANSIDOS)
+                    {
+                        return;
+                    }
                 }
-            }
-            AnsiCalcColor();
+
+                if ((!AnsiState_.__AnsiMusic) && (TextFileLine_i < 32) && (ANSIDOS))
+                {
+                    switch (TextFileLine_i)
+                    {
+                        case 13:
+                        case 10:
+                        case 26:
+                            break;
+                        case 8:
+                            if (ANSIPrintBackspace)
+                            {
+                                TextFileLine_i = DosControl[TextFileLine_i];
+                            }
+                            break;
+                        case 9:
+                            if (ANSIPrintTab)
+                            {
+                                TextFileLine_i = DosControl[TextFileLine_i];
+                            }
+                            break;
+                        default:
+                            TextFileLine_i = DosControl[TextFileLine_i];
+                            break;
+                    }
+                }
+                AnsiCalcColor();
             if ((TextFileLine_i >= 32))
             {
                 if (AnsiState_.__AnsiVT52)

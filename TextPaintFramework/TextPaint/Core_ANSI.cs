@@ -13,7 +13,7 @@ namespace TextPaint
         bool AnsiRingBell = true;
         bool AnsiScreenWork = true;
 
-        string CommandEndChar_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@`{}~";
+        string CommandEndChar_ = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz@`{}~|";
         List<int> CommandEndChar;
 
         public List<string> __AnsiResponse = new List<string>();
@@ -317,23 +317,24 @@ namespace TextPaint
                     }
                     Processed++;
 
-
+                    int CharToPrint = AnsiBuffer[AnsiState_.AnsiBufferI];
+                    AnsiState_.AnsiBufferI++;
                     if (AnsiState_.__AnsiCommand)
                     {
-                        if (AnsiBuffer[AnsiState_.AnsiBufferI] < 32)
+                        if (CharToPrint < 32)
                         {
-                            if (AnsiBuffer[AnsiState_.AnsiBufferI] == 27)
+                            if (CharToPrint == 27)
                             {
                                 AnsiState_.__AnsiCmd.Clear();
                             }
                             else
                             {
-                                AnsiCharPrint(AnsiBuffer[AnsiState_.AnsiBufferI]);
+                                AnsiCharPrint(CharToPrint);
                             }
                         }
                         else
                         {
-                            AnsiState_.__AnsiCmd.Add(AnsiBuffer[AnsiState_.AnsiBufferI]);
+                            AnsiState_.__AnsiCmd.Add(CharToPrint);
                             if (__AnsiTestCmd)
                             {
                                 if (AnsiState_.__AnsiCmd.Count > 20)
@@ -351,9 +352,9 @@ namespace TextPaint
                             }
                             else
                             {
-                                AnsiProcess_Fixed(AnsiBuffer[AnsiState_.AnsiBufferI]);
+                                AnsiProcess_Fixed(CharToPrint);
 
-                                if (AnsiState_.__AnsiCommand && (AnsiState_.__AnsiCmd[0] != ']') && (AnsiState_.__AnsiCmd.Count >= 2) && (CommandEndChar.Contains(AnsiBuffer[AnsiState_.AnsiBufferI])))
+                                if (AnsiState_.__AnsiCommand && (AnsiState_.__AnsiCmd[0] != ']') && (AnsiState_.__AnsiCmd.Count >= 2) && (CommandEndChar.Contains(CharToPrint)))
                                 {
                                     AnsiState_.__AnsiCommand = false;
                                     string AnsiCmd_ = TextWork.IntToStr(AnsiState_.__AnsiCmd);
@@ -394,7 +395,7 @@ namespace TextPaint
                     }
                     else
                     {
-                        if (AnsiBuffer[AnsiState_.AnsiBufferI] == 27)
+                        if (CharToPrint == 27)
                         {
                             AnsiState_.__AnsiCmd.Clear();
                             AnsiState_.__AnsiCommand = true;
@@ -403,15 +404,14 @@ namespace TextPaint
                         {
                             if (AnsiState_.__AnsiDCS_)
                             {
-                                AnsiState_.__AnsiDCS = AnsiState_.__AnsiDCS + TextWork.IntToStr(AnsiBuffer[AnsiState_.AnsiBufferI]);
+                                AnsiState_.__AnsiDCS = AnsiState_.__AnsiDCS + TextWork.IntToStr(CharToPrint);
                             }
                             else
                             {
-                                AnsiCharPrint(AnsiBuffer[AnsiState_.AnsiBufferI]);
+                                AnsiCharPrint(CharToPrint);
                             }
                         }
                     }
-                    AnsiState_.AnsiBufferI++;
                     if (AnsiState_.__AnsiAdditionalChars == 0)
                     {
                         ProcessCount--;

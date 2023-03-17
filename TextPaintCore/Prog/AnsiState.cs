@@ -33,6 +33,8 @@ namespace TextPaint
         public int __AnsiX = 0;
         public int __AnsiY = 0;
 
+        public bool StatusBar = true;
+
         public int __AnsiBack_ = -1;
         public int __AnsiFore_ = -1;
         public int __AnsiX_ = 0;
@@ -174,6 +176,8 @@ namespace TextPaint
 
         public void Reset(int AnsiMaxX, int AnsiMaxY)
         {
+            StatusBar = false;
+
             PrintCharCounter = 0;
             PrintCharCounterOver = 0;
             PrintCharInsDel = 0;
@@ -314,6 +318,8 @@ namespace TextPaint
             Dst.__AnsiNoWrap = Src.__AnsiNoWrap;
             Dst.__AnsiDCS = Src.__AnsiDCS;
             Dst.__AnsiDCS_ = Src.__AnsiDCS_;
+
+            Dst.StatusBar = Src.StatusBar;
 
             Dst.VT100_SemigraphDef[0] = Src.VT100_SemigraphDef[0];
             Dst.VT100_SemigraphDef[1] = Src.VT100_SemigraphDef[1];

@@ -518,6 +518,13 @@ namespace TextPaint
                 Core_.AnsiProcessSupply(FileCtX);
                 MovieLength = Core_.AnsiProcess(-1);
             }
+            AnsiSauce_.NonSauceInfo("Steps", MovieLength);
+            AnsiSauce_.NonSauceInfo("Characters", Core_.AnsiState_.AnsiBufferI);
+            AnsiSauce_.NonSauceInfo("Overwrites/writes", Core_.AnsiState_.PrintCharCounterOver + "/" + Core_.AnsiState_.PrintCharCounter);
+            AnsiSauce_.NonSauceInfo("Inserts and deletes", Core_.AnsiState_.PrintCharInsDel);
+            AnsiSauce_.NonSauceInfo("Scrolls", Core_.AnsiState_.PrintCharScroll);
+
+            AnsiSauce_.CreateInfo();
             MoviePos = 0;
             Core_.AnsiProcessReset(true, true, 2);
             Core_.AnsiProcessSupply(FileCtX);
@@ -701,7 +708,7 @@ namespace TextPaint
                             Screen_WriteLine();
                             Screen_WriteText("[~][`] - Change status information");
                             Screen_WriteLine();
-                            Screen_WriteText("Space - Show SAUCE info");
+                            Screen_WriteText("Space - File information");
                             Screen_WriteLine();
                             Screen_WriteText("Enter - Play/stop forward");
                             Screen_WriteLine();
