@@ -94,16 +94,76 @@ namespace TextPaint
             switch (FontName)
             {
                 case "GenericSerif":
-                    WinFont = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Regular);
+                    WinFont[0x00] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Regular);
+                    WinFont[0x01] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold);
+                    WinFont[0x02] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Italic);
+                    WinFont[0x03] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Italic);
+                    WinFont[0x04] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Underline);
+                    WinFont[0x05] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Underline);
+                    WinFont[0x06] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x07] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x08] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Strikeout);
+                    WinFont[0x09] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Strikeout);
+                    WinFont[0x0A] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0B] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0C] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0D] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0E] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0F] = new Font(FontFamily.GenericSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
                     break;
                 case "GenericSansSerif":
-                    WinFont = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Regular);
+                    WinFont[0x00] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Regular);
+                    WinFont[0x01] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold);
+                    WinFont[0x02] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Italic);
+                    WinFont[0x03] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Italic);
+                    WinFont[0x04] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Underline);
+                    WinFont[0x05] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Underline);
+                    WinFont[0x06] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x07] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x08] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Strikeout);
+                    WinFont[0x09] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Strikeout);
+                    WinFont[0x0A] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0B] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0C] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0D] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0E] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0F] = new Font(FontFamily.GenericSansSerif, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
                     break;
                 case "GenericMonospace":
-                    WinFont = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Regular);
+                    WinFont[0x00] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Regular);
+                    WinFont[0x01] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold);
+                    WinFont[0x02] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Italic);
+                    WinFont[0x03] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Italic);
+                    WinFont[0x04] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Underline);
+                    WinFont[0x05] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Underline);
+                    WinFont[0x06] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x07] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x08] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Strikeout);
+                    WinFont[0x09] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Strikeout);
+                    WinFont[0x0A] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0B] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0C] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0D] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0E] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0F] = new Font(FontFamily.GenericMonospace, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
                     break;
                 default:
-                    WinFont = new Font(FontName, FontSize, FontStyle.Regular);
+                    WinFont[0x00] = new Font(FontName, FontSize, FontStyle.Regular);
+                    WinFont[0x01] = new Font(FontName, FontSize, FontStyle.Bold);
+                    WinFont[0x02] = new Font(FontName, FontSize, FontStyle.Italic);
+                    WinFont[0x03] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Italic);
+                    WinFont[0x04] = new Font(FontName, FontSize, FontStyle.Underline);
+                    WinFont[0x05] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Underline);
+                    WinFont[0x06] = new Font(FontName, FontSize, FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x07] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline);
+                    WinFont[0x08] = new Font(FontName, FontSize, FontStyle.Strikeout);
+                    WinFont[0x09] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Strikeout);
+                    WinFont[0x0A] = new Font(FontName, FontSize, FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0B] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Strikeout);
+                    WinFont[0x0C] = new Font(FontName, FontSize, FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0D] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0E] = new Font(FontName, FontSize, FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
+                    WinFont[0x0F] = new Font(FontName, FontSize, FontStyle.Bold | FontStyle.Italic | FontStyle.Underline | FontStyle.Strikeout);
                     break;
             }
             WinStrFormat = new StringFormat();
@@ -113,7 +173,7 @@ namespace TextPaint
             WinStrFormat.FormatFlags = StringFormatFlags.NoWrap;
         }
 
-        public void DrawText(float X, float Y, float W, float H, float ScaleH, float ScaleV, string T, byte R, byte G, byte B)
+        public void DrawText(float X, float Y, float W, float H, float ScaleH, float ScaleV, string T, byte R, byte G, byte B, bool FontB, bool FontI, bool FontU, bool FontS)
         {
             try
             {
@@ -135,7 +195,13 @@ namespace TextPaint
                         BmpG.TextRenderingHint = System.Drawing.Text.TextRenderingHint.ClearTypeGridFit;
                         break;
                 }
-                BmpG.DrawString(T, WinFont, new SolidBrush(Color.FromArgb(R, G, B)), new RectangleF(X, Y, W, H), WinStrFormat);
+                float RectExp = 0;
+                if (FontU || FontS)
+                {
+                    T = "|     " + T + "     |";
+                    RectExp = BmpG.MeasureString(T, WinFont[15], 1000).Width;
+                }
+                BmpG.DrawString(T, WinFont[(FontB ? 1 : 0) + (FontI ? 2 : 0) + (FontU ? 4 : 0) + (FontU ? 8 : 0)], new SolidBrush(Color.FromArgb(R, G, B)), new RectangleF(X - RectExp, Y, W + RectExp + RectExp, H), WinStrFormat);
 
                 BitmapData Bmp_ = ToBitmapBmp.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadWrite, ColorDataFormat);
                 System.Runtime.InteropServices.Marshal.Copy(Bmp_.Scan0, Data, 0, DataLength);
@@ -148,7 +214,7 @@ namespace TextPaint
         }
 
         int WinCharRender = 0;
-        private Font WinFont;
+        private Font[] WinFont = new Font[16];
         private StringFormat WinStrFormat;
         private Bitmap ToBitmapBmp;
     }

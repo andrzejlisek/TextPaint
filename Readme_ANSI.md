@@ -49,23 +49,25 @@ The following parameters are especially related to creating or interpreting ANSI
   * **2** \- Ommic LF character\.
 * **ANSIWidth** \- Width of ANSI virtual screen \(not to be confused with **WinW** parameter\) for **WorkMode=0** and **WorkMode=4**\. If not set, the default is **80**\.
 * **ANSIHeight** \- Height of ANSI virtual screen \(not to be confused with **WinH** parameter\) for **WorkMode=0** and **WorkMode=4**\. If not set, the default is **24** \(when **ANSIDOS=0**\) or **25** \(when **ANSIDOS=1**\)\.
+* **ANSIAutoSize** \- Automatically resize screen according the DECCOLM, DECSNLS and XTWINOPS commands\. Requires **WinFixed>0** for **WorkMode=1** and **WorkMode=2**\.
 * **ANSIBufferAbove** \- Use extending buffer above the screen, affects in **WorkMode=0** and **WorkMode=4**\.
 * **ANSIBufferBelow** \- Use extending buffer below the screen, affects in **WorkMode=0** and **WorkMode=4**\.
 * **ANSIDOS** \- Use DOS behavior instead of standard VTxxx/ANSI\-derivative behavior, there are some differences, which affects correctness of ANSI display depending on source\.
-* **ANSIIgnoreBlink** \- Ignore blink attribute while interpreting ANSI data\. Some ANSI files was created assuming that terminal displays blinking text as steady text on bright background\. Some other ANSI files was created assuming terminal displays text as blinking and this attribute should be ignored while TextPaint does not support other attributes than colors of background and text\.
-* **ANSIIgnoreBold** \- Ignore bold attribute while interpreting ANSI data\.
-* **ANSIIgnoreConcealed** \- Ignore concealed \(hidden, invisible\) attribute while interpreting ANSI data\.
+* **ANSI8bit** \- Allow for 8\-bit control characters\. These characters has number between **80h** and **9Fh** and are the equivalent for **1Bh** followed by character numbered between **20h** and **3Fh**\. Set to **1** only if neccesary, for compatibility with some animations and remote services\.
+* **ANSIColor** \- Use ANSI colors\. You can disable using the ANSI colors for simulate monochrome terminal, which does not support the colors\.
 * **ANSIReverseMode** \- Mode for reverse color:
-  * **0** \- Before bold and blink \- compatible with DOS, usable in most cases\.
-  * **1** \- After bold and blink \- with **ANSIIgnoreBlink=1** is more close to original VTxxx terminal\.
+  * **0** \- No reverse \- ignore reverse attribute\.
+  * **1** \- Before bold and blink \- compatible with most ANSI files for DOS\.
+  * **2** \- After bold and blink \- compatible with original VTxxx terminals for Telnet/SSH session with Unix, Linux and MacOS\.
+* **ANSIColorBold** \- Interpret bold attribute as text color\. Some ANSI files was created assuming that terminal displays bold text as bright color\.
+* **ANSIColorBlink** \- Interpret blink attribute as background color\. Some ANSI files was created assuming that terminal displays blinking text as steady text on bright background\. Some other ANSI files was created assuming terminal displays text as blinking\.
+* **ANSIIgnoreConcealed** \- Ignore concealed \(hidden, invisible\) attribute while interpreting ANSI data\.
 * **ANSIPrintBackspace** \- Print backspace character \(while **ANSIDOS=1**\) or ignore backspace character \(while **ANSIDOS=0**\) instead of moving cursor backward\.
 * **ANSIPrintTab** \- Print tab character \(while **ANSIDOS=1**\) or ignore tab character \(while **ANSIDOS=0**\) instead of moving cursor to nearest tab stop\.
 * **ANSIWrite** \- Save colors as ANSI escape codes using key **F7** in **WorkMode=0**:
   * **0** \- Write file as plain text, ommiting colors\.
   * **1** \- Write file as ANSI text including color definition\.
-* **ANSIWriteBold** \- Use bold attribute instead of color attribute for save high intensity foreground color, work only while **ANSIWrite=1**\.
-* **ANSIWriteBlink** \- Use blink attribute instead of color attribute for save high intensity background color, work only while **ANSIWrite=1**\.
-* **ANSICharsDOS** \- List of 32 replacement character codes, to use as printable of characters from **00h** to **31h** while **DOSMODE=1**\.
+* **ANSICharsDOS** \- List of 32 replacement character codes, to use as printable of characters from **00h** to **31h** while **ANSIDOS=1**\.
 * **ANSICharsVT100** \- List of 32 replacement character codes, to use as VT100 graphics characters from **5Fh** to **7Eh**\.
 * **ANSICharsVT52** \- List of 32 replacement character codes, to use as VT52 graphics characters from **5Fh** to **7Eh**\.
 * **ANSIScrollSmooth** \- Display smooth scroll when smooth scroll state is set\. This parameter may have following values:
@@ -164,11 +166,11 @@ In the **WorkMode=1**, TextPaint ignores all data sent from client\.
 
 In the **WorkMode=2**, TextPaint redirects all data sent from all clients into connection\.
 
-# DOS vs\. standard terminal
+# DOS vs\. VTx terminal
 
 Older ANSI files uses features of DOS terminal, which works slightly differently than standard VTx/ANSI terminal\. The differences cannot be accomodate with each other, because the same data sequence \(text with escape codes\) giver different result\. In the table below, there are all differences:
 
-| Feature | ANSIDOS=0 | ANSIDOS=1 |
+| Feature | VTx/Unix data \- ANSIDOS=0 | ANSI/DOS data \- ANSIDOS=1 |
 | --- | --- | --- |
 | Text wrapping\. | After writing character at the last column, cursor remains at the same line\. The cursor jumps into beginning of next line only after writing one more character and this character will be written at the first column\. | After writing character at the last column, cursor immediately jumps into beginning of next line\. |
 | Characters from **00h** to **1Fh**, excluding from **05h**, **07h** to **0Dh**, **1Ah**, **1Bh**\. | Character will be ignored\. | Character will be written using assigned printable character according standard DOS character glyph for control characters\. |
@@ -185,6 +187,26 @@ Older ANSI files uses features of DOS terminal, which works slightly differently
 | Sequence **1Bh \[ x M** | Scroll **x** lines down\. | Enter into music state\. |
 | Sequence **1Bh \[ x C** | Move cursor right, if **x** exceedes distance to the last column, leave cursor at the last column\. | Move cursor right, if **x** exceedes distance to the last column, jump to begining of next line and move remaining value from begining of next line\. |
 | Sequence **1Bh \[ 2 J** | Clear screen only\. | Clear screen and move cursor to upper left corner\. |
+
+## Recommended display settings
+
+The difference between DOS and VTx data implies different values for some parameters\. Below there are listed recommended values in most cases, but you can use other values:
+
+| Parameter | Value for VTx/Unix | Value for ANSI/DOS |
+| --- | --- | --- |
+| ANSIDOS | 0 | 1 |
+| ANSI8bit | Usually 0, sometimes may require 1 | 0 |
+| ANSIPrintBackspace | 0 | Usually 0, sometimes 1 |
+| ANSIPrintTab | 0 | Usually 0, sometimes 1 |
+| ANSIReadCR | Usually 0, sometimes 2 | 0 |
+| ANSIReadLF | Usually 0, sometimes 1 | 0 |
+| DisplayBlink | 1 | 0 or 2 \(depending on data\) |
+| DisplayAttrib | 15 | 0 |
+| ANSIColors | 1 | 1 |
+| ANSIReverseMode | 2 | 1 |
+| ANSIColorBold | 0 | 1 |
+| ANSIColorBlink | 0 | 0 or 1 \(depending on data\) |
+| ANSIIgnoreConcealed | 0 | 0 |
 
 ## Music state
 
@@ -248,7 +270,7 @@ You can use the following keys while animation display:
 
 * **Esc** \- Return to information screen\.
 * **Tab** \- Show or hide status bar\.
-* **\`** or **~** \- Change information displayed on the status bar\.
+* **\`** \- Change information displayed on the status bar\.
 * **Space** \- Show the file information including SAUCE\. For return, you have to press one of the following keys: **Space**, **Esc**, **Enter**, **Backspace**\.
 * **Enter** \- Start or stop playing forward, according the **FileDelaySteps** and **FileDelayTime** parameters\.
 * **Backspace** \- Start or stop playing backward, according the **FileDelaySteps** and **FileDelayTime** parameters\.
@@ -256,10 +278,11 @@ You can use the following keys while animation display:
 * **Left Arrow** and **Right Arrow** \- Move animation position by steps defined as **FileDelaySteps**\.
 * **Home** \- Move into animation begin\.
 * **End** \- Move into animation end\.
-* **\+** or **=** \- Increase playing speed\.
-* **\-** or **\_** \- Decrease playing speed\.
-* **\*** or **/** \- Reset playing speed\.
+* **\]** \- Increase playing speed\.
+* **\[** \- Decrease playing speed\.
+* **/** \- Reset playing speed\.
 * **Page Up** or **Page Down** \- Prowse for previous or next file\.
+* **\\** \- ANSI processing parameters and display configuration\.
 
 In order to quit application, ples the **Esc** key to return to information and press **Tab** key to quit\.
 
@@ -317,12 +340,12 @@ The most ANSI files can be classified into three categories:
 
 * Still picture, which size is in the screen size \(usually 80x24 or 80x25\)\.
 * Still picture, which size exceedes the screen size vertically \(at the end of play, the bottom part is visible\)\.
-* Animation created using ANSI/vtxxx commands\.
+* Animation created using ANSI/VTxxx commands\.
 
 There is no way to distinguisg there types, but **TextPaint** counts some operations, which allows to suppose \(but without sure\), what is the file kind:
 
 
-* **Character overwrites** \- Occurs very frequently in animations, but rather not occurs in still pictures\. You have to count both overwrites and all characters prints for compare\. The character print will be classified as overwrite, where meets at least one of following conditions when comparing to previous character in the same place:
+* **Character overwrites** \- Occurs very frequently in animations, but rather not occurs in still pictures\. You have to count both overwrites and all characters prints for compare\. The character print will be classified as overwrite, where meets at least one of following conditions when comparing to previous character in the same place \(the font attribues such as bold or underline are treated as foreground color\):
   * Previous character is not a space and next character is different to previous character\.
   * Previous character is not a space and the foreground color is not a default color and the next foreground color is different to previous color\.
   * The background color is not a default color and the next background color is different to previous color\.
@@ -352,30 +375,39 @@ During the session, if you press the selected escape key, the information window
 * **Enter** \- Change escape key\.
 * **Tab** \- Move information window\.
 * **Backspace** \- Quit from application\.
-* **Space** \- Switch number key \(number from **1** to **9** followed by **0**\) function between three states:
+* **=** or **;** or **:** \- Switch number key \(number from **1** to **9** followed by **0**\) function between six states:
   * **State 1** \- Send keys from **F1** to **F10**\.
   * **State 2** \- Send keys from **F11** to **F20**\.
   * **State 3** \- Use **\[** and **\]** keys to send the **AnswerBack** message and use the number keys to send as following:
-    * **Number 1** \- NUL \(00h\) \- **Ctrl**\+**Space**\.
-    * **Number 2** \- ESC \(1Bh\) \- **Ctrl**\+**\[**\.
-    * **Number 3** \- FS \(1Ch\) \- **Ctrl**\+**\\**\.
-    * **Number 4** \- GS \(1Dh\) \- **Ctrl**\+**\]**\.
-    * **Number 5** \- RS \(1Eh\) \- **Ctrl**\+**^**\.
-    * **Number 6** \- US \(1Fh\) \- **Ctrl**\+**\_**\.
-* **\[** \- Send **F11** key or **AnswerBack** message\.
-* **\]** \- Send **F12** key or **AnswerBack** message\.
+    * **Number 2** \- NUL \(00h\) \- **Ctrl**\+**2**, **Ctrl**\+**@**, **Ctrl**\+**Space**\.
+    * **Number 3** \- ESC \(1Bh\) \- **Ctrl**\+**3**, **Ctrl**\+**\[**, **Ctrl**\+**\{**\.
+    * **Number 4** \- FS \(1Ch\) \- **Ctrl**\+**4**, **Ctrl**\+**\\**, **Ctrl**\+**&#124;**\.
+    * **Number 5** \- GS \(1Dh\) \- **Ctrl**\+**5**, **Ctrl**\+**\]**, **Ctrl**\+**\}**\.
+    * **Number 6** \- RS \(1Eh\) \- **Ctrl**\+**6**, **Ctrl**\+**^**, **Ctrl**\+**~**\.
+    * **Number 7** \- US \(1Fh\) \- **Ctrl**\+**7**, **Ctrl**\+**\_**, **Ctrl**\+**/**\.
+    * **Number 8** \- DEL \(7Fh\) \- **Ctrl**\+**8**, **Ctrl**\+**?**\.
+  * **State 4**, **State 5** and **State 6** \- The same as three first states, there are available other keys for send control codes instead of some functions\.
+* **<** \- Send **F11** key or **AnswerBack** message\.
+* **>** \- Send **F12** key or **AnswerBack** message\.
 * **Letter** \- Send letter with Ctrl modifier, like Ctrl\+X\.
-* / \- Connect od disconnect, depending on current state\.
-* **\\** \- Send screen size to server, some servers requires such information\.
-* **\+** or **=** or **\-** or **\*** \- Change codes for function keys, arrows, and position keys\. Theere are the following settings:
+* **\{** or **\}** \- Change codes for function keys, arrows, and position keys, detailed in **Key codes** subchapter\. Theere are the following settings:
   * **1** \- **Arrow** keys \- two variants\.
   * **2** \- Keys from **F1** to **F4** \- two variants\.
   * **3** \- Keys from **F5** to **F12** \- two variants\.
-  * **4** \- Edit keys \(**Ins**, **Del**, **Home**, **End**, **PgUp**, **PgDown**\) \- three variants\.
+  * **4** \- Navigation keys \(**Ins**, **Del**, **Home**, **End**, **PgUp**, **PgDown**\) \- three variants\.
   * **5** \- **Enter** key \- three variants\.
   * **6** \- **Backspace** key \- two variants\.
   * **7** \- **Numpad** keys \- two variants\.
-* **\`** or **~** \- Enable or disablo local echo\. While enabled, all printable characters, **Enter** and **Backspace** key will be send both to server and to terminal\.
+* **\[** or **\]** \- Enable forcing modifier keys \(Control, Alt, Shift\) for function keys, navigation keys and arrows\. Usable when pressing such key with modifier is neccesary for appliaction, but **TextPaint** does not receive such combination:
+  * **1** \- Force Control\.
+  * **2** \- Force Alt\.
+  * **3** \- Force Shift\.
+* / \- Connect od disconnect, depending on current state\.
+* **?** \- Send screen size to server, some servers requires such information\.
+* **\`** \- Enable or disablo local echo\. While enabled, all printable characters, **Enter** and **Backspace** key will be sent both to server and to terminal\.
+* **\\** \- ANSI processing parameters and display configuration\.
+* **,** \- Copy screen to system clipboard as plain text\. The leading and trailing blank lines will be ommited\.
+* **\.** \- Paste text from system clipboard as keystrokes\.
 
 ![](Readme/2_06.png "")
 
@@ -384,20 +416,20 @@ During the session, if you press the selected escape key, the information window
 **TextPaint** has some limitations compared to other Telnet/SSH software due to architecture and appleid approaches:
 
 
-* Screen size change on server demand \(like switch between 80 and 132 columns\) is not possible\.
-* If server demand some information via escape sequence, the client responds for some requests only \(this feature is necessary very rarely\)\.
 * Limited compatibility with VTxxx/ANSI terminals, the compatibility is sufficient in most cases\.
 * SSH relys on the Renci SSH\.NET library\. This library does not support terminal resize and sending screen size causes shell restart\.
-* TextPaint recognizes XTERM 256 colors, but these colors are converted to standard 16 colors\.
-* The bold, blink and underline will not be show explicity and will be displayed as following by default:
-  * **Bold** \- brighter foreground color, usable with some ANSI files\.
-  * **Blink** \- brighter background color, usable with some ANSI files\.
-  * **Underline** \- not displayed\.
-* Within the DECCARA and DECRARA command, the bold and blink state is determined based on colors\. If not color is uset, the detection is correct, otherwise, its may incorrect in certain color combinations\.
+* TextPaint recognizes XTERM 256 colors and 24\-bit RGB, but these colors are converted to standard 16 colors\.
+* XTERM mouse is not supported\.
+* For XTWINOPS command, there are assumptions and limitations:
+  * Cell size in pixels for reporting and changing window size is always 8x16\.
+  * Reported window position is always \(0,0\)\.
+  * Reported window state is always normal\.
+  * Resizing is the only command taking any effect\.
+  * Other commands \(iconify/deiconify, set position, raise/lower\) does not work, but not matter for any application/service\.
 
 ## Key codes
 
-The telnet client has several control code sets for some special keys to achieve compatibility with most services\. The initial setting is defined by **TerminalKeys** setting\. this parameter consists of 4 digits:
+The telnet client has several control code sets for some special keys to achieve compatibility with most services\. The initial setting is defined by **TerminalKeys** setting\. this parameter consists of 7 digits:
 
 
 1. Arrows \- **0** or **1**
@@ -453,6 +485,14 @@ There is keys and codes, which will sent to server for each possible setting:
 
 During session, you can change the key assignment\. Press the escape key to show the information window\. If you press the **\+** or **=** key, you will mowe the marker across the digits in cycle\. If you press the **\-** or **\*** key, you will change the digit across all possible values\. Then, if you close the information window by **Esc** key, the key assignment will be changed immediately\.
 
+## Key modifiers
+
+Function keys \(F1\-F12\), cursor keys \(arrows\) and navigation keys \(Insert, Delete, Home, End, PageUp, PageDown\) should send different code when pressed with modifier \(Shift, Ctrl, Alt\)\. In some cases, pressing such key is not possible, depending on operating system and application mode \(console or window\)\.
+
+You can set, that every pressed key will be treated as with modifier\. In the popup windo, you can enable or disable such modifier key\.
+
+For example, assume, that you enable the Control modifier\. If you press the **F1** key \(od **1** key during displaying the popup\), **TextPaint** will sent the code appropiate for **Ctrl\+F1**\. If you press **Shift\+F1**, **TextPaint** will send code for **Control\+Shift\+F1**\.
+
 ## Recording and playing session
 
 You can run Telnet client with session recording to Session\.ans using 100ms resolution \(10 frames per second\) with unlimited data per step:
@@ -473,6 +513,53 @@ You can render this session to movie \(picture sequence\), to achieve original s
 TextPaint Session.ans WorkMode=4 ANSIRead=1 RenderFile=MoviePath RenderStep=10000 RenderFrame=10000
 ```
 
+# ANSI processing parameters and display configuration
+
+**TextPaint** allows to change parameters of ANSI processing or display\.
+
+![](Readme/2_07.png "")
+
+At the top of the window, there are the current screen \(not to be confused with ANSI virtual screen size used in **WorkMode=0**\)\. There are the following keys on the keyboard:
+
+
+* **Left Arrow** and **Right Arrow** \- Change screen width by 1\.
+* **Home** and **End** \- Change screen width by 10\.
+* **Up Arrow** and **Down Arrow** \- Change screen height by 1\.
+* **PageUp** and **PageDown** \- Change screen height by 10\.
+* **Space** \- Enable and disable automatically screen size change by appropiate commands in ANSI data\. In **WorkMode=0**, this affects in the virtual screen working\.
+
+The screen size will be changed after closing the settings by **Enter** or **Esc** key\.
+
+Below the screen size, letter is the key, which changes there parameter\. For example, for change the **Process mode**, you have to press the **K** key\. These parameters are divided into three sections, every parameter has the **config\.txt** equivalent:
+
+
+* **ANSI processing** \- does not affect just processed contents, affects for new data only:
+  * **Process mode** \- ANSIDOS \- **0**=VTx, **1**=DOS
+  * **8\-bit controls** \- ANSI8bit \- **0**=No, **1**=Yes\.
+  * **Backspace** \- ANSIPrintBackspace \- **0**=Movement, **1**=Character\.
+  * **Tab** \- ANSIPrintTab \- **0**=Movement, **1**=Character\.
+  * **CR** \- ANSIReadCR \- **0**=CR, **1**=CR\+LF, **2**=Ignore\.
+  * **LF** \- ANSIReadLF \- **0**=LF, **1**=CR\+LF, **2**=Ignore\.
+* **Converting attributes to colors** \- colors as ANSI colors and attributes, affects immediately after change:
+  * **Use colors** \- ANSIColors \- **0**=No, **1**=Yes\.
+  * **Reverse mode** \- ANSIReverseMode \- **0**=None, **1**=Before, **2**=After\.
+  * **Bold as color** \- ANSIColorBold \- **0**=No, **1**=Yes\.
+  * **Blink as color** \- ANSIColorBlink \- **0**=No, **1**=Yes\.
+  * **Ignore concealed** \- ANSIIgnoreConcealed \- **0**=No, **1**=Yes\.
+* **Attribute display** \- text format display, affects immediately after change:
+  * **Blink** \- DisplayBlink \- **0**=None, **1**=VTx, **2**=DOS\.
+  * **Bold** \- DisplayAttrib \- **0**=No, **1**=Yes \- for the first LSB bit\.
+  * **Italic** \- DisplayAttrib \- **0**=No, **1**=Yes \- for the second LSB bit\.
+  * **Underline** \- DisplayAttrib \- **0**=No, **1**=Yes \- for the third LSB bit\.
+  * **Strikethrough** \- DisplayAttrib \- **0**=No, **1**=Yes \- for the fourth LSB bit\.
+
+For exit from this function, you have to press the **Enter** or **Esc** key\. The parameters of the first section affects depending on the current **WorkMode**:
+
+
+* **WorkMode=0 \(editor\)** \- After reloading the file \(**F8** key\)\.
+* **WorkMode=1 \(animation viewer\)** \- File reloads automatically after closing the settings\.
+* **WorkMode=2 \(terminal client\)** \- For new data only, reloading just processed data is not possible\.
+
 # Escape sequences
 
 TextPaint has implemented limited set of escape sequences used to ANSI data processing and interpreting\. The sequences are following and enough for most files and many telnet services\.
@@ -487,6 +574,8 @@ The sequences consists of constant number of character in exception by **1Bh \]*
 | 1Bh \) P1 |   | Character set for bank 1: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
 | 1Bh \* P1 |   | Character set for bank 2: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
 | 1Bh \+ P1 |   | Character set for bank 3: If P1 = **0** or P1 = **2**, then semigraphical, else use standard\. |
+| 1Bh Space F | S7C1T | Set the 7\-bit controls for input\. |
+| 1Bh Space G | S8C1T | Set the 8\-bit controls for input\. |
 | 1Bh n | LS2 | Use character bank 2\. |
 | 1Bh o | LS3 | Use character bank 3\. |
 | 1Bh c | RIS | Reset terminal\. |
@@ -513,8 +602,8 @@ The sequences consists of constant number of character in exception by **1Bh \]*
 | 1Bh H | HTS | Add current column to tabulator list |
 | 1Bh P | DCS | Switch into DCS state\. Next arriving character will be buffered without printing\. |
 | 1Bh \\ | ST | If within DCS state: Exit from DCS state and request DCS report\. Normally, ignore\. |
-| 1Bh = | DECKPAM | Ignore\. |
-| 1Bh > | DECKPNM | Ignore\. |
+| 1Bh = | DECKPAM | Change numeric keypad mode to 1\. |
+| 1Bh > | DECKPNM | Change numeric keypad mode to 0\. |
 | 1Bh N | SS2 | Ignore\. |
 | 1Bh O | SS3 | Ignore\. |
 | 1Bh V | SPA | Enable char protection against ED, EL and ECH\. |
@@ -539,23 +628,26 @@ When **ANSIDOS=0**, every character between **01h** to **1Fh** will be ignored i
 
 Every standard sequence begins with **1Bh** followed by **\[** character and ends with any letter or one of the characters: **@** **\`** **\{** **\}** **~** **&#124;**\.
 
-The standard sequences with **?** charater and without parameters:
+The standard sequences with **?** and **h**/**l** charater are the binary options, the options are in the table below\. For example, DECSET / DECOM means 1Bh \[ ? 6 h:
 
-| Escape sequence | XTERM name | Meaning |
-| --- | --- | --- |
-| 1Bh \[ ? 2 l | DECRST / DECANM | Enter into VT52 mode\. |
-| 1Bh \[ ? 3 h | DECSET / DECCOLM | Clear screen and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 3 l | DECRST / DECCOLM | Clear screen and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 4 h | DECSET / DECSCLM | Enable smooth scrolling |
-| 1Bh \[ ? 4 l | DECRST / DECSCLM | Disable smooth scrolling |
-| 1Bh \[ ? 6 h | DECSET / DECOM | Enable origin mode and move cursor to top left corner of cursor area\. |
-| 1Bh \[ ? 6 l | DECRST / DECOM | Disable origin mode and move cursor to top left corner of screen\. |
-| 1Bh \[ ? 7 h | DECSET / DECAWM | Disable screen wrapping\. |
-| 1Bh \[ ? 7 l | DECRST / DECAWM | Enable screen wrapping\. |
-| 1Bh \[ ? 69 h | DECSET / DECLRMM | Enable left and right margin\. |
-| 1Bh \[ ? 69 l | DECRST / DECLRMM | Disable left and right margin\. |
+| Parameter | XTERM name | Meaning for DECSET \- 1Bh \[ ? P1 h | Meaning for DECRST \- 1Bh \[ ? P1 l |
+| --- | --- | --- | --- |
+| 2 | DECANM | N/A | Enter into VT52 mode\. |
+| 3 | DECCOLM | Resize screen to 132 columns with clearing\. | Resize screen to 80 columns with clearing\. |
+| 4 | DECSCLM | Enable smooth scrolling\. | Disable smooth scrolling\. |
+| 5 | DECSCNM | Enable negative screen\. | Disable negative screen\. |
+| 6 | DECOM | Enable origin mode and move cursor to top left corner of cursor area\. | Disable origin mode and move cursor to top left corner of screen\. |
+| 7 | DECAWM | Disable screen wrapping\. | Enable screen wrapping\. |
+| 47 |   | Switch to alternate screen\. | Switch to main screen\. |
+| 66 | DECNKM | Set numeric keypad mode to 1\. | Set numeric keypad mode to 0\. |
+| 67 | DECBKM | Set backspace key mode to 1\. | Set backspace key mode to 0\. |
+| 69 | DECLRMM | Enable left and right margin\. | Disable left and right margin\. |
+| 95 | DECNCSM | Preserve screen when DECCOLM executed\. | Clear screen when DECCOLM executed\. |
+| 1047 |   | Switch to alternate screen\. | Clear screen and switch to main screen\. |
+| 1048 |   | Save cursor\. | Restore cursor\. |
+| 1049 |   | Save cursor and switch to alternate screen\. | Clear screen, switch to main screen and restore cursor\. |
 
-The standard sequences without **?** character and may contains parameters\. When parameter is ommited, the default value is **1**:
+The standard sequences may contains parameters\. When parameter is ommited, the default value is **0** or **1**, depending on sequence:
 
 | Escape sequence | XTERM name | Meaning |
 | --- | --- | --- |
@@ -623,8 +715,14 @@ The standard sequences without **?** character and may contains parameters\. Whe
 | 1Bh \[ P1 " q | DECSCA | Enable \(P1=1\) or disable \(P1<>1\) character protection against DECSED, DECSEL, DECSERA\. |
 | 1Bh \[ 1 $ \} | DECSASD | Enter in "status bar" mode, character printing and CUP, HVP, SGR, HPA, HPR will be ignored\. |
 | 1Bh \[ 0 $ \} | DECSASD | Exit from "status bar" mode\. |
+| 1Bh \[ P1 ' \} | DECIC | Insert P1 columns\. |
+| 1Bh \[ P1 ' ~ | DECDC | Delete P1 columns\. |
+| 1Bh \[ P1 ; P2 " p | DECSCL | Set the 7\-bit controls for input when P2=1, otherwise set 8\-bit controls\. |
+| 1Bh \[ P1 \* &#124; | DECSNLS | Resize screen to P1 lines\. |
+| 1Bh \[ 8 ; P1 ; P2 t | XTWINOPS | Change resolution to P2 x P1 in characters\. |
+| 1Bh \[ 4 ; P1 ; P2 t | XTWINOPS | Change resolution to P2 x P1 in pixels\. |
 
-## The request\-response sequences
+## The request\-response sequences \(reports\)
 
 Some sequences does not changing the terminal working, but received from server in **WorkMode=2**, induces response to server \(asterisk indicates command, which response varies depending on **TerminalType** parameter\):
 
@@ -633,12 +731,26 @@ Some sequences does not changing the terminal working, but received from server 
 | 1Bh \[ 0 c | Primary DA \* | 1Bh \[ ? 6 c |
 | 1Bh \[ 5 n | DSR | 1Bh \[ 0 n |
 | 1Bh \[ 6 n | DSR / CPR | 1Bh \[ YY ; XX R where YY and XX are current cursor position |
+| 1Bh \[ ? 6 n | DSR / DECXCPR | 1Bh \[ YY ; XX ; 1 R where YY and XX are current cursor position |
+| 1Bh \[ ? 1 5 n | DSR / Printer | 1Bh \[ ? 1 3 n |
+| 1Bh \[ ? 2 5 n | DSR / UDK | 1Bh \[ ? 2 0 n |
+| 1Bh \[ ? 2 6 n | DSR / Keyboard | 1Bh \[ ? 2 7 ; 1 ; 0 ; 0 n |
+| 1Bh \[ ? 5 3 n | DSR / Locator | 1Bh \[ ? 5 3 n |
+| 1Bh \[ ? 6 2 n | DSR / DECMSR | 1Bh \[ 0 0 0 0 \* \{ |
+| 1Bh \[ ? 6 3 ; 1 n | DSR / DECCKSR | 1Bh P 1 \! ~ 0 0 0 0 1Bh \\ |
+| 1Bh \[ ? 7 5 n | DSR / Data integrity | 1Bh \[ ? 7 0 n |
+| 1Bh \[ ? 8 5 n | DSR / Multi\-session | 1Bh \[ ? 8 3 n |
 | 1Bh \[ > 0 c | Secondary DA \* | 1Bh \[ > 0 ; 1 0 ; 0 c |
 | 1Bh \[ = 0 c | Tertiary DA | 1Bh P \! &#124; 0 0 0 0 0 0 0 0 1Bh \\ |
 | 1Bh \[ 0 x | DECREQTPARM | 1Bh \[ 2 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
 | 1Bh \[ 1 x | DECREQTPARM | 1Bh \[ 3 ; 1 ; 1 ; 1 1 2 ; 1 1 2 ; 1 ; 0 x |
-| 1Bh $q"p1 1Bh \\ | DCS / DECSCL \* | 1Bh P1$r61;1"p 1Bh \\ |
+| 1Bh $ q " p | DCS / DECSCL \* | 1Bh P 1 $ r P1 ; P2 " p 1Bh \\ where P2=0 when 8\-bit controls, otherwise P2=1 |
+| 1Bh $ q \* &#124; | DCS / DECSNLS | 1Bh P 1 $ r P1 \* &#124; 1Bh \\ where P1 is the number of lines |
+| 1Bh \[ ? P1 $ p | DECRQM / DECLRMM | 1Bh \[ ? P1 ; VAL $ y where VAL is from 0 to 4, depending on P1 value and current state |
+| 1Bh P $ q r 1Bh \\ | DECRQSS / DECSTBM | 1Bh P 1 $ r P1 ; P2 r 1B \\ where P1 and P2 are the first and last line |
+| 1Bh P $ q s 1Bh \\ | DECRQSS / DECSLRM | 1Bh P 1 $ r P1 ; P2 s 1B \\ where P1 and P2 are the first and last column |
 | 05h |   | AnswerBack message |
+| 1Bh P1 ; P2 ; P3 ; P4 ; P5 ; P6 \* y | DECRQCRA | 1Bh P P1 \! ~ 0 0 0 0 1Bh \\ |
 
 ## TerminalType\-affected request\-response sequences
 
@@ -646,12 +758,12 @@ There are three sequences, which has response depending on **TerminalType** para
 
 | TerminalType | Primary DA | Secondary DA | DCS / DECSCL |
 | --- | --- | --- | --- |
-| 0 \- VT100 | 1Bh \[ ? 1 ; 2 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P1$r61;1"p 1Bh \\ |
-| 1 \- VT102 | 1Bh \[ ? 6 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P1$r61;1"p 1Bh \\ |
-| 2 \- VT220 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 1 ; 1 0 ; 0 c | 1Bh P1$r62;1"p 1Bh \\ |
-| 3 \- VT320 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 2 4 ; 1 0 ; 0 c | 1Bh P1$r63;1"p 1Bh \\ |
-| 4 \- VT420 | 1Bh \[ ? 6 4 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 4 1 ; 1 0 ; 0 c | 1Bh P1$r64;1"p 1Bh \\ |
-| 5 \- VT520 | 1Bh \[ ? 6 5 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 6 4 ; 1 0 ; 0 c | 1Bh P1$r65;1"p 1Bh \\ |
+| 0 \- VT100 | 1Bh \[ ? 1 ; 2 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 1 ; 1 " p 1Bh \\ |
+| 1 \- VT102 | 1Bh \[ ? 6 c | 1Bh \[ > 0 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 1 ; 1 " p 1Bh \\ |
+| 2 \- VT220 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 1 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 2 ; 1 " p 1Bh \\ |
+| 3 \- VT320 | 1Bh \[ ? 6 2 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 c | 1Bh \[ > 2 4 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 3 ; 1 " p 1Bh \\ |
+| 4 \- VT420 | 1Bh \[ ? 6 4 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 4 1 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 4 ; 1 " p 1Bh \\ |
+| 5 \- VT520 | 1Bh \[ ? 6 5 ; 1 ; 2 ; 6 ; 7 ; 8 ; 9 ; 1 5 ; 1 8 ; 2 1 c | 1Bh \[ > 6 4 ; 1 0 ; 0 c | 1Bh P 1 $ r 6 5 ; 1 " p 1Bh \\ |
 
 ## The same\-meaning escape sequences
 
@@ -700,8 +812,12 @@ During processing ANSI data, there will be used internal text attributes with fo
 * Foreground = \-1 \(means color not defined\)
 * Background = \-1 \(means color not defined\)
 * Bold = false
+* Italic = false
+* Underline = false
 * Blink = false
-* Inverse = false
+* Reverse = false
+* Conceale = false
+* Strikethrough = false
 
 The attributes can be changed with the **1Bh \[ \.\.\. m** escape sequence\. The number of parameters can vary and has following meaning:
 
@@ -745,12 +861,22 @@ The attributes can be changed with the **1Bh \[ \.\.\. m** escape sequence\. The
 | 107 | Background = F |
 | 1 | Bold = true |
 | 22 | Bold = false |
+| 3 | Italic = true |
+| 23 | Italic = false |
+| 4 | Underline = true |
+| 24 | Underline = false |
 | 5 | Blink = true |
 | 25 | Blink = false |
-| 7 | Inverse = true |
-| 27 | Inverse = false |
+| 7 | Reverse = true |
+| 27 | Reverse = false |
+| 8 | Conceale = true |
+| 28 | Conceale = false |
+| 9 | Strikethrough = true |
+| 29 | Strikethrough = false |
 | 38 followed by 5 | Set the foreground color to the next number \(after **5**\)\. |
 | 48 followed by 5 | Set the background color to the next number \(after **5**\)\. |
+| 38 followed by 2 | Set the foreground color to the RGB from next three numbers \(after **2**\)\. |
+| 48 followed by 2 | Set the background color to the RGB from next three numbers \(after **2**\)\. |
 
 The parameters **38** or **48** followed by **5** sets the color from the 256\-color palette\. The parameters **38** or **48** followed by **2** sets the 24\-bit RGB color\. The **TextPaint** supports standard 16\-colors only, so every color from 256\-color paette and every 24\-bit color are mapped into 16 standard color as following:
 
@@ -819,30 +945,30 @@ The terminal and ANSI parser has VT52 mode, which can be entered by **1Bh \[ ? 2
 
 # VTTEST compatibility
 
-VTEST is popular VTxxx terminal test application\. Some tests uses features, which is not supported and mentioned as limitations \(light background, 80/320 columns switch, text underline\), such test also as denotes as passed\. You can run the VTTEST with appropriate parameter to avoid screen gliches, when is should be in other resolution, as is:
+VTEST is popular VTxxx terminal test application\. Some tests uses features, which is not supported and mentioned as limitations \(80/320 columns switch\), such test also as denotes as passed\. You can run the VTTEST with appropriate parameter to avoid screen gliches, when is should be in other resolution, as is:
 
 ```
 vttest 24x80.80
 ```
 
-There is the TextPaint compatibility with VTTEST\. Some features, which will not neet to bo compatible ans usable are not tested\.
+There is the TextPaint compatibility with VTTEST v2\.7 from 2023\-02\-01\. Some features, which will not neet to bo compatible ans usable are not tested\.
 
 | Number | Name | Result | Remarks |
 | --- | --- | --- | --- |
 | 1 | Cursor movements | Pass | Uses 80/132 column switching\. |
-| 2 | Screen features | Pass | Uses 80/132 column switching and light background\. |
+| 2 | Screen features | Pass | Uses 80/132 column switching\. |
 | 3 | Character sets | VT100 characters: pass; other tests: fail | TextPaint displays Unicode characters "as is"\. |
 | 4 | Double\-sized characters | Pass | Uses 80/132 column switching\. |
 | 5 | Keyboard |   |   |
-| 5\.1 | LED Lights | Fail |   |
-| 5\.2 | Auto Repeat | Fail |   |
-| 5\.3 | KeyBoard Layout | Pass |   |
+| 5\.1 | LED Lights | Fail / No glitches | Keyboard LEDs are not controlled\. |
+| 5\.2 | Auto Repeat | Fail / No glitches | Auto\-repeat key depends on operating system features\. |
+| 5\.3 | Keyboard Layout | Pass |   |
 | 5\.4 | Cursor Keys | Pass |   |
 | 5\.5 | Numeric Keypad | Pass | In "Application mode", you have to use "\+" instead of "Enter"\. |
 | 5\.6 | Editing Keypad | Normal: pass, VT100/VT52: fail | Sends key codes also in VT52 and VT100 modes\. |
 | 5\.7 | Function Keys | Normal: pass, VT100/VT52: fail | Does not send appropriate code in VT52 and VT100 modes\. |
-| 5\.8 | AnswerBack | Pass | Changing AnswerBack bessage during session is not possible\. |
-| 5\.9 | Control Keys | Pass | Use "Escape key" for input the control keys, the Ctrl shortcut is not supported\. |
+| 5\.8 | AnswerBack | Pass | Changing the AnswerBack message during session is not possible\. |
+| 5\.9 | Control Keys | Pass | Use "Escape key" for input all control keys\. |
 | 6 | Terminal reports |   |   |
 | 6\.1 | AnswerBack Message | Pass |   |
 | 6\.2 | Set/Reset Mode \- LineFeed / Newline | Pass |   |
@@ -851,37 +977,37 @@ There is the TextPaint compatibility with VTTEST\. Some features, which will not
 | 6\.5 | Secondary Device Attributes \(DA\) | Pass |   |
 | 6\.6 | Tertiary Device Attributes \(DA\) | Pass |   |
 | 6\.7 | Request Terminal Parameters \(DECREQTPARM\) | Pass |   |
-| 7 | VT52 mode | Pass | Recognizes DECSCL everytime\. |
+| 7 | VT52 mode | Pass | Recognizes DECSCL and S8C1T everytime\. |
 | 8 | VT102 features | Pass | Uses 80/132 column switching\. |
 | 9 | Known bugs |   |   |
 | 9\.1 | Smooth scroll to jump scroll | Pass |   |
 | 9\.2 | Scrolling region | Pass |   |
 | 9\.3 | Wide to narrow screen | Pass |   |
 | 9\.4 | Narrow to wide screen | Pass | Uses 80/132 column switching\. |
-| 9\.5 | Cursor move from double\- to single\-wide line | Pass | Uses 80/132 column switching\. |
+| 9\.5 | Cursor move from double\-wide to single\-wide line | Pass | Uses 80/132 column switching\. |
 | 9\.6 | Column mode escape sequence | Pass | Uses 80/132 column switching\. |
 | 9\.7 | Wrap around with cursor addressing | Pass |   |
 | 9\.8 | Erase right half of double width lines | Pass |   |
 | 9\.9 | Funny scroll regions | Pass | The \(0;1\) scroll region is interpreted as \(1;1\) scroll region\. |
 | 10 | Reset and self\-test |   |   |
 | 10\.1 | Reset to Initial State \(RIS\) | Pass |   |
-| 10\.2 | Invoke Terminal Test \(DECTST\) | Fail | The built\-in confidence test not exists and is not usable in emulators\. |
+| 10\.2 | Invoke Terminal Test \(DECTST\) | Pass | The built\-in confidence test not exists and is not usable in emulators\. |
 | 10\.3 | Soft Terminal Reset \(DECSTR\) | Pass |   |
 | 11 | Non\-VT100 terminals |   |   |
 | 11\.1 | VT220 features |   |   |
 | 11\.1\.1 | Reporting functions |   |   |
 | 11\.1\.1\.1 | Device Status Report \(DSR\) |   |   |
-| 11\.1\.1\.1\.1 | Keyboard Status | Fail |   |
+| 11\.1\.1\.1\.1 | Keyboard Status | Pass |   |
 | 11\.1\.1\.1\.2 | Operating Status | Pass |   |
-| 11\.1\.1\.1\.3 | Printer Status | Fail |   |
-| 11\.1\.1\.1\.4 | UDK Status | Fail |   |
-| 11\.1\.1\.2 | Screen\-display functions |   |   |
-| 11\.1\.1\.2\.1 | Send/Receive mode \(SRM\) | Pass |   |
-| 11\.1\.1\.2\.2 | Visible/Invisible Cursor \(DECTCEM\) | Fail | Cursor is always visible\. |
-| 11\.1\.1\.2\.3 | Erase Char \(ECH\) | Pass |   |
-| 11\.1\.1\.2\.4 | Protected\-Areas \(DECSCA\) | Pass |   |
-| 11\.1\.1\.3 | 8\-bit controls \(S7C1T/S8C1T\) | Fail |   |
-| 11\.1\.4 | Printer \(MC\) |   | The printer features is not supported and not tested\. |
+| 11\.1\.1\.1\.3 | Printer Status | Pass |   |
+| 11\.1\.1\.1\.4 | UDK Status | Pass |   |
+| 11\.1\.2 | Screen\-display functions |   |   |
+| 11\.1\.2\.1 | Send/Receive mode \(SRM\) | Pass |   |
+| 11\.1\.2\.2 | Visible/Invisible Cursor \(DECTCEM\) | Fail / No glitches | Cursor is always visible\. |
+| 11\.1\.2\.3 | Erase Char \(ECH\) | Pass |   |
+| 11\.1\.2\.4 | Protected\-Areas \(DECSCA\) | Pass |   |
+| 11\.1\.3 | 8\-bit controls \(S7C1T/S8C1T\) | Pass |   |
+| 11\.1\.4 | Printer \(MC\) | Fail | The printer features is not supported\. |
 | 11\.1\.5 | Soft Character Sets \(DECDLD\) | Fail |   |
 | 11\.1\.6 | Soft Terminal Reset \(DECSTR\) | Pass |   |
 | 11\.1\.7 | User\-Defined Keys \(DECUDK\) | Fail |   |
@@ -889,43 +1015,55 @@ There is the TextPaint compatibility with VTTEST\. Some features, which will not
 | 11\.2\.2 | Cursor\-movement |   |   |
 | 11\.2\.2\.1 | Pan down \(SU\) | Pass |   |
 | 11\.2\.2\.2 | Pan up \(SD\) | Pass |   |
-| 11\.2\.3 | Page\-format controls |   | TextPaint does not support resolution change and pages\. |
-| 11\.2\.4 | Page\-movement controls |   | TextPaint does not support resolution change and pages\. |
+| 11\.2\.3 | Page\-format controls | Fail |   |
+| 11\.2\.4 | Page\-movement controls | Fail |   |
 | 11\.2\.5 | Reporting functions |   |   |
-| 11\.2\.5\.2 | Device Status Report \(DSR\) | Not tested |   |
-| 11\.2\.5\.3 | Presentation State Reports | Not tested |   |
-| 11\.2\.5\.4 | Test Terminal State Reports | Not tested |   |
+| 11\.2\.5\.2 | Device Status Report \(DSR\) | Pass |   |
+| 11\.2\.5\.3 | Presentation State Reports | Fail |   |
+| 11\.2\.5\.4 | Terminal State Reports | Fail |   |
 | 11\.2\.5\.5 | User\-Preferred Supplemental Set \(DECAUPSS\) | Fail |   |
 | 11\.2\.5\.6 | Window Report \(DECRPDE\) | Fail |   |
 | 11\.2\.6 | Screen\-display functions |   |   |
 | 11\.2\.6\.2 | Status line \(DECSASD/DECSSDT\) |   |   |
-| 11\.2\.6\.2\.1 | Simple Status line Test | Pass | Status bar is not implemented and status bar commands are ignored\. |
-| 11\.2\.6\.2\.2 | Test Graphic\-Rendition in Status line | Pass | Status bar is not implemented and status bar commands are ignored\. |
+| 11\.2\.6\.2\.1 | Simple Status line | Fail / No glitches | Status bar is not implemented and status bar commands are ignored\. |
+| 11\.2\.6\.2\.2 | Graphic\-Rendition in Status line | Fail / No glitches | Status bar is not implemented and status bar commands are ignored\. |
+| 11\.2\.6\.2\.3 | Cursor\-movement in Status line | Fail / No glitches | Status bar is not implemented and status bar commands are ignored\. |
 | 11\.3 | VT420 features |   |   |
 | 11\.3\.2 | Cursor\-movement |   |   |
 | 11\.3\.2\.7 | Back Index \(DECBI\) | Pass |   |
 | 11\.3\.2\.8 | Forward Index \(DECFI\) | Pass |   |
 | 11\.3\.2\.9 | Cursor movement within margins | Pass |   |
-| 11\.3\.2\.10 | Other movement \(CR/HT/LF/FF\) within margins | Pass | Requires ANSIReadCR=0 ANSIReadLF=0 |
+| 11\.3\.2\.10 | Other movement \(CR/HT/LF/FF\) within margins | Pass | Requires ANSIReadCR=0 and ANSIReadLF=0 |
 | 11\.3\.3 | Editing sequences |   |   |
-| 11\.3\.3\.6 | DECRQM response for DECLRMM | Fail |   |
-| 11\.3\.3\.7 | DECRQSS response for DECSTBM | Fail |   |
-| 11\.3\.3\.8 | DECRQSS response for DECSLRM | Fail |   |
-| 11\.3\.3\.9 | Insert/delete column \(DECIC, DECDC\) | Fail |   |
+| 11\.3\.3\.6 | DECRQM response for DECLRMM | Pass |   |
+| 11\.3\.3\.7 | DECRQSS response for DECSTBM | Pass |   |
+| 11\.3\.3\.8 | DECRQSS response for DECSLRM | Pass |   |
+| 11\.3\.3\.9 | Insert/delete column \(DECIC, DECDC\) | Pass |   |
 | 11\.3\.3\.10 | Vertical scrolling \(IND, RI\) | Pass |   |
 | 11\.3\.3\.11 | Insert/delete line \(IL, DL\) | Pass |   |
-| 11\.3\.3\.12 | Test insert/delete char \(ICH, DCH\) | Pass |   |
-| 11\.3\.3\.13 | Test ASCII formatting \(BS, CR, TAB\) | Pass |   |
+| 11\.3\.3\.12 | insert/delete char \(ICH, DCH\) | Pass |   |
+| 11\.3\.3\.13 | ASCII formatting \(BS, CR, TAB\) | Pass |   |
+| 11\.3\.4 | Keyboard\-control |   |   |
+| 11\.3\.4\.1 | Backarrow key \(DECBKM\) | Pass |   |
+| 11\.3\.4\.2 | Numeric keypad \(DECNKM\) | Pass |   |
+| 11\.3\.4\.3 | Keyboard usage \(DECKBUM\) | Fail |   |
+| 11\.3\.4\.4 | Key position \(DECKPM\) | Fail |   |
 | 11\.3\.6 | Rectangular area functions |   |   |
-| 11\.3\.6\.7 | Test Change\-Attributes in Rectangular Area \(DECCARA\) | Pass | May work incorrectly with some color combinations\. |
-| 11\.3\.6\.8 | Test Copy Rectangular area \(DECCRA\) | Pass |   |
-| 11\.3\.6\.9 | Test Erase Rectangular area \(DECERA\) | Pass |   |
-| 11\.3\.6\.10 | Test Fill Rectangular area \(DECFRA\) | Pass |   |
-| 11\.3\.6\.11 | Test Reverse\-Attributes in Rectangular Area \(DECRARA\) | Pass | May work incorrectly with some color combinations\. |
-| 11\.3\.6\.12 | Test Selective\-Erase Rectangular area \(DECSERA\) | Pass |   |
-| 11\.3\.7 | Reporting functions | Not tested |   |
+| 11\.3\.6\.7 | Change\-Attributes in Rectangular Area \(DECCARA\) | Pass |   |
+| 11\.3\.6\.8 | Copy Rectangular area \(DECCRA\) | Pass |   |
+| 11\.3\.6\.9 | Erase Rectangular area \(DECERA\) | Pass |   |
+| 11\.3\.6\.10 | Fill Rectangular area \(DECFRA\) | Pass |   |
+| 11\.3\.6\.11 | Reverse\-Attributes in Rectangular Area \(DECRARA\) | Pass |   |
+| 11\.3\.6\.12 | Selective\-Erase Rectangular area \(DECSERA\) | Pass |   |
+| 11\.3\.7 | Reporting functions |   |   |
+| 11\.3\.7\.2 | Presentation State Reports |   |   |
+| 11\.3\.7\.2\.2 | Request Mode \(DECRQM\) / Report Mode \(DECRPM\) |   |   |
+| 11\.3\.7\.2\.2\.1 | ANSI Mode Report \(DECRPM\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.3\.7\.2\.2\.2 | DEC Mode Report \(DECRPM\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.3\.7\.2\.3 | Status\-String Report \(DECRQSS\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.3\.7\.3 | Device Status Reports \(DSR\) | Partial / No glitches | Checksum of rectangular area always returns zero\. |
 | 11\.3\.8 | Screen\-display functions |   |   |
-| 11\.3\.8\.2 | Test Select Number of Lines per Screen \(DECSNLS\) | Fail | Changes screen resolution\. |
+| 11\.3\.8\.2 | Select Number of Lines per Screen \(DECSNLS\) | Pass | Changes number of screen lines\. |
 | 11\.4 | VT520 features |   |   |
 | 11\.4\.2 | Cursor\-movement |   |   |
 | 11\.4\.2\.7 | Character\-Position\-Absolute \(HPA\) | Pass |   |
@@ -937,10 +1075,16 @@ There is the TextPaint compatibility with VTTEST\. Some features, which will not
 | 11\.4\.2\.13 | Next\-Line \(CNL\) | Pass |   |
 | 11\.4\.2\.14 | Previous\-Line \(CPL\) | Pass |   |
 | 11\.4\.2\.15 | Vertical\-Position\-Relative \(VPR\) | Pass |   |
-| 11\.4\.5 | Reporting functions | Not tested |   |
+| 11\.4\.5 | Reporting functions |   |   |
+| 11\.4\.5\.2 | Presentation State Reports |   |   |
+| 11\.4\.5\.2\.2 | Request Mode \(DECRQM\)/Report Mode \(DECRPM\) |   |   |
+| 11\.4\.5\.2\.2\.1 | ANSI Mode Report \(DECRPM\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.4\.5\.2\.2\.2 | DEC Mode Report \(DECRPM\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.4\.5\.2\.3 | Status\-String Report \(DECRQSS\) | Partial / No glitches | Not all reports are supported\. |
+| 11\.4\.5\.3 | Device Status Reports \(DSR\) | Partial / No glitches | Checksum of rectangular area always returns zero\. |
 | 11\.4\.6 | Screen\-display functions |   |   |
-| 11\.4\.6\.1 | No Clear on Column Change \(DECNCSM\) | Fail |   |
-| 11\.4\.6\.2 | Set Cursor Style \(DECSCUSR\) | Fail |   |
+| 11\.4\.6\.1 | No Clear on Column Change \(DECNCSM\) | Pass | Uses 80/132 column switching\. |
+| 11\.4\.6\.2 | Set Cursor Style \(DECSCUSR\) | Fail / No glitches | Cursor is always at the single style\. |
 | 11\.5 | ISO\-6429 cursor\-movement |   |   |
 | 11\.5\.1 | Character\-Position\-Absolute \(HPA\) | Pass |   |
 | 11\.5\.2 | Cursor\-Back\-Tab \(CBT\) | Pass |   |
@@ -958,27 +1102,41 @@ There is the TextPaint compatibility with VTTEST\. Some features, which will not
 | 11\.6\.5 | BCE\-style clear line/display \(ECH, Indexing\) | Pass |   |
 | 11\.6\.6 | VT102\-style features with BCE |   |   |
 | 11\.6\.6\.1 | Cursor movements | Pass | Uses 80/132 column switching\. |
-| 11\.6\.6\.2 | Screen features | Pass | Uses 80/132 column switching and light background\. |
+| 11\.6\.6\.2 | Screen features | Pass | Uses 80/132 column switching\. |
 | 11\.6\.6\.3 | Insert/Delete Char/Line | Pass | Uses 80/132 column switching\. |
 | 11\.6\.7 | Other ISO\-6429 features with BCE |   |   |
-| 11\.6\.7\.1 | Protected\-Area Tests |   |   |
-| 11\.6\.7\.1\.2 | Protected\-Areas \(SPA\) | Pass |   |
+| 11\.6\.7\.1 | Protected\-Area |   |   |
+| 11\.6\.7\.1\.2 | Protected\-Areas \(SPA\) | Pass | ERM is not implemented\. |
 | 11\.6\.7\.2 | Repeat \(REP\) | Pass |   |
 | 11\.6\.7\.3 | Scroll\-Down \(SD\) | Pass |   |
 | 11\.6\.7\.4 | Scroll\-Left \(SL\) | Pass |   |
 | 11\.6\.7\.5 | Scroll\-Right \(SR\) | Pass |   |
 | 11\.6\.7\.6 | Scroll\-Up \(SU\) | Pass |   |
-| 11\.6\.8 | Screen features with BCE | Pass | Uses light background\. |
-| 11\.6\.9 | Screen features with ISO 6429 SGR 22\-27 codes | Pass | Uses light background\. |
+| 11\.6\.8 | Screen features with BCE | Pass |   |
+| 11\.6\.9 | Screen features with ISO 6429 SGR 22\-27 codes | Pass |   |
 | 11\.7 | Other ISO\-6429 features |   |   |
 | 11\.7\.1 | Protected\-Area Tests |   |   |
-| 11\.7\.1\.2 | Test Protected\-Areas \(SPA\) | Pass |   |
-| 11\.7\.2 | Test Repeat \(REP\) | Pass |   |
-| 11\.7\.3 | Test Scroll\-Down \(SD\) | Pass |   |
-| 11\.7\.4 | Test Scroll\-Left \(SL\) | Pass |   |
-| 11\.7\.5 | Test Scroll\-Right \(SR\) | Pass |   |
-| 11\.7\.6 | Test Scroll\-Up \(SU\) | Pass |   |
-| 11\.8 | XTERM special features | Not tested | Features not usable in TextPaint\. |
+| 11\.7\.1\.2 | Protected\-Areas \(SPA\) | Pass |   |
+| 11\.7\.2 | Repeat \(REP\) | Pass |   |
+| 11\.7\.3 | Scroll\-Down \(SD\) | Pass |   |
+| 11\.7\.4 | Scroll\-Left \(SL\) | Pass |   |
+| 11\.7\.5 | Scroll\-Right \(SR\) | Pass |   |
+| 11\.7\.6 | Scroll\-Up \(SU\) | Pass |   |
+| 11\.8 | XTERM special features |   |   |
+| 11\.8\.2 | Reporting functions |   |   |
+| 11\.8\.2\.2 | Request Mode \(DECRQM\) / Report Mode \(DECRPM\) | Pass |   |
+| 11\.8\.3 | Set window title | Pass | Current window title is visible in popup via escape key\. |
+| 11\.8\.4 | Font features |   |   |
+| 11\.8\.4\.1 | Modify font | Impossible / No glitches | TextPaint always uses single, specified font\. |
+| 11\.8\.4\.2 | Report fonts | Impossible | Font reporting is not supported\. |
+| 11\.8\.5 | Mouse features | Impossible | Mouse is not supported\. |
+| 11\.8\.6 | Tektronix 4014 features | Impossible / No glitches | The additional graphical screen is not necessary and not supported\. |
+| 11\.8\.7 | Alternate screen features |   |   |
+| 11\.8\.7\.3 | Alternate screen \(xterm\) | Pass |   |
+| 11\.8\.7\.4 | Improved alternate screen \(XFree86 xterm mode 1047\) | Pass |   |
+| 11\.8\.7\.5 | Better alternate screen \(XFree86 xterm mode 1049\) | Pass |   |
+| 11\.8\.8 | Window modify\-operations | Partial / Impossible | Resize works, other are not possible and not usable in TextPaint\. |
+| 11\.8\.9 | Window report\-operations | Partial / Impossible | Labels and size works, other are not possible and not usable in TextPaint\. |
 
 
 

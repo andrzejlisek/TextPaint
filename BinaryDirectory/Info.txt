@@ -96,7 +96,9 @@ Character and color selector:
   F3 - Select between states:
     Character selector: Switch into Color selector.
     Color selector: Switch into Character selector.
-  F4 - Character selector state only: Browsing all pages, including invisible.
+  F4 - Depends on state:
+    Character selector: Browsing all pages, including invisible.
+    Color selector: ANSI process parameters.
   Delete - Go to character or color under text cursor.
   Insert - Depends on state:
     Character selector: Switch between ordinary and favorite state.
@@ -110,5 +112,13 @@ Character and color selector:
   Any alphanumeric key (character selector only):
     Ordinary: Save pointed character into favorite set under pressed key.
     Favorite: Go to place assigned with pressed key.
+  Number key (color selector only) - Toggle attribute:
+    1 - Bold
+    2 - Italic
+    3 - Underline
+    4 - Strikethrough
+    5 - Blink
+    6 - Reverse
+    7 - Conceale
 @
 

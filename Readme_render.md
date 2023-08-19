@@ -27,6 +27,10 @@ The following parameters are used only for rendering\. Like other parameters, th
 * **RenderSliceH** \- The height of sliced picture\. Use **RenderSliceH=0** for disable slicing vertically\.
 * **RenderSliceX** \- The horizontal offset, works only if **RenderSliceW>0**\.
 * **RenderSliceY** \- The horizontal offset, works only if **RenderSliceH>0**\.
+* **RenderLeading** \- Number of dummy leading ANSI processing steps before the file contents\. It can be used for create additional blank frames before ANSI animation\.
+* **RenderTrailing** \- Number of dummy trailing ANSI processing steps after the file contents\. It can be used for create additional repeating frames after ANSI animation\.
+* **RenderBlinkPeriod** \- Number of frames for one of the blinking state, the full blinking period \(including the base and alternate state\) equals thice the value\. Works when the **RenderStep>0** only\.
+* **RenderBlinkOffset** \- The Offset of the blinking cycle, which will begin the rendered animation\.
 
 # Graphic parameters
 

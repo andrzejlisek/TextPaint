@@ -57,6 +57,9 @@ namespace TextPaint
         List<int> EncodingKey1 = new List<int>();
         List<int> EncodingKey2 = new List<int>();
 
+        bool __AnsiLineOccupy1_Use = false;
+        bool __AnsiLineOccupy2_Use = false;
+
         void EncodingAddParam(string ParamName, string DisplayName, ConfigFile CF)
         {
             if (CF.ParamExists(ParamName))
@@ -189,21 +192,12 @@ namespace TextPaint
         public Core()
         {
             CommandEndChar = TextWork.StrToInt(CommandEndChar_);
-            //TestAttributeToColor();
         }
 
-        List<List<int>> TextBuffer = new List<List<int>>();
-        List<List<int>> TextColBuf = new List<List<int>>();
-        List<List<int>> TextFonBuf = new List<List<int>>();
-        List<List<int>> ScrCharType;
-        List<List<int>> ScrCharStr;
-        List<List<int>> ScrCharCol;
-        List<List<int>> ScrCharFon;
+        AnsiLineOccupyEx TextBuffer = new AnsiLineOccupyEx();
 
-        List<List<int>> ScrCharTypeDisp;
-        List<List<int>> ScrCharStrDisp;
-        List<List<int>> ScrCharColDisp;
-        List<List<int>> ScrCharFonDisp;
+        AnsiLineOccupyEx ScrChar_ = new AnsiLineOccupyEx();
+        AnsiLineOccupyEx ScrCharDisp_ = new AnsiLineOccupyEx();
 
         public int CursorXSize = 0;
         public int CursorYSize = 0;
@@ -274,21 +268,14 @@ namespace TextPaint
                         {
                             InfoTemp = "";
                         }
-                        ScrCharStr[i] = TextWork.StrToInt(InfoTemp);
-                        ScrCharCol[i] = TextWork.BlkCol(InfoTemp.Length);
-                        ScrCharFon[i] = TextWork.BlkCol(InfoTemp.Length);
-                        ScrCharStr[i].AddRange(TextWork.Spaces(WinTxtW - InfoTemp.Length));
-                        ScrCharCol[i].AddRange(TextWork.BlkCol(WinTxtW - InfoTemp.Length));
-                        ScrCharFon[i].AddRange(TextWork.BlkCol(WinTxtW - InfoTemp.Length));
+                        ScrChar_.SetLineString(i, InfoTemp);
+                        ScrChar_.PadRightSpace(i, WinTxtW);
                     }
                     else
                     {
-                        ScrCharStr[i] = TextWork.Spaces(WinTxtW);
-                        ScrCharCol[i] = TextWork.BlkCol(WinTxtW);
-                        ScrCharFon[i] = TextWork.BlkCol(WinTxtW);
+                        ScrChar_.SetLineString(i, "");
+                        ScrChar_.PadRightSpace(i, WinTxtW);
                     }
-
-                    ScrCharType[i] = TextWork.Pad(WinTxtW, 0);
                 }
             }
             else
@@ -313,47 +300,37 @@ namespace TextPaint
                 {
                     for (int i = I1; i <= I2; i++)
                     {
-                        if ((i + DisplayY) < TextBuffer.Count)
+                        if ((i + DisplayY) < TextBuffer.CountLines())
                         {
-                            List<int> S = TextBuffer[i + DisplayY];
-                            List<int> C = TextColBuf[i + DisplayY];
-                            List<int> F = TextFonBuf[i + DisplayY];
+                            ScrChar_.LineCopy(TextBuffer, i + DisplayY, i);
                             if (DisplayX > 0)
                             {
-                                if (S.Count > DisplayX)
+                                if (ScrChar_.CountItems(i) > DisplayX)
                                 {
-                                    S = S.GetRange(DisplayX, S.Count - DisplayX);
-                                    C = C.GetRange(DisplayX, C.Count - DisplayX);
-                                    F = F.GetRange(DisplayX, F.Count - DisplayX);
+                                    ScrChar_.DeleteLeft(i, DisplayX);
                                 }
                                 else
                                 {
-                                    S = new List<int>();
-                                    C = new List<int>();
-                                    F = new List<int>();
+                                    ScrChar_.ClearLine(i);
                                 }
                             }
-                            if (S.Count < WinTxtW)
+                            if (ScrChar_.CountItems(i) < WinTxtW)
                             {
-                                ScrCharStr[i] = TextWork.Concat(S, TextWork.Spaces(WinTxtW - S.Count));
-                                ScrCharCol[i] = TextWork.Concat(C, TextWork.BlkCol(WinTxtW - C.Count));
-                                ScrCharFon[i] = TextWork.Concat(F, TextWork.BlkCol(WinTxtW - F.Count));
-                                ScrCharType[i] = TextWork.Concat(TextWork.Pad(S.Count, 0), TextWork.Pad(WinTxtW - S.Count, 1));
+                                ScrChar_.BlankChar();
+                                ScrChar_.Item_Type = 1;
+                                ScrChar_.PadRight(i, WinTxtW);
                             }
                             else
                             {
-                                ScrCharStr[i] = S.GetRange(0, WinTxtW);
-                                ScrCharCol[i] = C.GetRange(0, WinTxtW);
-                                ScrCharFon[i] = F.GetRange(0, WinTxtW);
-                                ScrCharType[i] = TextWork.Pad(WinTxtW, 0);
+                                ScrChar_.Crop(i, 0, WinTxtW);
                             }
                         }
                         else
                         {
-                            ScrCharStr[i] = TextWork.Spaces(WinTxtW);
-                            ScrCharCol[i] = TextWork.BlkCol(WinTxtW);
-                            ScrCharFon[i] = TextWork.BlkCol(WinTxtW);
-                            ScrCharType[i] = TextWork.Pad(WinTxtW, 2);
+                            ScrChar_.ClearLine(i);
+                            ScrChar_.BlankChar();
+                            ScrChar_.Item_Type = 2;
+                            ScrChar_.PadRight(i, WinTxtW);
                         }
                     }
                 }
@@ -362,40 +339,31 @@ namespace TextPaint
                     int CurOffset = (Mode == 3) ? 0 : WinTxtW - 1;
                     for (int i = I1; i <= I2; i++)
                     {
-                        int ChType = 0;
-                        int ChStr = TextWork.SpaceChar0;
-                        int ChCol = 0;
-                        int ChFon = 0;
-                        if ((i + DisplayY) < TextBuffer.Count)
+                        ScrChar_.BlankChar();
+                        if ((i + DisplayY) < TextBuffer.CountLines())
                         {
-                            if (TextBuffer[i + DisplayY].Count > (DisplayX + CurOffset))
+                            if (TextBuffer.CountItems(i + DisplayY) > (DisplayX + CurOffset))
                             {
-                                ChStr = TextBuffer[i + DisplayY][DisplayX + CurOffset];
-                                ChCol = TextColBuf[i + DisplayY][DisplayX + CurOffset];
-                                ChFon = TextFonBuf[i + DisplayY][DisplayX + CurOffset];
+                                TextBuffer.Get(i + DisplayY, DisplayX + CurOffset);
+                                ScrChar_.CopyItem(TextBuffer);
+                                ScrChar_.Item_Type = 0;
                             }
                             else
                             {
-                                ChType = 1;
+                                ScrChar_.Item_Type = 1;
                             }
                         }
                         else
                         {
-                            ChType = 2;
+                            ScrChar_.Item_Type = 2;
                         }
                         if (Mode == 3)
                         {
-                            ScrCharType[i][0] = ChType;
-                            ScrCharStr[i][0] = ChStr;
-                            ScrCharCol[i][0] = ChCol;
-                            ScrCharFon[i][0] = ChFon;
+                            ScrChar_.Set(i, 0);
                         }
                         else
                         {
-                            ScrCharType[i][WinTxtW - 1] = ChType;
-                            ScrCharStr[i][WinTxtW - 1] = ChStr;
-                            ScrCharCol[i][WinTxtW - 1] = ChCol;
-                            ScrCharFon[i][WinTxtW - 1] = ChFon;
+                            ScrChar_.Set(i, WinTxtW - 1);
                         }
                     }
                 }
@@ -413,7 +381,7 @@ namespace TextPaint
         List<int> ElementGet_Kind = new List<int>();
         List<int> ElementGet_Count = new List<int>();
 
-        private int ElementGet(List<List<int>> Data, int X, int Y, int Default)
+        private int ElementGet(AnsiLineOccupyEx Data, int KindType, int X, int Y, int Default)
         {
             ElementGet_Kind.Clear();
             ElementGet_Count.Clear();
@@ -423,11 +391,20 @@ namespace TextPaint
                 for (int XX = X; XX < (X + CursorFontW); XX++)
                 {
                     int Kind = Default;
-                    if ((Data.Count > YY) && (YY >= 0))
+                    if ((Data.CountLines() > YY) && (YY >= 0))
                     {
-                        if ((Data[YY].Count > XX) && (XX >= 0))
+                        if ((Data.CountItems(YY) > XX) && (XX >= 0))
                         {
-                            Kind = Data[YY][XX];
+                            Data.Get_(YY, XX);
+                            switch (KindType)
+                            {
+                                case 0: Kind = Data.Item_Char; break;
+                                case 1: Kind = Data.Item_ColorB; break;
+                                case 2: Kind = Data.Item_ColorF; break;
+                                case 3: Kind = Data.Item_ColorA; break;
+                                case 4: Kind = Data.Item_FontW; break;
+                                case 5: Kind = Data.Item_FontH; break;
+                            }
                         }
                     }
                     int Idx = ElementGet_Kind.IndexOf(Kind);
@@ -456,73 +433,115 @@ namespace TextPaint
             return Default;
         }
 
-        public int FontGet(int X, int Y)
+
+        public AnsiLineOccupyItem ElementGetObj(int X, int Y, bool Space, bool SingleCell)
         {
-            if ((TextFonBuf.Count > Y) && (Y >= 0))
-            {
-                if ((TextFonBuf[Y].Count > X) && (X >= 0))
-                {
-                    return TextFonBuf[Y][X];
-                }
-            }
-            return 0;
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.Item_Char = ElementGetVal(X, Y, Space, SingleCell, 0);
+            Item.Item_ColorB = ElementGetVal(X, Y, Space, SingleCell, 1);
+            Item.Item_ColorF = ElementGetVal(X, Y, Space, SingleCell, 2);
+            Item.Item_ColorA = ElementGetVal(X, Y, Space, SingleCell, 3);
+            Item.Item_FontW = ElementGetVal(X, Y, Space, SingleCell, 4);
+            Item.Item_FontH = ElementGetVal(X, Y, Space, SingleCell, 5);
+            return Item;
         }
 
-        public int ColoGet(int X, int Y, bool Space, bool SingleCell)
+        public int ElementGetVal(int X, int Y, bool Space, bool SingleCell, int KindType)
         {
             if (SingleCell || ((CursorFontW == 1) && (CursorFontH == 1)))
             {
-                if ((TextColBuf.Count > Y) && (Y >= 0))
+                if ((TextBuffer.CountLines() > Y) && (Y >= 0))
                 {
-                    if ((TextColBuf[Y].Count > X) && (X >= 0))
+                    if ((TextBuffer.CountItems(Y) > X) && (X >= 0))
                     {
-                        return TextColBuf[Y][X];
+                        TextBuffer.Get(Y, X);
+                        switch (KindType)
+                        {
+                            case 0: return TextBuffer.Item_Char;
+                            case 1: return TextBuffer.Item_ColorB;
+                            case 2: return TextBuffer.Item_ColorF;
+                            case 3: return TextBuffer.Item_ColorA;
+                            case 4: return TextBuffer.Item_FontW;
+                            case 5: return TextBuffer.Item_FontH;
+                        }
                     }
                 }
-                if (Space)
+                switch (KindType)
                 {
-                    return 0;
-                }
-                else
-                {
-                    return -1;
+                    case 0:
+                        if (Space)
+                        {
+                            return TextWork.SpaceChar0;
+                        }
+                        else
+                        {
+                            return -1;
+                        }
+                    case 1:
+                    case 2:
+                        return -1;
+                    default:
+                        return 0;
                 }
             }
             else
             {
-                return ElementGet(TextColBuf, X, Y, Space ? 0 : -1);
+                switch (KindType)
+                {
+                    case 0:
+                        return ElementGet(TextBuffer, KindType, X, Y, Space ? TextWork.SpaceChar0 : -1);
+                    case 1:
+                    case 2:
+                        return ElementGet(TextBuffer, KindType, X, Y, -1);
+                    default:
+                        return ElementGet(TextBuffer, KindType, X, Y, 0);
+                }
             }
         }
 
         public int CharGet(int X, int Y, bool Space, bool SingleCell)
         {
-            if (SingleCell || ((CursorFontW == 1) && (CursorFontH == 1)))
-            {
-                if ((TextBuffer.Count > Y) && (Y >= 0))
-                {
-                    if ((TextBuffer[Y].Count > X) && (X >= 0))
-                    {
-                        return TextBuffer[Y][X];
-                    }
-                }
-                if (Space)
-                {
-                    return TextWork.SpaceChar0;
-                }
-                else
-                {
-                    return -1;
-                }
-            }
-            else
-            {
-                return ElementGet(TextBuffer, X, Y, Space ? TextWork.SpaceChar0 : -1);
-            }
+            return ElementGetVal(X, Y, Space, SingleCell, 0);
         }
 
-
-        public void CharPut(int X, int Y, int Ch, int Col, int Fon, bool SingleCell)
+        public int ColoBGet(int X, int Y, bool Space, bool SingleCell)
         {
+            return ElementGetVal(X, Y, Space, SingleCell, 1);
+        }
+
+        public int ColoFGet(int X, int Y, bool Space, bool SingleCell)
+        {
+            return ElementGetVal(X, Y, Space, SingleCell, 2);
+        }
+
+        public void CharPut0(int X, int Y, int Ch)
+        {
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.Item_Char = Ch;
+            Item.Item_ColorB = Semigraphics_.DrawColoBI;
+            Item.Item_ColorF = Semigraphics_.DrawColoFI;
+            Item.Item_ColorA = Semigraphics_.DrawColoAI;
+            Item.Item_FontW = 0;
+            Item.Item_FontH = 0;
+            CharPut(X, Y, Item, false);
+        }
+
+        public void CharPut(int X, int Y, int Ch)
+        {
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.Item_Char = Ch;
+            Item.Item_ColorB = Semigraphics_.DrawColoBI;
+            Item.Item_ColorF = Semigraphics_.DrawColoFI;
+            Item.Item_ColorA = Semigraphics_.DrawColoAI;
+            Item.Item_FontW = -1;
+            Item.Item_FontH = -1;
+            CharPut(X, Y, Item, false);
+        }
+
+        public void CharPut(int X, int Y, AnsiLineOccupyItem Item, bool SingleCell)
+        {
+            AnsiLineOccupyItem Item_ = new AnsiLineOccupyItem();
+
             int CursorFontW_ = SingleCell ? 1 : CursorFontW;
             int CursorFontH_ = SingleCell ? 1 : CursorFontH;
 
@@ -535,71 +554,61 @@ namespace TextPaint
                 return;
             }
 
-            int Font_W, Font_H;
-            if (Fon >= 0)
+            while (TextBuffer.CountLines() <= (Y + CursorFontH - 1))
             {
-                FontSFromInt(Fon, out Font_W, out Font_H);
-            }
-
-            while (TextBuffer.Count <= (Y + CursorFontH - 1))
-            {
-                TextBuffer.Add(new List<int>());
-                TextColBuf.Add(new List<int>());
-                TextFonBuf.Add(new List<int>());
-                TextDisplayLine(TextBuffer.Count - 1);
+                TextBuffer.AppendLine();
+                TextDisplayLine(TextBuffer.CountLines() - 1);
             }
 
             for (int YY = 0; YY < CursorFontH_; YY++)
             {
                 for (int XX = 0; XX < CursorFontW_; XX++)
                 {
-                    int Ch_ = CharGet(X + XX, Y + YY, true, true);
-                    int Col_ = ColoGet(X + XX, Y + YY, true, true);
-                    int Fon_ = FontGet(X + XX, Y + YY);
+                    Item_.Item_Char = ElementGetVal(X + XX, Y + YY, true, true, 0);
+                    Item_.Item_ColorB = ElementGetVal(X + XX, Y + YY, true, true, 1);
+                    Item_.Item_ColorF = ElementGetVal(X + XX, Y + YY, true, true, 2);
+                    Item_.Item_ColorA = ElementGetVal(X + XX, Y + YY, true, true, 3);
+                    Item_.Item_FontW = ElementGetVal(X + XX, Y + YY, true, false, 4);
+                    Item_.Item_FontH = ElementGetVal(X + XX, Y + YY, true, false, 5);
 
                     if (!ToggleDrawText)
                     {
-                        Ch = Ch_;
-                        Fon = Fon_;
+                        Item.Item_Char = Item_.Item_Char;
+                        Item.Item_FontW = Item_.Item_FontW;
+                        Item.Item_FontH = Item_.Item_FontH;
                     }
                     if (!ToggleDrawColo)
                     {
-                        Col = Col_;
+                        Item.Item_ColorB = Item_.Item_ColorB;
+                        Item.Item_ColorF = Item_.Item_ColorF;
+                        Item.Item_ColorA = Item_.Item_ColorA;
                     }
 
                     if (!SingleCell)
                     {
                         if (ToggleDrawText)
                         {
-                            Font_W = FontSizeCode(CursorFontW_, XX);
-                            Font_H = FontSizeCode(CursorFontH_, YY);
-                            Fon = FontSToInt(Font_W, Font_H);
+                            Item.Item_FontW = FontSizeCode(CursorFontW_, XX);
+                            Item.Item_FontH = FontSizeCode(CursorFontH_, YY);
                         }
                     }
 
-                    if (TextBuffer[Y + YY].Count > (X + XX))
+                    if (TextBuffer.CountItems(Y + YY) > (X + XX))
                     {
-                        TextBuffer[Y + YY][X + XX] = Ch;
-                        TextColBuf[Y + YY][X + XX] = Col;
-                        TextFonBuf[Y + YY][X + XX] = Fon;
-                        if (TextWork.SpaceChars.Contains(Ch) && (Col == 0))
+                        TextBuffer.CopyItem(Item);
+                        TextBuffer.Set_(Y + YY, X + XX);
+                        TextBuffer.Trim(Y + YY);
+                        if (TextWork.SpaceChars.Contains(Item.Item_Char) && (Item.Item_ColorB < 0) && (Item.Item_ColorF < 0) && (Item.Item_ColorA == 0))
                         {
-                            TextBufferTrimLine(Y + YY);
+                            TextBuffer.Trim(Y + YY);
                         }
                     }
                     else
                     {
-                        if ((!TextWork.SpaceChars.Contains(Ch)) || (Col != 0))
+                        if ((!TextWork.SpaceChars.Contains(Item.Item_Char)) || (Item.Item_ColorB >= 0) || (Item.Item_ColorF >= 0) || (Item.Item_ColorA > 0))
                         {
-                            if (TextBuffer[Y + YY].Count < (X + XX))
-                            {
-                                TextBuffer[Y + YY].AddRange(TextWork.Spaces((X + XX) - TextBuffer[Y + YY].Count));
-                                TextColBuf[Y + YY].AddRange(TextWork.BlkCol((X + XX) - TextColBuf[Y + YY].Count));
-                                TextFonBuf[Y + YY].AddRange(TextWork.BlkCol((X + XX) - TextFonBuf[Y + YY].Count));
-                            }
-                            TextBuffer[Y + YY].Add(Ch);
-                            TextColBuf[Y + YY].Add(Col);
-                            TextFonBuf[Y + YY].Add(Fon);
+                            TextBuffer.CopyItem(Item);
+                            TextBuffer.Set_(Y + YY, X + XX);
                         }
                     }
 
@@ -612,9 +621,7 @@ namespace TextPaint
                             {
                                 if (UndoBufferItem_.Y[i] == (Y + YY))
                                 {
-                                    UndoBufferItem_.CharNew[i] = Ch;
-                                    UndoBufferItem_.ColoNew[i] = Col;
-                                    UndoBufferItem_.FontNew[i] = Fon;
+                                    UndoBufferItem_.ItemNew[i] = Item;
                                     UndoBufNew = false;
                                     break;
                                 }
@@ -624,23 +631,17 @@ namespace TextPaint
                         {
                             UndoBufferItem_.X.Add(X + XX);
                             UndoBufferItem_.Y.Add(Y + YY);
-                            UndoBufferItem_.CharOld.Add(Ch_);
-                            UndoBufferItem_.ColoOld.Add(Col_);
-                            UndoBufferItem_.FontOld.Add(Fon_);
-                            UndoBufferItem_.CharNew.Add(Ch);
-                            UndoBufferItem_.ColoNew.Add(Col);
-                            UndoBufferItem_.FontNew.Add(Fon);
+                            UndoBufferItem_.ItemOld.Add(Item_);
+                            UndoBufferItem_.ItemNew.Add(Item);
                             UndoBufferItem_.OpParams.Add(null);
                         }
                     }
                 }
             }
-            while ((TextBuffer.Count > 0) && (TextBuffer[TextBuffer.Count - 1].Count == 0))
+            while ((TextBuffer.CountLines() > 0) && (TextBuffer.CountItems(TextBuffer.CountLines() - 1) == 0))
             {
-                TextBuffer.RemoveAt(TextBuffer.Count - 1);
-                TextColBuf.RemoveAt(TextColBuf.Count - 1);
-                TextFonBuf.RemoveAt(TextFonBuf.Count - 1);
-                TextDisplayLine(TextBuffer.Count);
+                TextBuffer.DeleteLine(TextBuffer.CountLines() - 1);
+                TextDisplayLine(TextBuffer.CountLines());
             }
             for (int YY = 0; YY < CursorFontH_; YY++)
             {
@@ -675,20 +676,22 @@ namespace TextPaint
             {
                 for (int XX = XMin; XX < XMax; XX++)
                 {
+                    ScrChar_.Get(YY, XX);
                     if (Show)
                     {
-                        if (ScrCharType[YY][XX] < 3)
+                        if (ScrChar_.Item_Type < 3)
                         {
-                            ScrCharType[YY][XX] += 3;
+                            ScrChar_.Item_Type += 3;
                         }
                     }
                     else
                     {
-                        if (ScrCharType[YY][XX] > 2)
+                        if (ScrChar_.Item_Type > 2)
                         {
-                            ScrCharType[YY][XX] -= 3;
+                            ScrChar_.Item_Type -= 3;
                         }
                     }
+                    ScrChar_.Set(YY, XX);
                 }
             }
         }
@@ -709,20 +712,22 @@ namespace TextPaint
                 {
                     if ((XX != X) || (YY != Y))
                     {
+                        ScrChar_.Get(YY, XX);
                         if (Show)
                         {
-                            if (ScrCharType[YY][XX] < 3)
+                            if (ScrChar_.Item_Type < 3)
                             {
-                                ScrCharType[YY][XX] += 3;
+                                ScrChar_.Item_Type += 3;
                             }
                         }
                         else
                         {
-                            if (ScrCharType[YY][XX] > 2)
+                            if (ScrChar_.Item_Type > 2)
                             {
-                                ScrCharType[YY][XX] -= 3;
+                                ScrChar_.Item_Type -= 3;
                             }
                         }
+                        ScrChar_.Set(YY, XX);
                     }
                 }
             }
@@ -1032,68 +1037,44 @@ namespace TextPaint
             {
                 DisplayY--;
                 Screen_.Move(0, 0, 0, 1, WinTxtW, WinTxtH - 1);
-                ScrCharType.Insert(0, new List<int>());
-                ScrCharType.RemoveAt(WinTxtH);
-                ScrCharStr.Insert(0, new List<int>());
-                ScrCharCol.Insert(0, new List<int>());
-                ScrCharFon.Insert(0, new List<int>());
-                ScrCharStr.RemoveAt(WinTxtH);
-                ScrCharCol.RemoveAt(WinTxtH);
-                ScrCharFon.RemoveAt(WinTxtH);
-                ScrCharTypeDisp.Insert(0, BlankDispLineT());
-                ScrCharTypeDisp.RemoveAt(WinTxtH);
-                ScrCharStrDisp.Insert(0, BlankDispLineT());
-                ScrCharColDisp.Insert(0, BlankDispLineC());
-                ScrCharFonDisp.Insert(0, BlankDispLineC());
-                ScrCharStrDisp.RemoveAt(WinTxtH);
-                ScrCharColDisp.RemoveAt(WinTxtH);
-                ScrCharFonDisp.RemoveAt(WinTxtH);
+                ScrChar_.InsertLine(0);
+                ScrChar_.DeleteLine(WinTxtH);
+
+                ScrCharDisp_.InsertLine(0);
+                ScrCharDisp_.PadRightTab(0, WinTxtW);
+                ScrCharDisp_.DeleteLine(WinTxtH);
                 TextDisplay(1);
             }
             while (DisplayY < (CursorY - WinTxtH + 1))
             {
                 DisplayY++;
                 Screen_.Move(0, 1, 0, 0, WinTxtW, WinTxtH - 1);
-                ScrCharType.RemoveAt(0);
-                ScrCharType.Add(new List<int>());
-                ScrCharStr.RemoveAt(0);
-                ScrCharCol.RemoveAt(0);
-                ScrCharFon.RemoveAt(0);
-                ScrCharStr.Add(new List<int>());
-                ScrCharCol.Add(new List<int>());
-                ScrCharFon.Add(new List<int>());
-                ScrCharTypeDisp.RemoveAt(0);
-                ScrCharTypeDisp.Add(BlankDispLineT());
-                ScrCharStrDisp.RemoveAt(0);
-                ScrCharColDisp.RemoveAt(0);
-                ScrCharFonDisp.RemoveAt(0);
-                ScrCharStrDisp.Add(BlankDispLineT());
-                ScrCharColDisp.Add(BlankDispLineC());
-                ScrCharFonDisp.Add(BlankDispLineC());
+                ScrChar_.DeleteLine(0);
+                ScrChar_.AppendLine();
+
+                ScrCharDisp_.DeleteLine(0);
+                ScrCharDisp_.AppendLine();
+                int II = ScrCharDisp_.CountLines() - 1;
+                for (int I = 0; I < WinTxtW; I++)
+                {
+                    ScrCharDisp_.PadRightTab(II, WinTxtW);
+                }
                 TextDisplay(2);
             }
             while (DisplayX > CursorX)
             {
                 DisplayX--;
                 Screen_.Move(0, 0, 1, 0, WinTxtW - 1, WinTxtH);
+                ScrChar_.BlankChar();
+                ScrCharDisp_.BlankChar();
+                ScrCharDisp_.Item_Type = 32;
                 for (int i = 0; i < WinTxtH; i++)
                 {
-                    ScrCharType[i].Insert(0, 0);
-                    ScrCharType[i].RemoveAt(WinTxtW);
-                    ScrCharStr[i].Insert(0, TextWork.SpaceChar0);
-                    ScrCharCol[i].Insert(0, 0);
-                    ScrCharFon[i].Insert(0, 0);
-                    ScrCharStr[i].RemoveAt(WinTxtW);
-                    ScrCharCol[i].RemoveAt(WinTxtW);
-                    ScrCharFon[i].RemoveAt(WinTxtW);
-                    ScrCharTypeDisp[i].Insert(0, TextWork.SpaceChar0);
-                    ScrCharTypeDisp[i].RemoveAt(WinTxtW);
-                    ScrCharStrDisp[i].Insert(0, TextWork.SpaceChar0);
-                    ScrCharColDisp[i].Insert(0, 0);
-                    ScrCharFonDisp[i].Insert(0, 0);
-                    ScrCharStrDisp[i].RemoveAt(WinTxtW);
-                    ScrCharColDisp[i].RemoveAt(WinTxtW);
-                    ScrCharFonDisp[i].RemoveAt(WinTxtW);
+                    ScrChar_.Insert(i, 0);
+                    ScrChar_.Delete(i, WinTxtW);
+
+                    ScrCharDisp_.Insert(i, 0);
+                    ScrCharDisp_.Delete(i, WinTxtW);
                 }
                 TextDisplay(3);
             }
@@ -1101,24 +1082,16 @@ namespace TextPaint
             {
                 DisplayX++;
                 Screen_.Move(1, 0, 0, 0, WinTxtW - 1, WinTxtH);
+                ScrChar_.BlankChar();
+                ScrCharDisp_.BlankChar();
+                ScrCharDisp_.Item_Type = 32;
                 for (int i = 0; i < WinTxtH; i++)
                 {
-                    ScrCharType[i].RemoveAt(0);
-                    ScrCharType[i].Add(0);
-                    ScrCharStr[i].RemoveAt(0);
-                    ScrCharCol[i].RemoveAt(0);
-                    ScrCharFon[i].RemoveAt(0);
-                    ScrCharStr[i].Add(TextWork.SpaceChar0);
-                    ScrCharCol[i].Add(0);
-                    ScrCharFon[i].Add(0);
-                    ScrCharTypeDisp[i].Add(TextWork.SpaceChar0);
-                    ScrCharTypeDisp[i].RemoveAt(0);
-                    ScrCharStrDisp[i].Add(TextWork.SpaceChar0);
-                    ScrCharColDisp[i].Add(0);
-                    ScrCharFonDisp[i].Add(0);
-                    ScrCharStrDisp[i].RemoveAt(0);
-                    ScrCharColDisp[i].RemoveAt(0);
-                    ScrCharFonDisp[i].RemoveAt(0);
+                    ScrChar_.Delete(i, 0);
+                    ScrChar_.Append(i);
+
+                    ScrCharDisp_.Delete(i, 0);
+                    ScrCharDisp_.Append(i);
                 }
                 TextDisplay(4);
             }
@@ -1126,7 +1099,7 @@ namespace TextPaint
 
 
 
-        Semigraphics Semigraphics_;
+        public Semigraphics Semigraphics_;
         Clipboard Clipboard_;
 
         public string CurrentFileName = "";
@@ -1283,18 +1256,10 @@ namespace TextPaint
             
             WinW = -1;
             WinH = -1;
-            ScrCharType = new List<List<int>>();
-            ScrCharStr = new List<List<int>>();
-            ScrCharCol = new List<List<int>>();
-            ScrCharFon = new List<List<int>>();
-            TextBuffer = new List<List<int>>();
-            TextColBuf = new List<List<int>>();
-            ScrCharTypeDisp = new List<List<int>>();
-            ScrCharStrDisp = new List<List<int>>();
-            ScrCharColDisp = new List<List<int>>();
-            ScrCharFonDisp = new List<List<int>>();
+            ScrChar_ = new AnsiLineOccupyEx();
+            TextBuffer = new AnsiLineOccupyEx();
+            ScrCharDisp_ = new AnsiLineOccupyEx();
             TextBuffer.Clear();
-            TextColBuf.Clear();
             FileREnc = CF.ParamGetS("FileReadEncoding");
             FileWEnc = CF.ParamGetS("FileWriteEncoding");
             FileReadSteps = CF.ParamGetI("FileReadSteps");
@@ -1306,11 +1271,10 @@ namespace TextPaint
             __AnsiLineOccupy2_Use = CF.ParamGetB("ANSIBufferBelow");
             ANSI_CR = CF.ParamGetI("ANSIReadCR");
             ANSI_LF = CF.ParamGetI("ANSIReadLF");
-            AnsiColorBackBlink = CF.ParamGetB("ANSIWriteBlink");
-            AnsiColorForeBold = CF.ParamGetB("ANSIWriteBold");
             TextBeyondLineMargin = CF.ParamGetI("BeyondLineMargin");
 
             ANSIDOS = CF.ParamGetB("ANSIDOS");
+            ANSI8bit = CF.ParamGetB("ANSI8bit");
             ANSIPrintBackspace = CF.ParamGetB("ANSIPrintBackspace");
             ANSIPrintTab = CF.ParamGetB("ANSIPrintTab");
 
@@ -1356,10 +1320,6 @@ namespace TextPaint
             ReadColor(CF.ParamGetS("ColorStatus"), ref StatusBack, ref StatusFore);
             ReadColor(CF.ParamGetS("ColorPopup"), ref PopupBack, ref PopupFore);
 
-            ANSIIgnoreBlink = CF.ParamGetB("ANSIIgnoreBlink");
-            ANSIIgnoreBold = CF.ParamGetB("ANSIIgnoreBold");
-            ANSIIgnoreConcealed = CF.ParamGetB("ANSIIgnoreConcealed");
-            ANSIReverseMode = CF.ParamGetI("ANSIReverseMode");
             UseWindow = (CF.ParamGetI("WinUse") > 0);
             CursorDisplay = UseWindow ? true : CF.ParamGetB("ConCursorDisplay");
             bool ColorBlending = CF.ParamGetB("WinColorBlending");
@@ -1399,6 +1359,7 @@ namespace TextPaint
                 }
                 Screen_.BellMethod = CF.ParamGetI("Bell");
             }
+
             if (WorkMode == 1)
             {
                 Telnet_ = new Telnet(this, CF);
@@ -1488,7 +1449,7 @@ namespace TextPaint
                 RenderSliceY = CF.ParamGetI("RenderSliceY");
                 RenderSliceW = CF.ParamGetI("RenderSliceW");
                 RenderSliceH = CF.ParamGetI("RenderSliceH");
-                RenderStart(CF.ParamGetS("RenderFile"), CF.ParamGetI("RenderStep"), CF.ParamGetI("RenderOffset"), CF.ParamGetI("RenderFrame"), CF.ParamGetB("RenderCursor"), CF.ParamGetS("RenderType"));
+                RenderStart(CF);
             }
         }
 
@@ -1497,7 +1458,7 @@ namespace TextPaint
             Screen_.Clear(TextNormalBack, TextNormalFore);
             if (WorkMode == 0)
             {
-                FileLoad0();
+                FileLoad0(true);
             }
             if (WorkMode == 1)
             {
@@ -1519,48 +1480,61 @@ namespace TextPaint
             {
                 for (int X = 0; X < WinTxtW; X++)
                 {
-                    if (Force || (ScrCharStrDisp[Y][X] != ScrCharStr[Y][X]) || (ScrCharColDisp[Y][X] != ScrCharCol[Y][X]) || (ScrCharFonDisp[Y][X] != ScrCharFon[Y][X]) || (ScrCharTypeDisp[Y][X] != ScrCharType[Y][X]))
+                    ScrChar_.Get(Y, X);
+                    ScrCharDisp_.Get(Y, X);
+                    bool Difference = false;
+                    if (ScrCharDisp_.Item_Char != ScrChar_.Item_Char) Difference = true;
+                    if (ScrCharDisp_.Item_ColorB != ScrChar_.Item_ColorB) Difference = true;
+                    if (ScrCharDisp_.Item_ColorF != ScrChar_.Item_ColorF) Difference = true;
+                    if (ScrCharDisp_.Item_ColorA != ScrChar_.Item_ColorA) Difference = true;
+                    if (ScrCharDisp_.Item_FontW != ScrChar_.Item_FontW) Difference = true;
+                    if (ScrCharDisp_.Item_FontH != ScrChar_.Item_FontH) Difference = true;
+                    if (ScrCharDisp_.Item_Type != ScrChar_.Item_Type) Difference = true;
+                    if (Force || Difference)
                     {
-                        int ColorB = 0;
-                        int ColorF = 0;
-                        int FontW = 0;
-                        int FontH = 0;
-                        ColorFromInt(ScrCharCol[Y][X], out ColorB, out ColorF);
-                        FontSFromInt(ScrCharFon[Y][X], out FontW, out FontH);
-                        switch (ScrCharType[Y][X])
+                        bool InsideText = true;
+                        switch (ScrChar_.Item_Type)
                         {
-                            case 0:
-                                if (ColorB < 0) { ColorB = TextNormalBack; }
-                                if (ColorF < 0) { ColorF = TextNormalFore; }
-                                break;
                             case 1:
                                 if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && ((X + DisplayX) < AnsiMaxX)))
                                 {
-                                    ColorB = TextNormalBack;
-                                    ColorF = TextNormalFore;
+                                    ScrChar_.Item_ColorB = -1;
+                                    ScrChar_.Item_ColorF = -1;
                                 }
                                 else
                                 {
-                                    ColorB = TextBeyondLineBack;
-                                    ColorF = TextBeyondLineFore;
+                                    ScrChar_.Item_ColorB = TextBeyondLineBack;
+                                    ScrChar_.Item_ColorF = TextBeyondLineFore;
+                                    InsideText = false;
                                 }
                                 break;
                             case 2:
-                                ColorB = TextBeyondEndBack;
-                                ColorF = TextBeyondEndFore;
+                                ScrChar_.Item_ColorB = TextBeyondEndBack;
+                                ScrChar_.Item_ColorF = TextBeyondEndFore;
+                                InsideText = false;
                                 break;
                             case 3:
                             case 4:
                             case 5:
-                                ColorB = CursorBack;
-                                ColorF = CursorFore;
+                                ScrChar_.Item_ColorB = CursorBack;
+                                ScrChar_.Item_ColorF = CursorFore;
+                                InsideText = false;
                                 break;
                         }
-                        ScrCharTypeDisp[Y][X] = ScrCharType[Y][X];
-                        ScrCharStrDisp[Y][X] = ScrCharStr[Y][X];
-                        ScrCharColDisp[Y][X] = ScrCharCol[Y][X];
-                        ScrCharFonDisp[Y][X] = ScrCharFon[Y][X];
-                        Screen_.PutChar(X, Y, ScrCharStr[Y][X], ColorB, ColorF, FontW, FontH);
+                        ScrCharDisp_.CopyItem(ScrChar_);
+                        ScrCharDisp_.Set(Y, X);
+                        if (InsideText)
+                        {
+                            if (Force)
+                            {
+                                Screen_.PutChar(X, Y, 32, -1, -1);
+                            }
+                            Screen_.PutChar(X, Y, ScrChar_.Item_Char, ScrChar_.Item_ColorB, ScrChar_.Item_ColorF, ScrChar_.Item_FontW, ScrChar_.Item_FontH, ScrChar_.Item_ColorA);
+                        }
+                        else
+                        {
+                            Screen_.PutChar(X, Y, ScrChar_.Item_Char, ScrChar_.Item_ColorB, ScrChar_.Item_ColorF);
+                        }
                     }
                 }
             }
@@ -1579,24 +1553,15 @@ namespace TextPaint
                     WinTxtW = WinW;
                     WinTxtH = WinH - 1;
 
-                    ScrCharType.Clear();
-                    ScrCharStr.Clear();
-                    ScrCharCol.Clear();
-                    ScrCharFon.Clear();
-                    ScrCharTypeDisp.Clear();
-                    ScrCharStrDisp.Clear();
-                    ScrCharColDisp.Clear();
-                    ScrCharFonDisp.Clear();
+                    ScrChar_.Clear();
+                    ScrCharDisp_.Clear();
+                    ScrCharDisp_.BlankChar();
+                    ScrCharDisp_.Item_Type = 32;
                     for (int i = 0; i < WinTxtH; i++)
                     {
-                        ScrCharType.Add(new List<int>());
-                        ScrCharStr.Add(new List<int>());
-                        ScrCharCol.Add(new List<int>());
-                        ScrCharFon.Add(new List<int>());
-                        ScrCharTypeDisp.Add(BlankDispLineT());
-                        ScrCharStrDisp.Add(BlankDispLineT());
-                        ScrCharColDisp.Add(BlankDispLineC());
-                        ScrCharFonDisp.Add(BlankDispLineC());
+                        ScrChar_.AppendLine();
+                        ScrCharDisp_.AppendLine();
+                        ScrCharDisp_.PadRight(i, WinTxtW);
                     }
                     TextDisplay(0);
                     CursorLimit();
@@ -1606,6 +1571,8 @@ namespace TextPaint
             {
                 if (Screen_.WindowResize())
                 {
+                    WinW = Screen_.WinW;
+                    WinH = Screen_.WinH;
                     if (Telnet_ != null)
                     {
                         if (WorkMode == 1)
@@ -1634,11 +1601,11 @@ namespace TextPaint
 
         string BeyondIndicator()
         {
-            if ((CursorY + CursorFontH - 1) < TextBuffer.Count)
+            if ((CursorY + CursorFontH - 1) < TextBuffer.CountLines())
             {
                 for (int i = 0; i < CursorFontH; i++)
                 {
-                    if ((CursorX + CursorFontW - 1) >= TextBuffer[CursorY + i].Count)
+                    if ((CursorX + CursorFontW - 1) >= TextBuffer.CountItems(CursorY + i))
                     {
                         return ";";
                     }
@@ -1652,7 +1619,9 @@ namespace TextPaint
         }
 
         int StatusCursorChar = 32;
-        int StatusCursorColo = 0;
+        int StatusCursorColoB = -1;
+        int StatusCursorColoF = -1;
+        int StatusCursorColoA = 0;
         public void ScreenRefresh(bool Force)
         {
             WindowResize();
@@ -1663,8 +1632,10 @@ namespace TextPaint
                 if (TextCipher_.PasswordState == 0)
                 {
                     StringBuilder StatusText = new StringBuilder();
-                    Semigraphics_.CursorChar = CharGet(CursorX, CursorY, true, false);
-                    Semigraphics_.CursorColo = ColoGet(CursorX, CursorY, true, false);
+                    Semigraphics_.CursorChar = ElementGetVal(CursorX, CursorY, true, false, 0);
+                    Semigraphics_.CursorColoB = ElementGetVal(CursorX, CursorY, true, false, 1);
+                    Semigraphics_.CursorColoF = ElementGetVal(CursorX, CursorY, true, false, 2);
+                    Semigraphics_.CursorColoA = ElementGetVal(CursorX, CursorY, true, false, 3);
                     if (WorkState == WorkStateDef.DrawPixel)
                     {
                         StatusText.Append(PixelPaint_.PPS.FontW.ToString());
@@ -1707,28 +1678,30 @@ namespace TextPaint
                         if (!InfoScreen_.Shown)
                         {
                             StatusCursorChar = Semigraphics_.CursorChar;
-                            StatusCursorColo = Semigraphics_.CursorColo;
+                            StatusCursorColoB = Semigraphics_.CursorColoB;
+                            StatusCursorColoF = Semigraphics_.CursorColoF;
+                            StatusCursorColoA = Semigraphics_.CursorColoA;
 
                         }
                         StatusText.Append(" " + TextWork.CharCode(StatusCursorChar, 1) + " " + TextWork.CharToStr(StatusCursorChar) + " ");
-                        int _ColorB, _ColorF;
-                        ColorFromInt(StatusCursorColo, out _ColorB, out _ColorF);
-                        if ((_ColorB >= 0) && (_ColorB <= 15))
+                        if ((StatusCursorColoB >= 0) && (StatusCursorColoB <= 15))
                         {
-                            StatusText.Append(_ColorB.ToString("X"));
+                            StatusText.Append(StatusCursorColoB.ToString("X"));
                         }
                         else
                         {
                             StatusText.Append("-");
                         }
-                        if ((_ColorF >= 0) && (_ColorF <= 15))
+                        if ((StatusCursorColoF >= 0) && (StatusCursorColoF <= 15))
                         {
-                            StatusText.Append(_ColorF.ToString("X"));
+                            StatusText.Append(StatusCursorColoF.ToString("X"));
                         }
                         else
                         {
                             StatusText.Append("-");
                         }
+                        StatusText.Append(" ");
+                        StatusText.Append(GetAttribText(StatusCursorColoA));
                         StatusText.Append(" ");
                     }
 
@@ -2048,7 +2021,7 @@ namespace TextPaint
                             }
                             for (int i = 0; i < WinW; i++)
                             {
-                                Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore, 0, 0);
+                                Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore);
                             }
 
                             Screen_.SetCursorPosition(0, WinH - 1);
@@ -2081,87 +2054,48 @@ namespace TextPaint
                         {
                             case 2:
                                 Screen_.Move(0, 0, 0, 1, WinTxtW, WinTxtH - 1);
-                                ScrCharType.Insert(0, new List<int>());
-                                ScrCharType.RemoveAt(WinTxtH);
-                                ScrCharStr.Insert(0, new List<int>());
-                                ScrCharCol.Insert(0, new List<int>());
-                                ScrCharFon.Insert(0, new List<int>());
-                                ScrCharStr.RemoveAt(WinTxtH);
-                                ScrCharCol.RemoveAt(WinTxtH);
-                                ScrCharFon.RemoveAt(WinTxtH);
-                                ScrCharTypeDisp.Insert(0, BlankDispLineT());
-                                ScrCharTypeDisp.RemoveAt(WinTxtH);
-                                ScrCharStrDisp.Insert(0, BlankDispLineT());
-                                ScrCharColDisp.Insert(0, BlankDispLineC());
-                                ScrCharFonDisp.Insert(0, BlankDispLineC());
-                                ScrCharStrDisp.RemoveAt(WinTxtH);
-                                ScrCharColDisp.RemoveAt(WinTxtH);
-                                ScrCharFonDisp.RemoveAt(WinTxtH);
+                                ScrChar_.InsertLine(0);
+                                ScrChar_.DeleteLine(WinTxtH);
+                                ScrCharDisp_.InsertLine(0);
+                                ScrCharDisp_.PadRightTab(0, WinTxtW);
+                                ScrCharDisp_.DeleteLine(WinTxtH);
                                 TextDisplay(1);
                                 break;
                             case 3:
                                 Screen_.Move(0, 1, 0, 0, WinTxtW, WinTxtH - 1);
-                                ScrCharType.RemoveAt(0);
-                                ScrCharType.Add(new List<int>());
-                                ScrCharStr.RemoveAt(0);
-                                ScrCharCol.RemoveAt(0);
-                                ScrCharFon.RemoveAt(0);
-                                ScrCharStr.Add(new List<int>());
-                                ScrCharCol.Add(new List<int>());
-                                ScrCharFon.Add(new List<int>());
-                                ScrCharTypeDisp.RemoveAt(0);
-                                ScrCharTypeDisp.Add(BlankDispLineT());
-                                ScrCharStrDisp.RemoveAt(0);
-                                ScrCharColDisp.RemoveAt(0);
-                                ScrCharFonDisp.RemoveAt(0);
-                                ScrCharStrDisp.Add(BlankDispLineT());
-                                ScrCharColDisp.Add(BlankDispLineC());
-                                ScrCharFonDisp.Add(BlankDispLineC());
+                                ScrChar_.DeleteLine(0);
+                                ScrChar_.AppendLine();
+                                ScrCharDisp_.DeleteLine(0);
+                                ScrCharDisp_.AppendLine();
+                                int II = ScrCharDisp_.CountLines() - 1;
+                                ScrCharDisp_.PadRightTab(II, WinTxtW);
                                 TextDisplay(2);
                                 break;
                             case 4:
                                 Screen_.Move(0, 0, 1, 0, WinTxtW - 1, WinTxtH);
+                                ScrChar_.BlankChar();
+                                ScrCharDisp_.BlankChar();
+                                ScrCharDisp_.Item_Type = 32;
                                 for (int i = 0; i < WinTxtH; i++)
                                 {
-                                    ScrCharType[i].Insert(0, 0);
-                                    ScrCharType[i].RemoveAt(WinTxtW);
-                                    ScrCharStr[i].Insert(0, TextWork.SpaceChar0);
-                                    ScrCharCol[i].Insert(0, 0);
-                                    ScrCharFon[i].Insert(0, 0);
-                                    ScrCharStr[i].RemoveAt(WinTxtW);
-                                    ScrCharCol[i].RemoveAt(WinTxtW);
-                                    ScrCharFon[i].RemoveAt(WinTxtW);
-                                    ScrCharTypeDisp[i].Insert(0, TextWork.SpaceChar0);
-                                    ScrCharTypeDisp[i].RemoveAt(WinTxtW);
-                                    ScrCharStrDisp[i].Insert(0, TextWork.SpaceChar0);
-                                    ScrCharColDisp[i].Insert(0, 0);
-                                    ScrCharFonDisp[i].Insert(0, 0);
-                                    ScrCharStrDisp[i].RemoveAt(WinTxtW);
-                                    ScrCharColDisp[i].RemoveAt(WinTxtW);
-                                    ScrCharFonDisp[i].RemoveAt(WinTxtW);
+                                    ScrChar_.Insert(i, 0);
+                                    ScrChar_.Delete(i, WinTxtW);
+                                    ScrCharDisp_.Insert(i, 0);
+                                    ScrCharDisp_.Delete(i, WinTxtW);
                                 }
                                 TextDisplay(3);
                                 break;
                             case 5:
                                 Screen_.Move(1, 0, 0, 0, WinTxtW - 1, WinTxtH);
+                                ScrChar_.BlankChar();
+                                ScrCharDisp_.BlankChar();
+                                ScrCharDisp_.Item_Type = 32;
                                 for (int i = 0; i < WinTxtH; i++)
                                 {
-                                    ScrCharType[i].RemoveAt(0);
-                                    ScrCharType[i].Add(0);
-                                    ScrCharStr[i].RemoveAt(0);
-                                    ScrCharCol[i].RemoveAt(0);
-                                    ScrCharFon[i].RemoveAt(0);
-                                    ScrCharStr[i].Add(TextWork.SpaceChar0);
-                                    ScrCharCol[i].Add(0);
-                                    ScrCharFon[i].Add(0);
-                                    ScrCharTypeDisp[i].Add(TextWork.SpaceChar0);
-                                    ScrCharTypeDisp[i].RemoveAt(0);
-                                    ScrCharStrDisp[i].Add(TextWork.SpaceChar0);
-                                    ScrCharColDisp[i].Add(0);
-                                    ScrCharFonDisp[i].Add(0);
-                                    ScrCharStrDisp[i].RemoveAt(0);
-                                    ScrCharColDisp[i].RemoveAt(0);
-                                    ScrCharFonDisp[i].RemoveAt(0);
+                                    ScrChar_.Delete(i, 0);
+                                    ScrChar_.Append(i);
+                                    ScrCharDisp_.Delete(i, 0);
+                                    ScrCharDisp_.Append(i);
                                 }
                                 TextDisplay(4);
                                 break;
@@ -2256,7 +2190,7 @@ namespace TextPaint
                     FileSave0();
                     return;
                 case "F8":
-                    FileLoad0();
+                    FileLoad0(false);
                     return;
 
                 case "WindowClose":
@@ -2360,12 +2294,12 @@ namespace TextPaint
                                     {
                                         if (KeyChar <= 255)
                                         {
-                                            CharPut(CursorX, CursorY, Semigraphics_.FavChar[KeyChar], Semigraphics_.DrawColoI, 0, false);
+                                            CharPut0(CursorX, CursorY, Semigraphics_.FavChar[KeyChar]);
                                         }
                                     }
                                     else
                                     {
-                                        CharPut(CursorX, CursorY, KeyChar, Semigraphics_.DrawColoI, 0, false);
+                                        CharPut0(CursorX, CursorY, KeyChar);
                                     }
                                     if (TextMoveDir == 0) { MoveCursor(3); }
                                     if (TextMoveDir == 2) { MoveCursor(1); }
@@ -2630,11 +2564,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[2], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[2]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[13], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[13]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2643,11 +2577,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[3], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[3]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[14], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[14]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2656,11 +2590,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[4], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[4]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[15], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[15]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2669,11 +2603,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[5], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[5]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[16], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[16]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2682,11 +2616,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[6], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[6]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[17], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[17]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2695,11 +2629,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[7], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[7]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[18], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[18]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2708,11 +2642,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[8], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[8]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[19], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[19]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2721,11 +2655,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[9], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[9]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[20], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[20]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2734,11 +2668,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[10], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[10]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[21], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[21]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2748,11 +2682,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[1], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[1]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[12], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[12]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2761,18 +2695,18 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[0], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[0]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[11], Semigraphics_.DrawColoI, -1, false);
+                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[11]);
                                 }
                                 UndoBufferStop();
                                 break;
                             case "Space":
                             case "NumPad0":
                                 UndoBufferStart();
-                                CharPut(CursorX, CursorY, Semigraphics_.DrawCharI, Semigraphics_.DrawColoI, -1, false);
+                                CharPut(CursorX, CursorY, Semigraphics_.DrawCharI);
                                 UndoBufferStop();
                                 break;
 
@@ -2905,23 +2839,23 @@ namespace TextPaint
 
                             case "R":
                                 PixelPaint_.PPS.PaintColor++;
-                                if (PixelPaint_.PPS.PaintColor == 3)
+                                if (PixelPaint_.PPS.PaintColor == 4)
                                 {
                                     PixelPaint_.PPS.PaintColor = 0;
                                 }
-                                if (PixelPaint_.PPS.PaintColor == 6)
+                                if (PixelPaint_.PPS.PaintColor == 8)
                                 {
-                                    PixelPaint_.PPS.PaintColor = 3;
+                                    PixelPaint_.PPS.PaintColor = 4;
                                 }
                                 break;
                             case "F":
-                                if (PixelPaint_.PPS.PaintColor < 3)
+                                if (PixelPaint_.PPS.PaintColor < 4)
                                 {
-                                    PixelPaint_.PPS.PaintColor += 3;
+                                    PixelPaint_.PPS.PaintColor += 4;
                                 }
                                 else
                                 {
-                                    PixelPaint_.PPS.PaintColor -= 3;
+                                    PixelPaint_.PPS.PaintColor -= 4;
                                 }
                                 break;
 
@@ -3063,7 +2997,7 @@ namespace TextPaint
             FileSave(CurrentFileName);
         }
 
-        void FileLoad0()
+        void FileLoad0(bool ForceDummyLoad)
         {
             List<int> NewFile_ = new List<int>();
             int TempX = CursorX;
@@ -3120,11 +3054,14 @@ namespace TextPaint
 
             if (!("".Equals(NewFile)))
             {
-                CurrentFileName = NewFile;
-                CursorX = 0;
-                CursorY = 0;
-                DisplayX = 0;
-                DisplayY = 0;
+                if (ForceDummyLoad || (FileExists(NewFile)))
+                {
+                    CurrentFileName = NewFile;
+                    CursorX = 0;
+                    CursorY = 0;
+                    DisplayX = 0;
+                    DisplayY = 0;
+                }
             }
 
             if (TextCipher_.CipherEnabled)
@@ -3184,33 +3121,34 @@ namespace TextPaint
             int W_ = (W + 1) * CursorFontW;
             int H_ = (H + 1) * CursorFontH;
 
+            TextBuffer.BlankChar();
+            AnsiLineOccupyEx ColoBuffer = TextBuffer.CloneData();
+            AnsiLineOccupyEx TempBuffer = new AnsiLineOccupyEx();
             switch (InsDelMode)
             {
                 case 0:
                 case 10:
                     for (int i = Y; i < (Y + H_); i++)
                     {
-                        if (TextBuffer.Count > i)
+                        if (TextBuffer.CountLines() > i)
                         {
-                            if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X) || (TextWork.TrimEndLenCol(TextFonBuf[i]) > X))
+                            if (TextBuffer.CountItemsTrim(i) > X)
                             {
                                 if (ToggleDrawText)
                                 {
-                                    TextBuffer[i].InsertRange(X, TextWork.Spaces(W_));
-                                    TextFonBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                    TextBuffer.Insert(i, X, W_);
                                 }
                                 else
                                 {
-                                    TextBuffer[i].AddRange(TextWork.Spaces(W_));
-                                    TextFonBuf[i].AddRange(TextWork.BlkCol(W_));
+                                    TextBuffer.Append(i, W_);
                                 }
                                 if (ToggleDrawColo)
                                 {
-                                    TextColBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                    ColoBuffer.Insert(i, X, W_);
                                 }
                                 else
                                 {
-                                    TextColBuf[i].AddRange(TextWork.BlkCol(W_));
+                                    ColoBuffer.Append(i, W_);
                                 }
                             }
                         }
@@ -3218,119 +3156,119 @@ namespace TextPaint
                     break;
                 case 1:
                 case 11:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
-                        for (int i = Y; i < TextBuffer.Count; i++)
+                        for (int i = Y; i < TextBuffer.CountLines(); i++)
                         {
-                            if (TextBuffer[i].Count < (X + W_ + 1))
-                            {
-                                TextBuffer[i].AddRange(TextWork.Spaces((X + W_ + 1) - TextBuffer[i].Count));
-                                TextColBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextColBuf[i].Count));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextFonBuf[i].Count));
-                            }
+                            TextBuffer.PadRight(i, X + W_ + 1);
+                            ColoBuffer.PadRight(i, X + W_ + 1);
                         }
                         for (int i = 0; i < H_; i++)
                         {
-                            TextBuffer.Add(TextWork.Spaces(X + W_ + 1));
-                            TextColBuf.Add(TextWork.BlkCol(X + W_ + 1));
-                            TextFonBuf.Add(TextWork.BlkCol(X + W_ + 1));
+                            TextBuffer.AppendLine();
+                            TextBuffer.Append(TextBuffer.CountLines() - 1, X + W_ + 1);
+                            ColoBuffer.AppendLine();
+                            ColoBuffer.Append(ColoBuffer.CountLines() - 1, X + W_ + 1);
                         }
-                        for (int i = (TextBuffer.Count - H_ - 0); i > Y; i--)
+                        for (int i = (TextBuffer.CountLines() - H_ - 0); i > Y; i--)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i + H_ - 1].RemoveRange(X, W_);
-                                TextBuffer[i + H_ - 1].InsertRange(X, TextBuffer[i - 1].GetRange(X, W_));
-                                TextFonBuf[i + H_ - 1].RemoveRange(X, W_);
-                                TextFonBuf[i + H_ - 1].InsertRange(X, TextFonBuf[i - 1].GetRange(X, W_));
+                                TempBuffer.Clear();
+                                TempBuffer.AppendLineCopy(TextBuffer, i - 1);
+                                TempBuffer.Crop(0, X, W_);
+
+                                TextBuffer.Delete(i + H_ - 1, X, W_);
+                                TextBuffer.Insert(i + H_ - 1, X, TempBuffer, 0);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i + H_ - 1].RemoveRange(X, W_);
-                                TextColBuf[i + H_ - 1].InsertRange(X, TextColBuf[i - 1].GetRange(X, W_));
+                                TempBuffer.Clear();
+                                TempBuffer.AppendLineCopy(ColoBuffer, i - 1);
+                                TempBuffer.Crop(0, X, W_);
+
+                                ColoBuffer.Delete(i + H_ - 1, X, W_);
+                                ColoBuffer.Insert(i + H_ - 1, X, TempBuffer, 0);
                             }
-                            TextBufferTrimLine(i + H_ - 1);
+                            TextBuffer.Trim(i + H_ - 1);
+                            ColoBuffer.Trim(i + H_ - 1);
                         }
+                        TextBuffer.BlankChar();
+                        ColoBuffer.BlankChar();
                         for (int i = Y; i < (Y + H_); i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i].RemoveRange(X, W_);
-                                TextBuffer[i].InsertRange(X, TextWork.Spaces(W_));
-                                TextFonBuf[i].RemoveRange(X, W_);
-                                TextFonBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                TextBuffer.Delete(i, X, W_);
+                                TextBuffer.Insert(i, X, W_);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i].RemoveRange(X, W_);
-                                TextColBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                ColoBuffer.Delete(i, X, W_);
+                                ColoBuffer.Insert(i, X, W_);
                             }
-                            TextBufferTrimLine(i);
+                            TextBuffer.Trim(i);
+                            ColoBuffer.Trim(i);
                         }
                     }
                     break;
                 case 2:
                 case 12:
-                    for (int i = 0; i < TextBuffer.Count; i++)
+                    for (int i = 0; i < TextBuffer.CountLines(); i++)
                     {
-                        if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X) || (TextWork.TrimEndLenCol(TextFonBuf[i]) > X))
+                        if (TextBuffer.CountItemsTrim(i) > X)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i].InsertRange(X, TextWork.Spaces(W_));
-                                TextFonBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                TextBuffer.Insert(i, X, W_);
                             }
                             else
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces(W_));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(W_));
+                                TextBuffer.Append(i, W_);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                ColoBuffer.Insert(i, X, W_);
                             }
                             else
                             {
-                                TextColBuf[i].AddRange(TextWork.BlkCol(W_));
+                                ColoBuffer.Append(i, W_);
                             }
                         }
                     }
                     break;
                 case 3:
                 case 13:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
                         for (int i = 0; i < H_; i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer.Insert(Y, new List<int>());
-                                TextFonBuf.Insert(Y, new List<int>());
+                                TextBuffer.InsertLine(Y);
                             }
                             else
                             {
-                                TextBuffer.Add(new List<int>());
-                                TextFonBuf.Add(new List<int>());
+                                TextBuffer.AppendLine();
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf.Insert(Y, new List<int>());
+                                ColoBuffer.InsertLine(Y);
                             }
                             else
                             {
-                                TextColBuf.Add(new List<int>());
+                                ColoBuffer.AppendLine();
                             }
                         }
-                        for (int i = Y; i < TextBuffer.Count; i++)
+                        for (int i = Y; i < TextBuffer.CountLines(); i++)
                         {
-                            if (TextBuffer[i].Count < TextColBuf[i].Count)
+                            if (TextBuffer.CountItems(i) < ColoBuffer.CountItems(i))
                             {
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(TextColBuf[i].Count - TextBuffer[i].Count));
-                                TextBuffer[i].AddRange(TextWork.Spaces(TextColBuf[i].Count - TextBuffer[i].Count));
+                                TextBuffer.PadRight(i, ColoBuffer.CountItems(i));
                             }
-                            if (TextColBuf[i].Count < TextBuffer[i].Count)
+                            if (ColoBuffer.CountItems(i) < TextBuffer.CountItems(i))
                             {
-                                TextColBuf[i].AddRange(TextWork.BlkCol(TextBuffer[i].Count - TextColBuf[i].Count));
+                                ColoBuffer.PadRight(i, TextBuffer.CountItems(i));
                             }
                         }
                     }
@@ -3339,96 +3277,100 @@ namespace TextPaint
                 case 14:
                     for (int i = Y; i < (Y + H_); i++)
                     {
-                        if (TextBuffer.Count > i)
+                        if (TextBuffer.CountLines() > i)
                         {
-                            if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X) || (TextWork.TrimEndLenCol(TextFonBuf[i]) > X))
+                            if (TextBuffer.CountItemsTrim(i) > X)
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces(W_));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(W_));
-                                TextColBuf[i].AddRange(TextWork.BlkCol(W_));
-                                List<int> Temp;
-
+                                TextBuffer.BlankChar();
+                                TextBuffer.Append(i, W_);
+                                ColoBuffer.BlankChar();
+                                ColoBuffer.Append(i, W_);
                                 if (ToggleDrawText)
                                 {
-                                    Temp = TextBuffer[i].GetRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextBuffer[i].RemoveRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextBuffer[i].InsertRange(X, Temp);
-
-                                    Temp = TextFonBuf[i].GetRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextFonBuf[i].RemoveRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextFonBuf[i].InsertRange(X, Temp);
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(TextBuffer, i);
+                                    TempBuffer.Crop(0, X + W_ - CursorFontW, CursorFontW);
+                                    TextBuffer.Delete(i, X + W_ - CursorFontW, CursorFontW);
+                                    TextBuffer.Insert(i, X, TempBuffer, 0);
                                 }
                                 if (ToggleDrawColo)
                                 {
-                                    Temp = TextColBuf[i].GetRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextColBuf[i].RemoveRange(X + W_ - CursorFontW, CursorFontW);
-                                    TextColBuf[i].InsertRange(X, Temp);
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(ColoBuffer, i);
+                                    TempBuffer.Crop(0, X + W_ - CursorFontW, CursorFontW);
+                                    ColoBuffer.Delete(i, X + W_ - CursorFontW, CursorFontW);
+                                    ColoBuffer.Insert(i, X, TempBuffer, 0);
                                 }
-                                TextBufferTrimLine(i);
+                                TextBuffer.Trim(i);
+                                ColoBuffer.Trim(i);
                             }
                         }
                     }
                     break;
                 case 5:
                 case 15:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
+                        TextBuffer.BlankChar();
+                        ColoBuffer.BlankChar();
                         for (int i = Y; i < (Y + H_); i++)
                         {
-                            if (TextBuffer.Count <= i)
+                            if (TextBuffer.CountLines() <= i)
                             {
-                                TextBuffer.Add(new List<int>());
-                                TextColBuf.Add(new List<int>());
-                                TextFonBuf.Add(new List<int>());
+                                TextBuffer.AppendLine();
                             }
-                            if (TextBuffer[i].Count < (X + W_ + 1))
+                            TextBuffer.PadRight(i, (X + W_ + 1));
+                            if (ColoBuffer.CountLines() <= i)
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces((X + W_ + 1) - TextBuffer[i].Count));
-                                TextColBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextColBuf[i].Count));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextFonBuf[i].Count));
+                                ColoBuffer.AppendLine();
                             }
+                            ColoBuffer.PadRight(i, (X + W_ + 1));
                         }
-                        List<List<int>> Temp1 = new List<List<int>>();
-                        List<List<int>> Temp2 = new List<List<int>>();
-                        List<List<int>> Temp3 = new List<List<int>>();
+                        TempBuffer.Clear();
+                        TempBuffer.AppendLine();
+                        TempBuffer.AppendLine();
                         for (int i = 0; i < CursorFontH; i++)
                         {
-                            Temp1.Add(TextBuffer[Y + i + H_ - CursorFontH].GetRange(X, W_));
-                            Temp2.Add(TextFonBuf[Y + i + H_ - CursorFontH].GetRange(X, W_));
-                            Temp3.Add(TextColBuf[Y + i + H_ - CursorFontH].GetRange(X, W_));
+                            TempBuffer.AppendLineCopy(TextBuffer, Y + i + H_ - CursorFontH);
+                            TempBuffer.AppendLineCopy(ColoBuffer, Y + i + H_ - CursorFontH);
+                            TempBuffer.Crop((i << 1) + 2, X, W_);
+                            TempBuffer.Crop((i << 1) + 3, X, W_);
                         }
                         for (int i = (Y + H_ - CursorFontH - 1); i > (Y - 1); i--)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i + CursorFontH].RemoveRange(X, W_);
-                                TextBuffer[i + CursorFontH].InsertRange(X, TextBuffer[i].GetRange(X, W_));
-                                TextFonBuf[i + CursorFontH].RemoveRange(X, W_);
-                                TextFonBuf[i + CursorFontH].InsertRange(X, TextFonBuf[i].GetRange(X, W_));
+                                TempBuffer.LineCopy(TextBuffer, i, 0);
+                                TempBuffer.Crop(0, X, W_);
+
+                                TextBuffer.Delete(i + CursorFontH, X, W_);
+                                TextBuffer.Insert(i + CursorFontH, X, TempBuffer, 0);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i + CursorFontH].RemoveRange(X, W_);
-                                TextColBuf[i + CursorFontH].InsertRange(X, TextColBuf[i].GetRange(X, W_));
+                                TempBuffer.LineCopy(ColoBuffer, i, 1);
+                                TempBuffer.Crop(1, X, W_);
+
+                                ColoBuffer.Delete(i + CursorFontH, X, W_);
+                                ColoBuffer.Insert(i + CursorFontH, X, TempBuffer, 1);
                             }
-                            TextBufferTrimLine(i + CursorFontH);
+                            TextBuffer.Trim(i + CursorFontH);
+                            ColoBuffer.Trim(i + CursorFontH);
                         }
                         for (int i = 0; i < CursorFontH; i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[Y + i].RemoveRange(X, W_);
-                                TextBuffer[Y + i].InsertRange(X, Temp1[i]);
-
-                                TextFonBuf[Y + i].RemoveRange(X, W_);
-                                TextFonBuf[Y + i].InsertRange(X, Temp2[i]);
+                                TextBuffer.Delete(Y + i, X, W_);
+                                TextBuffer.Insert(Y + i, X, TempBuffer, (i << 1) + 2);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[Y + i].RemoveRange(X, W_);
-                                TextColBuf[Y + i].InsertRange(X, Temp3[i]);
+                                ColoBuffer.Delete(Y + i, X, W_);
+                                ColoBuffer.Insert(Y + i, X, TempBuffer, (i << 1) + 3);
                             }
-                            TextBufferTrimLine(Y + i);
+                            TextBuffer.Trim(Y + i);
+                            ColoBuffer.Trim(Y + i);
                         }
                     }
                     break;
@@ -3437,15 +3379,12 @@ namespace TextPaint
             {
                 UndoBufferItem_.X.Add(X);
                 UndoBufferItem_.Y.Add(Y);
-                UndoBufferItem_.CharOld.Add(-1);
-                UndoBufferItem_.CharNew.Add(-1);
-                UndoBufferItem_.ColoOld.Add(-1);
-                UndoBufferItem_.ColoNew.Add(-1);
-                UndoBufferItem_.FontOld.Add(-1);
-                UndoBufferItem_.FontNew.Add(-1);
+                UndoBufferItem_.ItemOld.Add(null);
+                UndoBufferItem_.ItemNew.Add(null);
                 UndoBufferItem_.OpParams.Add(new int[] { InsDelMode, W, H });
                 TextDisplay(0);
             }
+            TextBuffer.MergeColor(ColoBuffer);
             switch (InsDelMode)
             {
                 case 0:
@@ -3460,56 +3399,45 @@ namespace TextPaint
                             {
                                 for (int i_XX = 0; i_XX < CursorFontW; i_XX++)
                                 {
-                                    while (TextBuffer.Count <= (Y + H_))
+                                    while (TextBuffer.CountLines() <= (Y + H_))
                                     {
-                                        TextBuffer.Add(new List<int>());
-                                        TextColBuf.Add(new List<int>());
-                                        TextFonBuf.Add(new List<int>());
+                                        TextBuffer.AppendLine();
                                     }
-                                    if (TextBuffer[i_Y + i_YY].Count < (X + W_))
-                                    {
-                                        TextBuffer[i_Y + i_YY].AddRange(TextWork.Spaces((X + W_) - TextBuffer[i_Y + i_YY].Count));
-                                        TextColBuf[i_Y + i_YY].AddRange(TextWork.BlkCol((X + W_) - TextColBuf[i_Y + i_YY].Count));
-                                        TextFonBuf[i_Y + i_YY].AddRange(TextWork.BlkCol((X + W_) - TextFonBuf[i_Y + i_YY].Count));
-                                    }
+                                    TextBuffer.BlankChar();
+                                    TextBuffer.PadRight(i_Y + i_YY, X + W_);
 
-                                    int Temp_B, Temp_F, Temp_W, Temp_H;
+                                    AnsiLineOccupyItem Temp__ = new AnsiLineOccupyItem();
+
+                                    TextBuffer.Get(i_Y + i_YY, i_X + i_XX);
+                                    Temp__.CopyItem(TextBuffer);
                                     if (ToggleDrawColo)
                                     {
-                                        ColorFromInt(Semigraphics_.DrawColoI, out Temp_B, out Temp_F);
-                                    }
-                                    else
-                                    {
-                                        ColorFromInt(TextColBuf[i_Y + i_YY][i_X + i_XX], out Temp_B, out Temp_F);
+                                        TextBuffer.Item_ColorB = Semigraphics_.DrawColoBI;
+                                        TextBuffer.Item_ColorF = Semigraphics_.DrawColoFI;
+                                        TextBuffer.Item_ColorA = Semigraphics_.DrawColoAI;
                                     }
                                     if (ToggleDrawText)
                                     {
-                                        Temp_W = FontSizeCode(CursorFontW, i_XX);
-                                        Temp_H = FontSizeCode(CursorFontH, i_YY);
-                                    }
-                                    else
-                                    {
-                                        FontSFromInt(TextFonBuf[i_Y + i_YY][i_X + i_XX], out Temp_W, out Temp_H);
+                                        TextBuffer.Item_FontW = FontSizeCode(CursorFontW, i_XX);
+                                        TextBuffer.Item_FontH = FontSizeCode(CursorFontH, i_YY);
                                     }
                                     if (ToggleDrawText)
                                     {
-                                        TextBuffer[i_Y + i_YY][i_X + i_XX] = Semigraphics_.DrawCharI;
-                                        TextFonBuf[i_Y + i_YY][i_X + i_XX] = FontSToInt(Temp_W, Temp_H);
+                                        TextBuffer.Item_Char = Semigraphics_.DrawCharI;
                                     }
                                     if (ToggleDrawColo)
                                     {
-                                        TextColBuf[i_Y + i_YY][i_X + i_XX] = Semigraphics_.DrawColoI;
+                                        TextBuffer.Item_ColorB = Semigraphics_.DrawColoBI;
+                                        TextBuffer.Item_ColorF = Semigraphics_.DrawColoFI;
+                                        TextBuffer.Item_ColorA = Semigraphics_.DrawColoAI;
                                     }
                                     if (InsDelMode < 10)
                                     {
+                                        TextBuffer.Get(i_Y + i_YY, i_X + i_XX);
                                         UndoBufferItem_.X.Add(i_X + i_XX);
                                         UndoBufferItem_.Y.Add(i_Y + i_YY);
-                                        UndoBufferItem_.CharOld.Add(TextWork.SpaceChar0);
-                                        UndoBufferItem_.ColoOld.Add(0);
-                                        UndoBufferItem_.FontOld.Add(0);
-                                        UndoBufferItem_.CharNew.Add(TextBuffer[i_Y + i_YY][i_X + i_XX]);
-                                        UndoBufferItem_.ColoNew.Add(TextColBuf[i_Y + i_YY][i_X + i_XX]);
-                                        UndoBufferItem_.FontNew.Add(TextFonBuf[i_Y + i_YY][i_X + i_XX]);
+                                        UndoBufferItem_.ItemOld.Add(new AnsiLineOccupyItem());
+                                        UndoBufferItem_.ItemNew.Add(TextBuffer.CopyItemObj());
                                         UndoBufferItem_.OpParams.Add(null);
                                     }
                                 }
@@ -3546,65 +3474,63 @@ namespace TextPaint
             int W_ = (W + 1) * CursorFontW;
             int H_ = (H + 1) * CursorFontH;
 
+            AnsiLineOccupyEx ColoBuffer = TextBuffer.CloneData();
+            AnsiLineOccupyEx TempBuffer = new AnsiLineOccupyEx();
             switch (InsDelMode)
             {
                 case 0:
                 case 10:
                     for (int i = Y; i < (Y + H_); i++)
                     {
-                        if (TextBuffer.Count > i)
+                        if (TextBuffer.CountLines() > i)
                         {
-                            if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X) || (TextWork.TrimEndLenCol(TextFonBuf[i]) > X))
+                            if (TextBuffer.CountItemsTrim(i) > X)
                             {
                                 int RemCount = W_;
-                                if (TextBuffer[i].Count <= (X + W_))
+                                if (TextBuffer.CountItems(i) <= (X + W_))
                                 {
-                                    RemCount = TextBuffer[i].Count - X;
+                                    RemCount = TextBuffer.CountItems(i) - X;
                                 }
                                 if (InsDelMode < 10)
                                 {
                                     for (int ii = 0; ii < RemCount; ii++)
                                     {
+                                        TextBuffer.Get(i, X + ii);
                                         UndoBufferItem_.X.Add(X + ii);
                                         UndoBufferItem_.Y.Add(i);
-                                        UndoBufferItem_.CharOld.Add(TextBuffer[i][X + ii]);
-                                        UndoBufferItem_.CharNew.Add(TextWork.SpaceChar0);
-                                        UndoBufferItem_.ColoOld.Add(TextColBuf[i][X + ii]);
-                                        UndoBufferItem_.ColoNew.Add(0);
-                                        UndoBufferItem_.FontOld.Add(TextFonBuf[i][X + ii]);
-                                        UndoBufferItem_.FontNew.Add(0);
+                                        UndoBufferItem_.ItemOld.Add(TextBuffer.CopyItemObj());
+                                        UndoBufferItem_.ItemNew.Add(new AnsiLineOccupyItem());
                                         UndoBufferItem_.OpParams.Add(null);
                                     }
                                 }
                                 if (ToggleDrawText)
                                 {
-                                    TextBuffer[i].AddRange(TextWork.Spaces(RemCount));
-                                    TextBuffer[i].RemoveRange(X, RemCount);
-                                    TextFonBuf[i].AddRange(TextWork.BlkCol(RemCount));
-                                    TextFonBuf[i].RemoveRange(X, RemCount);
+                                    TextBuffer.BlankChar();
+                                    TextBuffer.Append(i, RemCount);
+                                    TextBuffer.Delete(i, X, RemCount);
                                 }
                                 if (ToggleDrawColo)
                                 {
-                                    TextColBuf[i].AddRange(TextWork.BlkCol(RemCount));
-                                    TextColBuf[i].RemoveRange(X, RemCount);
+                                    ColoBuffer.BlankChar();
+                                    ColoBuffer.Append(i, RemCount);
+                                    ColoBuffer.Delete(i, X, RemCount);
                                 }
-                                TextBufferTrimLine(i);
+                                TextBuffer.Trim(i);
+                                ColoBuffer.Trim(i);
                             }
                         }
                     }
                     break;
                 case 1:
                 case 11:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
-                        for (int i = Y; i < TextBuffer.Count; i++)
+                        for (int i = Y; i < TextBuffer.CountLines(); i++)
                         {
-                            if (TextBuffer[i].Count < (X + W_ + 1))
-                            {
-                                TextBuffer[i].AddRange(TextWork.Spaces((X + W_ + 1) - TextBuffer[i].Count));
-                                TextColBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextColBuf[i].Count));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextFonBuf[i].Count));
-                            }
+                            TextBuffer.BlankChar();
+                            TextBuffer.PadRight(i, X + W_ + 1);
+                            ColoBuffer.BlankChar();
+                            ColoBuffer.PadRight(i, X + W_ + 1);
                         }
                         if (InsDelMode < 10)
                         {
@@ -3612,153 +3538,148 @@ namespace TextPaint
                             {
                                 for (int ii = X; ii < (X + W_); ii++)
                                 {
-                                    if (TextBuffer.Count > i)
+                                    if (TextBuffer.CountLines() > i)
                                     {
-                                        if (TextBuffer[i].Count > ii)
+                                        if (TextBuffer.CountItems(i) > ii)
                                         {
+                                            TextBuffer.Get(i, ii);
                                             UndoBufferItem_.X.Add(ii);
                                             UndoBufferItem_.Y.Add(i);
-                                            UndoBufferItem_.CharOld.Add(TextBuffer[i][ii]);
-                                            UndoBufferItem_.CharNew.Add(TextWork.SpaceChar0);
-                                            UndoBufferItem_.ColoOld.Add(TextColBuf[i][ii]);
-                                            UndoBufferItem_.ColoNew.Add(0);
-                                            UndoBufferItem_.FontOld.Add(TextFonBuf[i][ii]);
-                                            UndoBufferItem_.FontNew.Add(0);
+                                            UndoBufferItem_.ItemOld.Add(TextBuffer.CopyItemObj());
+                                            UndoBufferItem_.ItemNew.Add(new AnsiLineOccupyItem());
                                             UndoBufferItem_.OpParams.Add(null);
                                         }
                                     }
                                 }
                             }
                         }
-                        for (int i = Y; i < TextBuffer.Count; i++)
+                        for (int i = Y; i < TextBuffer.CountLines(); i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i].RemoveRange(X, W_);
-                                TextFonBuf[i].RemoveRange(X, W_);
+                                TextBuffer.Delete(i, X, W_);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i].RemoveRange(X, W_);
+                                ColoBuffer.Delete(i, X, W_);
                             }
                             if (ToggleDrawText)
                             {
-                                if ((i + H_) < TextBuffer.Count)
+                                if ((i + H_) < TextBuffer.CountLines())
                                 {
-                                    TextBuffer[i].InsertRange(X, TextBuffer[i + H_].GetRange(X, W_));
-                                    TextFonBuf[i].InsertRange(X, TextFonBuf[i + H_].GetRange(X, W_));
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(TextBuffer, i + H_);
+                                    TempBuffer.Crop(0, X, W_);
+                                    TextBuffer.Insert(i, X, TempBuffer, 0);
                                 }
                                 else
                                 {
-                                    TextBuffer[i].InsertRange(X, TextWork.Spaces(W_));
-                                    TextFonBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                    TextBuffer.BlankChar();
+                                    TextBuffer.Insert(i, X, W_);
                                 }
                             }
                             if (ToggleDrawColo)
                             {
-                                if ((i + H_) < TextColBuf.Count)
+                                if ((i + H_) < ColoBuffer.CountLines())
                                 {
-                                    TextColBuf[i].InsertRange(X, TextColBuf[i + H_].GetRange(X, W_));
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(ColoBuffer, i + H_);
+                                    TempBuffer.Crop(0, X, W_);
+                                    ColoBuffer.Insert(i, X, TempBuffer, 0);
                                 }
                                 else
                                 {
-                                    TextColBuf[i].InsertRange(X, TextWork.BlkCol(W_));
+                                    ColoBuffer.BlankChar();
+                                    ColoBuffer.Insert(i, X, W_);
                                 }
                             }
 
-                            TextBufferTrimLine(i);
+                            TextBuffer.Trim(i);
+                            ColoBuffer.Trim(i);
                         }
                     }
                     break;
                 case 2:
                 case 12:
-                    for (int i = 0; i < TextBuffer.Count; i++)
+                    for (int i = 0; i < TextBuffer.CountLines(); i++)
                     {
-                        if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X) || (TextWork.TrimEndLenCol(TextFonBuf[i]) > X))
+                        if (TextBuffer.CountItemsTrim(i) > X)
                         {
                             int RemCount = W_;
-                            if (TextBuffer[i].Count <= (X + W_))
+                            if (TextBuffer.CountItems(i) <= (X + W_))
                             {
-                                RemCount = TextBuffer[i].Count - X;
+                                RemCount = TextBuffer.CountItems(i) - X;
                             }
                             if (InsDelMode < 10)
                             {
                                 for (int ii = 0; ii < RemCount; ii++)
                                 {
+                                    TextBuffer.Get(i, X + ii);
                                     UndoBufferItem_.X.Add(X + ii);
                                     UndoBufferItem_.Y.Add(i);
-                                    UndoBufferItem_.CharOld.Add(TextBuffer[i][X + ii]);
-                                    UndoBufferItem_.CharNew.Add(TextWork.SpaceChar0);
-                                    UndoBufferItem_.ColoOld.Add(TextColBuf[i][X + ii]);
-                                    UndoBufferItem_.ColoNew.Add(0);
-                                    UndoBufferItem_.FontOld.Add(TextFonBuf[i][X + ii]);
-                                    UndoBufferItem_.FontNew.Add(0);
+                                    UndoBufferItem_.ItemOld.Add(TextBuffer.CopyItemObj());
+                                    UndoBufferItem_.ItemNew.Add(new AnsiLineOccupyItem());
                                     UndoBufferItem_.OpParams.Add(null);
                                 }
                             }
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces(RemCount));
-                                TextBuffer[i].RemoveRange(X, RemCount);
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(RemCount));
-                                TextFonBuf[i].RemoveRange(X, RemCount);
+                                TextBuffer.BlankChar();
+                                TextBuffer.Append(i, RemCount);
+                                TextBuffer.Delete(i, X, RemCount);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i].AddRange(TextWork.BlkCol(RemCount));
-                                TextColBuf[i].RemoveRange(X, RemCount);
+                                ColoBuffer.BlankChar();
+                                ColoBuffer.Append(i, RemCount);
+                                ColoBuffer.Delete(i, X, RemCount);
                             }
-                            TextBufferTrimLine(i);
+                            TextBuffer.Trim(i);
+                            ColoBuffer.Trim(i);
                         }
                     }
                     break;
                 case 3:
                 case 13:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
                         for (int i = 0; i < H_; i++)
                         {
-                            if (TextBuffer.Count > Y)
+                            if (TextBuffer.CountLines() > Y)
                             {
                                 if (InsDelMode < 10)
                                 {
-                                    for (int ii = 0; ii < TextBuffer[Y].Count; ii++)
+                                    for (int ii = 0; ii < TextBuffer.CountItems(Y); ii++)
                                     {
+                                        TextBuffer.Get(Y, ii);
                                         UndoBufferItem_.X.Add(ii);
                                         UndoBufferItem_.Y.Add(Y + i);
-                                        UndoBufferItem_.CharOld.Add(TextBuffer[Y][ii]);
-                                        UndoBufferItem_.CharNew.Add(TextWork.SpaceChar0);
-                                        UndoBufferItem_.ColoOld.Add(TextColBuf[Y][ii]);
-                                        UndoBufferItem_.ColoNew.Add(0);
-                                        UndoBufferItem_.FontOld.Add(TextFonBuf[Y][ii]);
-                                        UndoBufferItem_.FontNew.Add(0);
+                                        UndoBufferItem_.ItemOld.Add(TextBuffer.CopyItemObj());
+                                        UndoBufferItem_.ItemNew.Add(new AnsiLineOccupyItem());
                                         UndoBufferItem_.OpParams.Add(null);
                                     }
                                 }
                                 if (ToggleDrawText)
                                 {
-                                    TextBuffer.RemoveAt(Y);
-                                    TextBuffer.Add(new List<int>());
-                                    TextFonBuf.RemoveAt(Y);
-                                    TextFonBuf.Add(new List<int>());
+                                    TextBuffer.DeleteLine(Y);
+                                    TextBuffer.AppendLine();
                                 }
                                 if (ToggleDrawColo)
                                 {
-                                    TextColBuf.RemoveAt(Y);
-                                    TextColBuf.Add(new List<int>());
+                                    ColoBuffer.DeleteLine(Y);
+                                    ColoBuffer.AppendLine();
                                 }
                             }
                         }
-                        for (int i = Y; i < TextBuffer.Count; i++)
+                        for (int i = Y; i < TextBuffer.CountLines(); i++)
                         {
-                            if (TextBuffer[i].Count < TextColBuf[i].Count)
+                            if (TextBuffer.CountItems(i) < ColoBuffer.CountItems(i))
                             {
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(TextColBuf[i].Count - TextBuffer[i].Count));
-                                TextBuffer[i].AddRange(TextWork.Spaces(TextColBuf[i].Count - TextBuffer[i].Count));
+                                TextBuffer.PadRight(i, ColoBuffer.CountItems(i));
                             }
-                            if (TextColBuf[i].Count < TextBuffer[i].Count)
+                            if (ColoBuffer.CountItems(i) < TextBuffer.CountItems(i))
                             {
-                                TextColBuf[i].AddRange(TextWork.BlkCol(TextBuffer[i].Count - TextColBuf[i].Count));
+                                ColoBuffer.PadRight(i, TextBuffer.CountItems(i));
                             }
                         }
                     }
@@ -3767,96 +3688,101 @@ namespace TextPaint
                 case 14:
                     for (int i = Y; i < (Y + H_); i++)
                     {
-                        if (TextBuffer.Count > i)
+                        TextBuffer.BlankChar();
+                        if (TextBuffer.CountLines() > i)
                         {
-                            if ((TextWork.TrimEndLength(TextBuffer[i]) > X) || (TextWork.TrimEndLenCol(TextColBuf[i]) > X))
+                            if (TextBuffer.CountItemsTrim(i) > X)
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces(W_));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol(W_));
-                                TextColBuf[i].AddRange(TextWork.BlkCol(W_));
-                                List<int> Temp;
-
+                                TextBuffer.Append(i, W_);
+                                ColoBuffer.Append(i, W_);
                                 if (ToggleDrawText)
                                 {
-                                    Temp = TextBuffer[i].GetRange(X, CursorFontW);
-                                    TextBuffer[i].RemoveRange(X, CursorFontW);
-                                    TextBuffer[i].InsertRange(X + W_ - CursorFontW, Temp);
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(TextBuffer, i);
+                                    TempBuffer.Crop(0, X, CursorFontW);
 
-                                    Temp = TextFonBuf[i].GetRange(X, CursorFontW);
-                                    TextFonBuf[i].RemoveRange(X, CursorFontW);
-                                    TextFonBuf[i].InsertRange(X + W_ - CursorFontW, Temp);
+                                    TextBuffer.Delete(i, X, CursorFontW);
+                                    TextBuffer.Insert(i, X + W_ - CursorFontW, TempBuffer, 0);
                                 }
                                 if (ToggleDrawColo)
                                 {
-                                    Temp = TextColBuf[i].GetRange(X, CursorFontW);
-                                    TextColBuf[i].RemoveRange(X, CursorFontW);
-                                    TextColBuf[i].InsertRange(X + W_ - CursorFontW, Temp);
+                                    TempBuffer.Clear();
+                                    TempBuffer.AppendLineCopy(ColoBuffer, i);
+                                    TempBuffer.Crop(0, X, CursorFontW);
+
+                                    ColoBuffer.Delete(i, X, CursorFontW);
+                                    ColoBuffer.Insert(i, X + W_ - CursorFontW, TempBuffer, 0);
                                 }
-                                TextBufferTrimLine(i);
+                                TextBuffer.Trim(i);
+                                ColoBuffer.Trim(i);
                             }
                         }
                     }
                     break;
                 case 5:
                 case 15:
-                    if (Y < TextBuffer.Count)
+                    if (Y < TextBuffer.CountLines())
                     {
+                        TextBuffer.BlankChar();
+                        ColoBuffer.BlankChar();
                         for (int i = Y; i < (Y + H_); i++)
                         {
-                            if (TextBuffer.Count <= i)
+                            if (TextBuffer.CountLines() <= i)
                             {
-                                TextBuffer.Add(new List<int>());
-                                TextColBuf.Add(new List<int>());
-                                TextFonBuf.Add(new List<int>());
+                                TextBuffer.AppendLine();
                             }
-                            if (TextBuffer[i].Count < (X + W_ + 1))
+                            TextBuffer.PadRight(i, X + W_ + 1);
+                            if (ColoBuffer.CountLines() <= i)
                             {
-                                TextBuffer[i].AddRange(TextWork.Spaces((X + W_ + 1) - TextBuffer[i].Count));
-                                TextColBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextColBuf[i].Count));
-                                TextFonBuf[i].AddRange(TextWork.BlkCol((X + W_ + 1) - TextFonBuf[i].Count));
+                                ColoBuffer.AppendLine();
                             }
+                            ColoBuffer.PadRight(i, X + W_ + 1);
                         }
-                        List<List<int>> Temp1 = new List<List<int>>();
-                        List<List<int>> Temp2 = new List<List<int>>();
-                        List<List<int>> Temp3 = new List<List<int>>();
+                        TempBuffer.Clear();
+                        TempBuffer.AppendLine();
+                        TempBuffer.AppendLine();
                         for (int i = 0; i < CursorFontH; i++)
                         {
-                            Temp1.Add(TextBuffer[Y + i].GetRange(X, W_));
-                            Temp2.Add(TextFonBuf[Y + i].GetRange(X, W_));
-                            Temp3.Add(TextColBuf[Y + i].GetRange(X, W_));
+                            TempBuffer.AppendLineCopy(TextBuffer, Y + i);
+                            TempBuffer.AppendLineCopy(ColoBuffer, Y + i);
+                            TempBuffer.Crop((i << 1) + 2, X, W_);
+                            TempBuffer.Crop((i << 1) + 3, X, W_);
                         }
                         for (int i = (Y + CursorFontH); i < (Y + H_); i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[i - CursorFontH].RemoveRange(X, W_);
-                                TextBuffer[i - CursorFontH].InsertRange(X, TextBuffer[i].GetRange(X, W_));
-                                TextFonBuf[i - CursorFontH].RemoveRange(X, W_);
-                                TextFonBuf[i - CursorFontH].InsertRange(X, TextFonBuf[i].GetRange(X, W_));
+                                TempBuffer.LineCopy(TextBuffer, i, 0);
+                                TempBuffer.Crop(0, X, W_);
+
+                                TextBuffer.Delete(i - CursorFontH, X, W_);
+                                TextBuffer.Insert(i - CursorFontH, X, TempBuffer, 0);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[i - CursorFontH].RemoveRange(X, W_);
-                                TextColBuf[i - CursorFontH].InsertRange(X, TextColBuf[i].GetRange(X, W_));
+                                TempBuffer.LineCopy(ColoBuffer, i, 1);
+                                TempBuffer.Crop(1, X, W_);
+
+                                ColoBuffer.Delete(i - CursorFontH, X, W_);
+                                ColoBuffer.Insert(i - CursorFontH, X, TempBuffer, 1);
                             }
-                            TextBufferTrimLine(i - CursorFontH);
+                            TextBuffer.Trim(i - CursorFontH);
+                            ColoBuffer.Trim(i - CursorFontH);
                         }
                         for (int i = 0; i < CursorFontH; i++)
                         {
                             if (ToggleDrawText)
                             {
-                                TextBuffer[Y + H_ - CursorFontH + i].RemoveRange(X, W_);
-                                TextBuffer[Y + H_ - CursorFontH + i].InsertRange(X, Temp1[i]);
-
-                                TextFonBuf[Y + H_ - CursorFontH + i].RemoveRange(X, W_);
-                                TextFonBuf[Y + H_ - CursorFontH + i].InsertRange(X, Temp2[i]);
+                                TextBuffer.Delete(Y + H_ - CursorFontH + i, X, W_);
+                                TextBuffer.Insert(Y + H_ - CursorFontH + i, X, TempBuffer, (i << 1) + 2);
                             }
                             if (ToggleDrawColo)
                             {
-                                TextColBuf[Y + H_ - CursorFontH + i].RemoveRange(X, W_);
-                                TextColBuf[Y + H_ - CursorFontH + i].InsertRange(X, Temp3[i]);
+                                ColoBuffer.Delete(Y + H_ - CursorFontH + i, X, W_);
+                                ColoBuffer.Insert(Y + H_ - CursorFontH + i, X, TempBuffer, (i << 1) + 3);
                             }
-                            TextBufferTrimLine(Y + H_ - CursorFontH + i);
+                            TextBuffer.Trim(Y + H_ - CursorFontH + i);
+                            ColoBuffer.Trim(Y + H_ - CursorFontH + i);
                         }
                     }
                     break;
@@ -3865,40 +3791,13 @@ namespace TextPaint
             {
                 UndoBufferItem_.X.Add(X);
                 UndoBufferItem_.Y.Add(Y);
-                UndoBufferItem_.CharOld.Add(-1);
-                UndoBufferItem_.CharNew.Add(-1);
-                UndoBufferItem_.ColoOld.Add(-1);
-                UndoBufferItem_.ColoNew.Add(-1);
-                UndoBufferItem_.FontOld.Add(-1);
-                UndoBufferItem_.FontNew.Add(-1);
+                UndoBufferItem_.ItemOld.Add(null);
+                UndoBufferItem_.ItemNew.Add(null);
                 UndoBufferItem_.OpParams.Add(new int[] { InsDelMode + 4, W, H });
-                TextBufferTrim();
+                TextBuffer.TrimLines();
                 TextDisplay(0);
             }
-        }
-
-        void TextBufferTrim()
-        {
-            for (int i = 0; i < TextBuffer.Count; i++)
-            {
-                TextBufferTrimLine(i);
-            }
-            while ((TextBuffer.Count > 0) && (TextBuffer[TextBuffer.Count - 1].Count == 0))
-            {
-                TextBuffer.RemoveAt(TextBuffer.Count - 1);
-                TextFonBuf.RemoveAt(TextFonBuf.Count - 1);
-                TextColBuf.RemoveAt(TextColBuf.Count - 1);
-            }
-        }
-        
-        void TextBufferTrimLine(int i)
-        {
-            while ((TextBuffer[i].Count > 0) && (TextWork.SpaceChars.Contains(TextBuffer[i][TextBuffer[i].Count - 1])) && (TextColBuf[i][TextColBuf[i].Count - 1] == 0))
-            {
-                TextBuffer[i].RemoveRange(TextBuffer[i].Count - 1, 1);
-                TextFonBuf[i].RemoveRange(TextFonBuf[i].Count - 1, 1);
-                TextColBuf[i].RemoveRange(TextColBuf[i].Count - 1, 1);
-            }
+            TextBuffer.MergeColor(ColoBuffer);
         }
 
 
@@ -3922,12 +3821,8 @@ namespace TextPaint
             public PixelPaintState PixelPaintStateNew;
             public List<int> X;
             public List<int> Y;
-            public List<int> CharOld;
-            public List<int> CharNew;
-            public List<int> ColoOld;
-            public List<int> ColoNew;
-            public List<int> FontOld;
-            public List<int> FontNew;
+            public List<AnsiLineOccupyItem> ItemOld;
+            public List<AnsiLineOccupyItem> ItemNew;
             public List<int[]> OpParams;
         }
 
@@ -3957,12 +3852,8 @@ namespace TextPaint
             UndoBufferItem_.PixelPaintStateOld = PixelPaint_.PPS.GetState();
             UndoBufferItem_.X = new List<int>();
             UndoBufferItem_.Y = new List<int>();
-            UndoBufferItem_.CharOld = new List<int>();
-            UndoBufferItem_.CharNew = new List<int>();
-            UndoBufferItem_.ColoOld = new List<int>();
-            UndoBufferItem_.ColoNew = new List<int>();
-            UndoBufferItem_.FontOld = new List<int>();
-            UndoBufferItem_.FontNew = new List<int>();
+            UndoBufferItem_.ItemOld = new List<AnsiLineOccupyItem>();
+            UndoBufferItem_.ItemNew = new List<AnsiLineOccupyItem>();
             UndoBufferItem_.OpParams = new List<int[]>();
             UndoBufferEnabled = true;
         }
@@ -3994,7 +3885,7 @@ namespace TextPaint
                 }
                 UndoBufferIndex++;
             }
-            TextBufferTrim();
+            TextBuffer.TrimLines();
             CursorLimit();
             TextDisplay(0);
         }
@@ -4011,13 +3902,13 @@ namespace TextPaint
                 ToggleDrawColo = UndoBufferItem_.ToggleDrawColo;
                 for (int i = (UndoBufferItem_.X.Count - 1); i >= 0; i--)
                 {
-                    if ((UndoBufferItem_.CharOld[i] >= 0) || (UndoBufferItem_.ColoOld[i] >= 0))
+                    if (UndoBufferItem_.ItemOld[i] != null)
                     {
-                        CharPut(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.CharOld[i], UndoBufferItem_.ColoOld[i], UndoBufferItem_.FontOld[i], true);
+                        CharPut(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.ItemOld[i].CopyItemObj(), true);
                     }
                     else
                     {
-                        if (UndoBufferItem_.OpParams[i][0] < 4)
+                        if (UndoBufferItem_.OpParams[i][0] < 6)
                         {
                             TextDelete(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.OpParams[i][1], UndoBufferItem_.OpParams[i][2], UndoBufferItem_.OpParams[i][0] + 10);
                         }
@@ -4038,7 +3929,7 @@ namespace TextPaint
                 ToggleDrawText = ToggleDrawText_;
                 ToggleDrawColo = ToggleDrawColo_;
             }
-            TextBufferTrim();
+            TextBuffer.TrimLines();
             CursorLimit();
             TextDisplay(0);
         }
@@ -4054,13 +3945,13 @@ namespace TextPaint
                 ToggleDrawColo = UndoBufferItem_.ToggleDrawColo;
                 for (int i = 0; i < UndoBufferItem_.X.Count; i++)
                 {
-                    if ((UndoBufferItem_.CharNew[i] >= 0) || (UndoBufferItem_.ColoNew[i] >= 0))
+                    if (UndoBufferItem_.ItemNew[i] != null)
                     {
-                        CharPut(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.CharNew[i], UndoBufferItem_.ColoNew[i], UndoBufferItem_.FontNew[i], true);
+                        CharPut(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.ItemNew[i].CopyItemObj(), true);
                     }
                     else
                     {
-                        if (UndoBufferItem_.OpParams[i][0] < 4)
+                        if (UndoBufferItem_.OpParams[i][0] < 6)
                         {
                             TextInsert(UndoBufferItem_.X[i], UndoBufferItem_.Y[i], UndoBufferItem_.OpParams[i][1], UndoBufferItem_.OpParams[i][2], UndoBufferItem_.OpParams[i][0] + 10);
                         }
@@ -4081,7 +3972,7 @@ namespace TextPaint
                 ToggleDrawText = ToggleDrawText_;
                 ToggleDrawColo = ToggleDrawColo_;
             }
-            TextBufferTrim();
+            TextBuffer.TrimLines();
             CursorLimit();
             TextDisplay(0);
         }

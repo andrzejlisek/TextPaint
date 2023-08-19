@@ -19,12 +19,19 @@ namespace TextPaint
         TextPaint.Views.MainWindow Form_ = null;
         Avalonia.Threading.DispatcherTimer DispTimer;
 
-        LowLevelBitmap ScreenBmp;
+        LowLevelBitmap[] ScreenBmp = new LowLevelBitmap[2];
+        int ScreenBmpDisp = 0;
+        int ScreenBmpCounter = 0;
 
         bool LowLevelStretch = false;
 
         public ScreenWindowGUI(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
         {
+            if (WinFixed_ > 0)
+            {
+                WinAutoAllowed = true;
+                WinAuto = CF.ParamGetB("ANSIAutoSize");
+            }
             if (!DummyScreen)
             {
                 WinFixed = WinFixed_;
@@ -68,18 +75,34 @@ namespace TextPaint
             ConsoleScreen.AddHandler(DragDrop.DropEvent, DragFileExit);
         }
 
-        public override void FormCtrlSetBitmap(LowLevelBitmap Bmp)
+        public override void FormCtrlSetBitmap(LowLevelBitmap Bmp0, LowLevelBitmap Bmp1)
         {
             if (Form_ == null)
             {
                 return;
             }
-            ScreenBmp = Bmp;
+            ScreenBmp[0] = Bmp0;
+            ScreenBmp[1] = Bmp1;
             FormCtrlRefresh();
         }
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
+            while (FormCtrlSetParamQueueV.Count > 0)
+            {
+                FormCtrlSetParam(FormCtrlSetParamQueueP[0], FormCtrlSetParamQueueV[0]);
+                FormCtrlSetParamQueueP.RemoveAt(0);
+                FormCtrlSetParamQueueV.RemoveAt(0);
+            }
+
+            ScreenBmpCounter++;
+            if (ScreenBmpCounter >= 5)
+            {
+                ScreenBmpCounter = 0;
+                ScreenBmpDisp = 1 - ScreenBmpDisp;
+                FormCtrlRefresh();
+            }
+
             if (!ConsoleKeyCapture.IsFocused)
             {
                 ConsoleKeyCapture.Focus();
@@ -155,48 +178,59 @@ namespace TextPaint
             return 0;
         }
 
+        List<int> FormCtrlSetParamQueueP = new List<int>();
+        List<int> FormCtrlSetParamQueueV = new List<int>();
+
         protected override void FormCtrlSetParam(int Param, int Value)
         {
             if (Form_ == null)
             {
                 return;
             }
-            switch (Param)
+            try
             {
-                case 0:
-                    Avalonia.Controls.Canvas.SetLeft(ConsoleScreen, Value);
-                    break;
-                case 1:
-                    Avalonia.Controls.Canvas.SetTop(ConsoleScreen, Value);
-                    break;
-                case 2:
-                    ConsoleScreen.Width = Value;
-                    break;
-                case 3:
-                    ConsoleScreen.Height = Value;
-                    break;
-                case 4:
-                    Avalonia.Controls.Canvas.SetLeft(ConsoleCursor, Value);
-                    break;
-                case 5:
-                    Avalonia.Controls.Canvas.SetTop(ConsoleCursor, Value);
-                    break;
-                case 6:
-                    ConsoleCursor.Width = Value;
-                    break;
-                case 7:
-                    ConsoleCursor.Height = Value;
-                    break;
-                case 8:
-                    if (Value >= 0)
-                    {
-                        ConsoleCursor.IsVisible = (Value != 0);
-                    }
-                    else
-                    {
-                        ConsoleCursor.IsVisible = !ConsoleCursor.IsVisible;
-                    }
-                    break;
+                switch (Param)
+                {
+                    case 0:
+                        Avalonia.Controls.Canvas.SetLeft(ConsoleScreen, Value);
+                        break;
+                    case 1:
+                        Avalonia.Controls.Canvas.SetTop(ConsoleScreen, Value);
+                        break;
+                    case 2:
+                        ConsoleScreen.Width = Value;
+                        break;
+                    case 3:
+                        ConsoleScreen.Height = Value;
+                        break;
+                    case 4:
+                        Avalonia.Controls.Canvas.SetLeft(ConsoleCursor, Value);
+                        break;
+                    case 5:
+                        Avalonia.Controls.Canvas.SetTop(ConsoleCursor, Value);
+                        break;
+                    case 6:
+                        ConsoleCursor.Width = Value;
+                        break;
+                    case 7:
+                        ConsoleCursor.Height = Value;
+                        break;
+                    case 8:
+                        if (Value >= 0)
+                        {
+                            ConsoleCursor.IsVisible = (Value != 0);
+                        }
+                        else
+                        {
+                            ConsoleCursor.IsVisible = !ConsoleCursor.IsVisible;
+                        }
+                        break;
+                }
+            }
+            catch
+            {
+                FormCtrlSetParamQueueP.Add(Param);
+                FormCtrlSetParamQueueV.Add(Value);
             }
         }
 
@@ -208,11 +242,11 @@ namespace TextPaint
                 {
                     if (LowLevelStretch)
                     {
-                        ConsoleScreen.Source = ScreenBmp.ToBitmap(XWidth, XHeight);
+                        ConsoleScreen.Source = ScreenBmp[ScreenBmpDisp].ToBitmap(XWidth, XHeight);
                     }
                     else
                     {
-                        ConsoleScreen.Source = ScreenBmp.ToBitmap();
+                        ConsoleScreen.Source = ScreenBmp[ScreenBmpDisp].ToBitmap();
                     }
                 }
                 catch

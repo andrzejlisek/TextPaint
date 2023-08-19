@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace TextPaint
 {
@@ -7,8 +8,6 @@ namespace TextPaint
     {
         public int AnsiMaxX = 0;
         public int AnsiMaxY = 0;
-
-        public int ANSIReverseMode = 0;
 
         bool AnsiRingBell = true;
         bool AnsiScreenWork = true;
@@ -27,12 +26,11 @@ namespace TextPaint
         // Color subsitution from 256-color palette - filled in in constructor
         int[] Color256 = new int[256];
 
-        bool ANSIDOS = false;
-        bool ANSIPrintBackspace = false;
-        bool ANSIPrintTab = false;
-        bool ANSIIgnoreBlink = false;
-        bool ANSIIgnoreBold = false;
-        bool ANSIIgnoreConcealed = false;
+        public bool ANSIDOS = false;
+        public bool ANSIPrintBackspace = false;
+        public bool ANSIPrintTab = false;
+
+        public bool ANSI8bit = false;
 
         // 0 - Do not change
         // 1 - Use as CRLF
@@ -45,12 +43,6 @@ namespace TextPaint
         public bool __AnsiTestCmd = false;
         int __AnsiTest = 0;
         bool __AnsiScreen = false;
-
-        int __AnsiLineOccupyFactor = 5;
-
-        bool __AnsiLineOccupy1_Use = false;
-        bool __AnsiLineOccupy2_Use = false;
-
 
         int[] VT100_SemigraphChars = { 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
                                        0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20, 0x20,
@@ -126,11 +118,13 @@ namespace TextPaint
 
             if (SeekState.Count > 1)
             {
-                SeekState.RemoveRange(1, SeekState.Count - 1);
+                //SeekState.RemoveRange(1, SeekState.Count - 1);
             }
 
             AnsiMaxX = NewW;
             AnsiMaxY = NewH;
+            AnsiState_.TerminalW = NewW;
+            AnsiState_.TerminalH = NewH;
             return true;
         }
 
@@ -138,7 +132,7 @@ namespace TextPaint
 
         public void AnsiTerminalReset()
         {
-            AnsiState_.Reset(AnsiMaxX, AnsiMaxY);
+            AnsiState_.Reset(AnsiMaxX, AnsiMaxY, -1, -1);
 
             __AnsiResponse.Clear();
             if (AnsiScreenWork && ((WorkMode == 1) || (WorkMode == 2) || (WorkMode == 4)))
@@ -173,7 +167,7 @@ namespace TextPaint
 
         private void SeekStateSave(bool Instant)
         {
-            if ((SeekMode > 0) && (SeekStateSaveLast < AnsiState_.__AnsiProcessStep))
+            if ((SeekMode > 0) && ((SeekStateSaveLast < AnsiState_.__AnsiProcessStep)))
             {
                 if (Instant)
                 {
@@ -241,7 +235,16 @@ namespace TextPaint
                 {
                     SeekIdx--;
                 }
+                bool MustResize = false;
+                if ((SeekState[SeekIdx].TerminalW != AnsiState_.TerminalW) || (SeekState[SeekIdx].TerminalH != AnsiState_.TerminalH))
+                {
+                    MustResize = true;
+                }
                 AnsiState.Copy(SeekState[SeekIdx], AnsiState_);
+                if (MustResize)
+                {
+                    AnsiResize(AnsiState_.TerminalW, AnsiState_.TerminalH);
+                }
                 AnsiRepaint(false);
             }
             AnsiProcess((int)(NewProcessStep - AnsiState_.__AnsiProcessStep));
@@ -329,7 +332,10 @@ namespace TextPaint
                             }
                             else
                             {
-                                AnsiCharPrint(CharToPrint);
+                                if (AnsiCharNotCmd(CharToPrint))
+                                {
+                                    AnsiCharPrint(CharToPrint);
+                                }
                             }
                         }
                         else
@@ -352,6 +358,8 @@ namespace TextPaint
                             }
                             else
                             {
+                                int ResoX = AnsiMaxX;
+                                int ResoY = AnsiMaxY;
                                 AnsiProcess_Fixed(CharToPrint);
 
                                 if (AnsiState_.__AnsiCommand && (AnsiState_.__AnsiCmd[0] != ']') && (AnsiState_.__AnsiCmd.Count >= 2) && (CommandEndChar.Contains(CharToPrint)))
@@ -390,6 +398,11 @@ namespace TextPaint
                                         Console.WriteLine("ANSI command: " + AnsiCmd_0);
                                     }
                                 }
+                                if ((ResoX != AnsiMaxX) || (ResoY != AnsiMaxY))
+                                {
+                                    SeekStateSaveLast = AnsiState_.__AnsiProcessStep - 1;
+                                    SeekStateSaveRequest = true;
+                                }
                             }
                         }
                     }
@@ -402,13 +415,16 @@ namespace TextPaint
                         }
                         else
                         {
-                            if (AnsiState_.__AnsiDCS_)
+                            if (AnsiCharNotCmd(CharToPrint))
                             {
-                                AnsiState_.__AnsiDCS = AnsiState_.__AnsiDCS + TextWork.IntToStr(CharToPrint);
-                            }
-                            else
-                            {
-                                AnsiCharPrint(CharToPrint);
+                                if (AnsiState_.__AnsiDCS_)
+                                {
+                                    AnsiState_.__AnsiDCS = AnsiState_.__AnsiDCS + TextWork.IntToStr(CharToPrint);
+                                }
+                                else
+                                {
+                                    AnsiCharPrint(CharToPrint);
+                                }
                             }
                         }
                     }
@@ -459,36 +475,39 @@ namespace TextPaint
             }
         }
 
-        public void AnsiGetF(int X, int Y, out int Ch, out int ColB, out int ColF)
+        public void AnsiGetF(int X, int Y, out int Ch, out int ColB, out int ColF, out int FontAttrib)
         {
             int FontW;
             int FontH;
             if (AnsiGetFontSize(Y) > 0)
             {
-                AnsiGet(X * 2, Y, out Ch, out ColB, out ColF, out FontW, out FontH);
+                AnsiGet(X * 2, Y, out Ch, out ColB, out ColF, out FontW, out FontH, out FontAttrib);
             }
             else
             {
-                AnsiGet(X, Y, out Ch, out ColB, out ColF, out FontW, out FontH);
+                AnsiGet(X, Y, out Ch, out ColB, out ColF, out FontW, out FontH, out FontAttrib);
             }
         }
 
-        public void AnsiGet(int X, int Y, out int Ch, out int ColB, out int ColF, out int FontW, out int FontH)
+        public void AnsiGet(int X, int Y, out int Ch, out int ColB, out int ColF, out int FontW, out int FontH, out int FontAttrib)
         {
             Ch = 32;
-            ColB = TextNormalBack;
-            ColF = TextNormalFore;
+            ColB = -1;
+            ColF = -1;
             FontW = 0;
             FontH = 0;
-            if (AnsiState_.__AnsiLineOccupy.Count > Y)
+            FontAttrib = 0;
+            if (AnsiState_.__AnsiLineOccupy__.CountLines() > Y)
             {
-                if ((AnsiState_.__AnsiLineOccupy[Y].Count / __AnsiLineOccupyFactor) > X)
+                if ((AnsiState_.__AnsiLineOccupy__.CountItems(Y)) > X)
                 {
-                    Ch = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0];
-                    ColB = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1];
-                    ColF = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2];
-                    FontW = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 3];
-                    FontH = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 4];
+                    AnsiState_.__AnsiLineOccupy__.Get(Y, X);
+                    Ch = AnsiState_.__AnsiLineOccupy__.Item_Char;
+                    ColB = AnsiState_.__AnsiLineOccupy__.Item_ColorB;
+                    ColF = AnsiState_.__AnsiLineOccupy__.Item_ColorF;
+                    FontW = AnsiState_.__AnsiLineOccupy__.Item_FontW;
+                    FontH = AnsiState_.__AnsiLineOccupy__.Item_FontH;
+                    FontAttrib = AnsiState_.__AnsiLineOccupy__.Item_ColorA;
                 }
             }
         }
@@ -498,28 +517,19 @@ namespace TextPaint
         {
             if (__AnsiScreen)
             {
-                if (Y < AnsiState_.__AnsiLineOccupy.Count)
+                if (Y < AnsiState_.__AnsiLineOccupy__.CountLines())
                 {
-                    int L = (AnsiState_.__AnsiLineOccupy[Y].Count / __AnsiLineOccupyFactor);
+                    int L = (AnsiState_.__AnsiLineOccupy__.CountItems(Y));
                     for (int X = 0; X < WinW; X++)
                     {
                         if (X < L)
                         {
-                            int ColorB = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1];
-                            int ColorF = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2];
-                            if (ColorB < 0)
-                            {
-                                ColorB = TextNormalBack;
-                            }
-                            if (ColorF < 0)
-                            {
-                                ColorF = TextNormalFore;
-                            }
-                            Screen_.PutChar(X, Y, AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0], ColorB, ColorF, AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 3], AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 4]);
+                            AnsiState_.__AnsiLineOccupy__.Get(Y, X);
+                            Screen_.PutChar(X, Y, AnsiState_.__AnsiLineOccupy__.Item_Char, AnsiState_.__AnsiLineOccupy__.Item_ColorB, AnsiState_.__AnsiLineOccupy__.Item_ColorF, AnsiState_.__AnsiLineOccupy__.Item_FontW, AnsiState_.__AnsiLineOccupy__.Item_FontH, AnsiState_.__AnsiLineOccupy__.Item_ColorA);
                         }
                         else
                         {
-                            Screen_.PutChar(X, Y, ' ', TextNormalBack, TextNormalFore, 0, 0);
+                            Screen_.PutChar(X, Y, ' ', -1, -1, 0, 0, 0);
                         }
                     }
                 }
@@ -532,7 +542,7 @@ namespace TextPaint
         int __ScreenMaxY = 0;
         public void AnsiRepaint(bool AdditionalBuffers)
         {
-            Screen_.Clear(TextNormalBack, TextNormalFore);
+            Screen_.Clear(-1, -1);
             __ScreenMinX = 0;
             __ScreenMinY = 0;
             __ScreenMaxX = 0;
@@ -542,37 +552,34 @@ namespace TextPaint
             int Bufoffset = 0;
             for (int BufI = BufMin; BufI <= BufMax; BufI++)
             {
-                List<List<int>> __AnsiLineOccupyX;
+                AnsiLineOccupy __AnsiLineOccupyX;
                 if (BufI == 1)
                 {
-                    __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy;
+                    __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy__;
                 }
                 else
                 {
                     if (BufI == 0)
                     {
-                        __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy1;
+                        __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy1__;
                     }
                     else
                     {
-                        __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy2;
+                        __AnsiLineOccupyX = AnsiState_.__AnsiLineOccupy2__;
                     }
                 }
-                for (int Y = 0; Y < __AnsiLineOccupyX.Count; Y++)
+                for (int Y = 0; Y < __AnsiLineOccupyX.CountLines(); Y++)
                 {
                     int Y__ = Y + Bufoffset;
-                    for (int X = 0; X < (__AnsiLineOccupyX[Y].Count / __AnsiLineOccupyFactor); X++)
+                    for (int X = 0; X < (__AnsiLineOccupyX.CountItems(Y)); X++)
                     {
                         if (__ScreenMinX > X) { __ScreenMinX = X; }
                         if (__ScreenMinY > Y__) { __ScreenMinY = Y__; }
                         if (__ScreenMaxX < X) { __ScreenMaxX = X; }
                         if (__ScreenMaxY < Y__) { __ScreenMaxY = Y__; }
 
-                        int ColorB = __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 1];
-                        int ColorF = __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 2];
-                        if (ColorB < 0) ColorB = TextNormalBack;
-                        if (ColorF < 0) ColorF = TextNormalFore;
-                        Screen_.PutChar(X, Y__, __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 0], ColorB, ColorF, __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 3], __AnsiLineOccupyX[Y][X * __AnsiLineOccupyFactor + 4]);
+                        __AnsiLineOccupyX.Get(Y, X);
+                        Screen_.PutChar(X, Y__, __AnsiLineOccupyX.Item_Char, __AnsiLineOccupyX.Item_ColorB, __AnsiLineOccupyX.Item_ColorF, __AnsiLineOccupyX.Item_FontW, __AnsiLineOccupyX.Item_FontH, __AnsiLineOccupyX.Item_ColorA);
                     }
                 }
                 if (BufI == 1)
@@ -583,7 +590,47 @@ namespace TextPaint
                     AnsiState_.__AnsiScrollFirst -= Bufoffset;
                     AnsiState_.__AnsiScrollLast -= Bufoffset;
                 }
-                Bufoffset = Bufoffset + __AnsiLineOccupyX.Count;
+                Bufoffset = Bufoffset + __AnsiLineOccupyX.CountLines();
+            }
+        }
+
+        public void AnsiScreenNegative(bool IsNega)
+        {
+            if (IsNega)
+            {
+                AnsiState_.__AnsiAttr = AnsiState_.__AnsiAttr | 0x80;
+                AnsiState_.__AnsiAttr_ = AnsiState_.__AnsiAttr_ | 0x80;
+            }
+            else
+            {
+                AnsiState_.__AnsiAttr = AnsiState_.__AnsiAttr & 0x7F;
+                AnsiState_.__AnsiAttr_ = AnsiState_.__AnsiAttr_ & 0x7F;
+            }
+            while (AnsiState_.__AnsiLineOccupy__.CountLines() < AnsiMaxY)
+            {
+                AnsiState_.__AnsiLineOccupy__.AppendLine();
+            }
+            for (int Y = 0; Y < AnsiMaxY; Y++)
+            {
+                while (AnsiState_.__AnsiLineOccupy__.CountItems(Y) < AnsiMaxX)
+                {
+                    AnsiState_.__AnsiLineOccupy__.BlankChar();
+                    AnsiState_.__AnsiLineOccupy__.Append(Y);
+                }
+                for (int X = 0; X < AnsiMaxX; X++)
+                {
+                    AnsiState_.__AnsiLineOccupy__.Get(Y, X);
+                    if (IsNega)
+                    {
+                        AnsiState_.__AnsiLineOccupy__.Item_ColorA = AnsiState_.__AnsiLineOccupy__.Item_ColorA | 0x80;
+                    }
+                    else
+                    {
+                        AnsiState_.__AnsiLineOccupy__.Item_ColorA = AnsiState_.__AnsiLineOccupy__.Item_ColorA & 0x7F;
+                    }
+                    AnsiState_.__AnsiLineOccupy__.Set(Y, X);
+                    Screen_.PutChar(X, Y, AnsiState_.__AnsiLineOccupy__.Item_Char, AnsiState_.__AnsiLineOccupy__.Item_ColorB, AnsiState_.__AnsiLineOccupy__.Item_ColorF, AnsiState_.__AnsiLineOccupy__.Item_FontW, AnsiState_.__AnsiLineOccupy__.Item_FontH, AnsiState_.__AnsiLineOccupy__.Item_ColorA);
+                }
             }
         }
 
@@ -619,68 +666,59 @@ namespace TextPaint
 
         public void AnsiCharF(int X, int Y, int Ch)
         {
-            AnsiCharF(X, Y, Ch, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork);
+            AnsiCharF(X, Y, Ch, AnsiState_.__AnsiBack, AnsiState_.__AnsiFore, AnsiState_.__AnsiAttr);
         }
 
-        public void AnsiCharFI(int X, int Y, int Ch, int ColB, int ColF)
+        public void AnsiCharFI(int X, int Y, int Ch, int ColB, int ColF, int FonA)
         {
             if (AnsiState_.__AnsiInsertMode)
             {
-                if (AnsiState_.__AnsiLineOccupy.Count > Y)
+                if (AnsiState_.__AnsiLineOccupy__.CountLines() > Y)
                 {
                     if (AnsiGetFontSize(Y) > 0)
                     {
-                        if (AnsiState_.__AnsiLineOccupy[Y].Count >= (X * __AnsiLineOccupyFactor))
+                        if (AnsiState_.__AnsiLineOccupy__.CountItems(Y) >= X)
                         {
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalFore);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalBack);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 32);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalFore);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalBack);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 32);
+                            AnsiState_.__AnsiLineOccupy__.BlankChar();
+                            AnsiState_.__AnsiLineOccupy__.Insert(Y, X);
+                            AnsiState_.__AnsiLineOccupy__.Insert(Y, X);
                         }
-                        if (AnsiState_.__AnsiLineOccupy[Y].Count > (AnsiMaxX * __AnsiLineOccupyFactor))
+                        if (AnsiState_.__AnsiLineOccupy__.CountItems(Y) > AnsiMaxX)
                         {
-                            AnsiState_.__AnsiLineOccupy[Y].RemoveRange(AnsiMaxX * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor * 2);
+                            AnsiState_.__AnsiLineOccupy__.Delete(Y, AnsiMaxX);
+                            AnsiState_.__AnsiLineOccupy__.Delete(Y, AnsiMaxX);
                         }
                     }
                     else
                     {
-                        if (AnsiState_.__AnsiLineOccupy[Y].Count >= (X * __AnsiLineOccupyFactor))
+                        if (AnsiState_.__AnsiLineOccupy__.CountItems(Y) >= X)
                         {
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 0);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalFore);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, TextNormalBack);
-                            AnsiState_.__AnsiLineOccupy[Y].Insert(X * __AnsiLineOccupyFactor, 32);
+                            AnsiState_.__AnsiLineOccupy__.BlankChar();
+                            AnsiState_.__AnsiLineOccupy__.Insert(Y, X);
                         }
-                        if (AnsiState_.__AnsiLineOccupy[Y].Count > (AnsiMaxX * __AnsiLineOccupyFactor))
+                        if (AnsiState_.__AnsiLineOccupy__.CountItems(Y) > AnsiMaxX)
                         {
-                            AnsiState_.__AnsiLineOccupy[Y].RemoveRange(AnsiMaxX * __AnsiLineOccupyFactor, __AnsiLineOccupyFactor);
+                            AnsiState_.__AnsiLineOccupy__.Delete(Y, AnsiMaxX);
                         }
                     }
                     AnsiState_.PrintCharInsDel++;
                     AnsiRepaintLine(Y);
                 }
             }
-            AnsiCharF(X, Y, Ch, ColB, ColF);
+            AnsiCharF(X, Y, Ch, ColB, ColF, FonA);
         }
 
-        public void AnsiCharF(int X, int Y, int Ch, int ColB, int ColF)
+        public void AnsiCharF(int X, int Y, int Ch, int ColB, int ColF, int FonA)
         {
             int S = AnsiGetFontSize(Y);
             if (S > 0)
             {
-                AnsiChar(X * 2 + 0, Y, Ch, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork, 1, S - 1);
-                AnsiChar(X * 2 + 1, Y, Ch, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork, 2, S - 1);
+                AnsiChar(X * 2 + 0, Y, Ch, AnsiState_.__AnsiBack, AnsiState_.__AnsiFore, 1, S - 1, AnsiState_.__AnsiAttr);
+                AnsiChar(X * 2 + 1, Y, Ch, AnsiState_.__AnsiBack, AnsiState_.__AnsiFore, 2, S - 1, AnsiState_.__AnsiAttr);
             }
             else
             {
-                AnsiChar(X, Y, Ch, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork, AnsiState_.__AnsiFontSizeW, AnsiState_.__AnsiFontSizeH);
+                AnsiChar(X, Y, Ch, AnsiState_.__AnsiBack, AnsiState_.__AnsiFore, AnsiState_.__AnsiFontSizeW, AnsiState_.__AnsiFontSizeH, AnsiState_.__AnsiAttr);
                 AnsiState_.__AnsiFontSizeW = FontCounter(AnsiState_.__AnsiFontSizeW);
             }
         }
@@ -703,10 +741,10 @@ namespace TextPaint
 
         public void AnsiChar(int X, int Y, int Ch)
         {
-            AnsiChar(X, Y, Ch, AnsiState_.__AnsiBackWork, AnsiState_.__AnsiForeWork, 0, 0);
+            AnsiChar(X, Y, Ch, AnsiState_.__AnsiBack, AnsiState_.__AnsiFore, 0, 0, AnsiState_.__AnsiAttr);
         }
 
-        public void AnsiChar(int X, int Y, int Ch, int ColB, int ColF, int FontW, int FontH)
+        public void AnsiChar(int X, int Y, int Ch, int ColB, int ColF, int FontW, int FontH, int ColA)
         {
             if (X < 0)
             {
@@ -737,48 +775,48 @@ namespace TextPaint
 
             if (__AnsiScreen)
             {
-                if (ColB < 0)
-                {
-                    ColB = TextNormalBack;
-                }
-                if (ColF < 0)
-                {
-                    ColF = TextNormalFore;
-                }
-                Screen_.PutChar(X, Y, Ch, ColB, ColF, FontW, FontH);
+                Screen_.PutChar(X, Y, Ch, ColB, ColF, FontW, FontH, ColA);
             }
-            while (AnsiState_.__AnsiLineOccupy.Count <= Y)
+            while (AnsiState_.__AnsiLineOccupy__.CountLines() <= Y)
             {
-                AnsiState_.__AnsiLineOccupy.Add(new List<int>());
+                AnsiState_.__AnsiLineOccupy__.AppendLine();
             }
-            while ((AnsiState_.__AnsiLineOccupy[Y].Count / __AnsiLineOccupyFactor) <= X)
+            while ((AnsiState_.__AnsiLineOccupy__.CountItems(Y)) <= X)
             {
-                AnsiState_.__AnsiLineOccupy[Y].Add(32);
-                AnsiState_.__AnsiLineOccupy[Y].Add(-1);
-                AnsiState_.__AnsiLineOccupy[Y].Add(-1);
-                AnsiState_.__AnsiLineOccupy[Y].Add(0);
-                AnsiState_.__AnsiLineOccupy[Y].Add(0);
+                AnsiState_.__AnsiLineOccupy__.BlankChar();
+                AnsiState_.__AnsiLineOccupy__.Append(Y);
             }
-            int __Ch = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0];
-            int __ColB = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1];
-            int __ColF = AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2];
-            AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 0] = Ch;
-            AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 1] = ColB;
-            AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 2] = ColF;
-            AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 3] = FontW;
-            AnsiState_.__AnsiLineOccupy[Y][X * __AnsiLineOccupyFactor + 4] = FontH;
+            AnsiState_.__AnsiLineOccupy__.Get(Y, X);
+
+            int __Ch = AnsiState_.__AnsiLineOccupy__.Item_Char;
+            int __ColB = AnsiState_.__AnsiLineOccupy__.Item_ColorB;
+            int __ColF = AnsiState_.__AnsiLineOccupy__.Item_ColorF;
+            int __ColA = AnsiState_.__AnsiLineOccupy__.Item_ColorA & 127;
+
+            AnsiState_.__AnsiLineOccupy__.Item_Char = Ch;
+            AnsiState_.__AnsiLineOccupy__.Item_ColorB = ColB;
+            AnsiState_.__AnsiLineOccupy__.Item_ColorF = ColF;
+            AnsiState_.__AnsiLineOccupy__.Item_ColorA = ColA;
+            AnsiState_.__AnsiLineOccupy__.Item_FontW = FontW;
+            AnsiState_.__AnsiLineOccupy__.Item_FontH = FontH;
+            AnsiState_.__AnsiLineOccupy__.Set(Y, X);
+            ColA = ColA & 127;
             bool IsCharOver = false;
-            if ((__ColB >= 0) && (__ColB != TextNormalBack) && (__ColB != ColB))
+            if ((__ColB != ColB) && (__ColB >= 0) && (__ColB != TextNormalBack))
             {
                 IsCharOver = true;
             }
             if (!TextWork.SpaceChars.Contains(__Ch))
             {
-                if ((__ColF >= 0) && (__ColF != TextNormalFore) && (__ColF != ColF))
+                if ((__Ch != Ch))
                 {
                     IsCharOver = true;
                 }
-                if ((__Ch != Ch))
+                if ((__ColF != ColF) && (__ColF >= 0) && (__ColF != TextNormalFore))
+                {
+                    IsCharOver = true;
+                }
+                if ((__ColA != ColA) && (__ColA > 0))
                 {
                     IsCharOver = true;
                 }
@@ -790,6 +828,43 @@ namespace TextPaint
             AnsiState_.PrintCharCounter++;
             AnsiState_.CharProtection1Set(X, Y, AnsiState_.CharProtection1Print);
             AnsiState_.CharProtection2Set(X, Y, AnsiState_.CharProtection2Print);
+        }
+
+        object AnsiResizeMonitor = new object();
+
+        public void AnsiResize(int NewW, int NewH)
+        {
+            if (WorkMode != 2)
+            {
+                Monitor.Enter(AnsiResizeMonitor);
+            }
+            if (NewW < 0)
+            {
+                NewW = AnsiMaxX;
+            }
+            if (NewH < 0)
+            {
+                NewH = AnsiMaxY;
+            }
+            if ((NewW != AnsiMaxX) || (NewH != AnsiMaxY))
+            {
+                if (Screen_.WinAuto)
+                {
+                    if (__AnsiScreen)
+                    {
+                        Screen_.AppResize(NewW, NewH);
+                        AnsiTerminalResize(Screen_.WinW, Screen_.WinH);
+                    }
+                    else
+                    {
+                        AnsiTerminalResize(NewW, NewH);
+                    }
+                }
+            }
+            if (WorkMode != 2)
+            {
+                Monitor.Exit(AnsiResizeMonitor);
+            }
         }
     }
 }

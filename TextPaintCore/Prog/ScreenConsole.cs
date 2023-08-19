@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Created by SharpDevelop.
  * User: XXX
  * Date: 2020-07-07
@@ -29,6 +29,11 @@ namespace TextPaint
         int DefaultBack = 0;
         int DefaultFore = 7;
 
+        bool LastFormatB = false;
+        bool LastFormatI = false;
+        bool LastFormatU = false;
+        bool LastFormatS = false;
+        bool LastFormatX = false;
 
 
         void SetBackColor(int N)
@@ -57,6 +62,10 @@ namespace TextPaint
 
         public ScreenConsole(Core Core__, int WinFixed_, ConfigFile CF, int DefBack, int DefFore)
         {
+            LoadConfig(CF);
+
+            UseTerminalColorCodes = CF.ParamGetB("ConUseEscapeCodes");
+
             WinFixed = WinFixed_;
             Core_ = Core__;
             ConIEnc = CF.ParamGetS("ConInputEncoding");
@@ -116,7 +125,7 @@ namespace TextPaint
             DefaultFore = DefFore;
         }
 
-        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
+        protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH, int ColorAttr)
         {
             Monitor.Enter(GraphMutex);
             if ((Y == (WinH - 1)) && (X == (WinW - 1)))
@@ -143,11 +152,98 @@ namespace TextPaint
                 LastColorFore = ColorFore;
                 SetForeColor(ColorFore);
             }
+            bool IsFormatB = ((ColorAttr & 1) > 0);
+            bool IsFormatI = ((ColorAttr & 2) > 0);
+            bool IsFormatU = ((ColorAttr & 4) > 0);
+            bool IsFormatS = ((ColorAttr & 64) > 0);
+            bool IsFormatX = ((ColorAttr & 8) > 0);
+
+            if (LastFormatB != IsFormatB)
+            {
+                if (FontModeBold > 0)
+                {
+                    if (IsFormatB)
+                    {
+                        Console.Write("\x1b[1m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[22m");
+                    }
+                }
+                LastFormatB = IsFormatB;
+            }
+
+            if (LastFormatI != IsFormatI)
+            {
+                if (FontModeItalic > 0)
+                {
+                    if (IsFormatI)
+                    {
+                        Console.Write("\x1b[3m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[23m");
+                    }
+                }
+                LastFormatI = IsFormatI;
+            }
+
+            if (LastFormatU != IsFormatU)
+            {
+                if (FontModeUnderline > 0)
+                {
+                    if (IsFormatU)
+                    {
+                        Console.Write("\x1b[4m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[24m");
+                    }
+                }
+                LastFormatU = IsFormatU;
+            }
+
+            if (LastFormatS != IsFormatS)
+            {
+                if (FontModeStrike > 0)
+                {
+                    if (IsFormatS)
+                    {
+                        Console.Write("\x1b[9m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[29m");
+                    }
+                }
+                LastFormatS = IsFormatS;
+            }
+
+            if (LastFormatX != IsFormatX)
+            {
+                if (FontModeBlink > 0)
+                {
+                    if (IsFormatX)
+                    {
+                        Console.Write("\x1b[5m");
+                    }
+                    else
+                    {
+                        Console.Write("\x1b[25m");
+                    }
+                }
+                LastFormatX = IsFormatX;
+            }
+
             if (UseMemo != 0)
             {
                 ScrChrC[X, Y] = C;
                 ScrChrB[X, Y] = ColorBack;
                 ScrChrF[X, Y] = ColorFore;
+                ScrChrA[X, Y] = ColorAttr;
             }
             if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
             {
@@ -166,6 +262,7 @@ namespace TextPaint
             ScrChrC[DstX, DstY] = ScrChrC[SrcX, SrcY];
             ScrChrB[DstX, DstY] = ScrChrB[SrcX, SrcY];
             ScrChrF[DstX, DstY] = ScrChrF[SrcX, SrcY];
+            ScrChrA[DstX, DstY] = ScrChrA[SrcX, SrcY];
             if (ScrChrC[DstX, DstY] == 0)
             {
                 return false;
@@ -228,7 +325,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_], ScrChrA[X_, Y_]);
                                 }
                             }
                         }
@@ -240,7 +337,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_], ScrChrA[X_, Y_]);
                                 }
                             }
                         }
@@ -258,7 +355,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_], ScrChrA[X_, Y_]);
                                 }
                             }
                         }
@@ -270,7 +367,7 @@ namespace TextPaint
                                 Y_ = Y + DstY;
                                 if (CharCopy(X + SrcX, Y + SrcY, X_, Y_))
                                 {
-                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_]);
+                                    PutChar_(X_, Y_, ScrChrC[X_, Y_], ScrChrB[X_, Y_], ScrChrF[X_, Y_], ScrChrFontW[X_, Y_], ScrChrFontH[X_, Y_], ScrChrA[X_, Y_]);
                                 }
                             }
                         }

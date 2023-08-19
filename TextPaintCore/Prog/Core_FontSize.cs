@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 namespace TextPaint
 {
     public partial class Core
@@ -125,6 +125,98 @@ namespace TextPaint
             {
                 return 0 - (CursorFontH - T);
             }
+        }
+
+        public bool GetAttribBit(int Attrib, int Bit)
+        {
+            switch (Bit)
+            {
+                case 0:
+                    return ((Attrib & 0x01) > 0);
+                case 1:
+                    return ((Attrib & 0x02) > 0);
+                case 2:
+                    return ((Attrib & 0x04) > 0);
+                case 3:
+                    return ((Attrib & 0x08) > 0);
+                case 4:
+                    return ((Attrib & 0x10) > 0);
+                case 5:
+                    return ((Attrib & 0x20) > 0);
+                case 6:
+                    return ((Attrib & 0x40) > 0);
+                case 7:
+                    return ((Attrib & 0x80) > 0);
+            }
+            return false;
+        }
+
+        public int SetAttribBit(int Attrib, int Bit, bool Val)
+        {
+            switch (Bit)
+            {
+                case 0:
+                    {
+                        if (Val) { Attrib = Attrib | 0x01; } else { Attrib = Attrib & 0xFE; }
+                    }
+                    break;
+                case 1:
+                    {
+                        if (Val) { Attrib = Attrib | 0x02; } else { Attrib = Attrib & 0xFD; }
+                    }
+                    break;
+                case 2:
+                    {
+                        if (Val) { Attrib = Attrib | 0x04; } else { Attrib = Attrib & 0xFB; }
+                    }
+                    break;
+                case 3:
+                    {
+                        if (Val) { Attrib = Attrib | 0x08; } else { Attrib = Attrib & 0xF7; }
+                    }
+                    break;
+                case 4:
+                    {
+                        if (Val) { Attrib = Attrib | 0x10; } else { Attrib = Attrib & 0xEF; }
+                    }
+                    break;
+                case 5:
+                    {
+                        if (Val) { Attrib = Attrib | 0x20; } else { Attrib = Attrib & 0xDF; }
+                    }
+                    break;
+                case 6:
+                    {
+                        if (Val) { Attrib = Attrib | 0x40; } else { Attrib = Attrib & 0xBF; }
+                    }
+                    break;
+                case 7:
+                    {
+                        if (Val) { Attrib = Attrib | 0x80; } else { Attrib = Attrib & 0x7F; }
+                    }
+                    break;
+            }
+            return Attrib;
+        }
+
+        public string GetAttribText(int Attrib)
+        {
+            //Bold
+            // Italic
+            //  Underline
+            //   Strikethrough
+            //    blinK
+            //     Reverse
+            //      Concealed
+            string X = "";
+            if (GetAttribBit(Attrib, 0)) { X = X + "B"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 1)) { X = X + "I"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 2)) { X = X + "U"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 6)) { X = X + "S"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 3)) { X = X + "K"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 4)) { X = X + "R"; } else { X = X + "_"; }
+            if (GetAttribBit(Attrib, 5)) { X = X + "C"; } else { X = X + "_"; }
+            return X;
         }
     }
 }

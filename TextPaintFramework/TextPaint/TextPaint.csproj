@@ -101,6 +101,11 @@
     <Compile Include="AnsiSauce.cs" />
     <Compile Include="Server.cs" />
     <Compile Include="LowLevelBitmapBase.cs" />
+    <Compile Include="AnsiLineOccupy.cs" />
+    <Compile Include="DisplayConfig.cs" />
+    <Compile Include="AnsiLineOccupyEx.cs" />
+    <Compile Include="AnsiLineOccupyItem.cs" />
+    <Compile Include="ClipboardBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

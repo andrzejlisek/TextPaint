@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace TextPaint
@@ -7,8 +7,7 @@ namespace TextPaint
     {
         int LastB = -1;
         int LastF = -1;
-        bool LastBlink = false;
-        bool LastBold = false;
+        int LastA = -1;
         int LastFontW = 0;
         int LastFontH = 0;
 
@@ -16,166 +15,226 @@ namespace TextPaint
         {
             LastB = -1;
             LastF = -1;
-            LastBlink = false;
-            LastBold = false;
+            LastA = -1;
             LastFontW = 0;
             LastFontH = 0;
         }
 
-        public List<int> Process(List<int> TextBuffer, List<int> TextColBuf, List<int> TextFonBuf, bool LinePrefix, bool LinePostfix, int AnsiMaxX, bool AnsiColorBackBlink, bool AnsiColorForeBold)
+        public List<int> Process(AnsiLineOccupyEx TextBuffer, int TextBufferI, bool LinePrefix, bool LinePostfix, int AnsiMaxX)
         {
             List<int> TextFileLine = new List<int>();
 
-            for (int ii = 0; ii < TextBuffer.Count; ii++)
+            for (int ii = 0; ii < TextBuffer.CountItems(TextBufferI); ii++)
             {
                 // Get color of current character
-                int TempB;
-                int TempF;
-                int TempFontW;
-                int TempFontH;
-
-                Core.ColorFromInt(TextColBuf[ii], out TempB, out TempF);
-                Core.FontSFromInt(TextFonBuf[ii], out TempFontW, out TempFontH);
+                TextBuffer.Get(TextBufferI, ii);
 
                 // Font size change
-                if ((LastFontW != TempFontW) || (LastFontH != TempFontH))
+                if ((LastFontW != TextBuffer.Item_FontW) || (LastFontH != TextBuffer.Item_FontH))
                 {
                     TextFileLine.Add(27);
                     TextFileLine.AddRange(TextWork.StrToInt("[0;"));
-                    TextFileLine.AddRange(TextWork.StrToInt(TempFontW.ToString()));
+                    TextFileLine.AddRange(TextWork.StrToInt(TextBuffer.Item_FontW.ToString()));
                     TextFileLine.Add(';');
-                    TextFileLine.AddRange(TextWork.StrToInt(TempFontH.ToString()));
+                    TextFileLine.AddRange(TextWork.StrToInt(TextBuffer.Item_FontH.ToString()));
                     TextFileLine.Add('V');
-                    LastFontW = TempFontW;
-                    LastFontH = TempFontH;
+                    LastFontW = TextBuffer.Item_FontW;
+                    LastFontH = TextBuffer.Item_FontH;
                 }
 
                 // Use escape codes only if color differs from the last color
-                if ((LastB != TempB) || (LastF != TempF))
+                if ((LastB != TextBuffer.Item_ColorB) || (LastF != TextBuffer.Item_ColorF) || (LastA != TextBuffer.Item_ColorA))
                 {
+                    // Attribute change prefix
+                    TextFileLine.Add(27);
+                    TextFileLine.Add('[');
+
+                    bool TagSeparator = false;
+
                     // Default color - reset attributes
-                    if (((TempB < 0) && (LastB >= 0)) || ((TempF < 0) && (LastF >= 0)))
+                    if (((TextBuffer.Item_ColorB < 0) && (LastB >= 0)) || ((TextBuffer.Item_ColorF < 0) && (LastF >= 0)))
                     {
-                        TextFileLine.Add(27);
-                        TextFileLine.Add('[');
+                        if (TagSeparator) { TextFileLine.Add(';'); }
                         TextFileLine.Add('0');
-                        TextFileLine.Add('m');
                         LastB = -1;
                         LastF = -1;
-                        LastBlink = false;
-                        LastBold = false;
+                        LastA = 0;
+                        TagSeparator = true;
                     }
 
                     // Background color change
-                    if (LastB != TempB)
+                    if (LastB != TextBuffer.Item_ColorB)
                     {
-                        if ((TempB >= 0) && (TempB <= 7))
+                        if (TagSeparator) { TextFileLine.Add(';'); }
+                        if ((TextBuffer.Item_ColorB >= 0) && (TextBuffer.Item_ColorB <= 7))
                         {
-                            TextFileLine.Add(27);
-                            TextFileLine.Add('[');
                             TextFileLine.Add('4');
-                            TextFileLine.Add(48 + TempB);
-                            if (AnsiColorBackBlink)
-                            {
-                                if (LastBlink)
-                                {
-                                    TextFileLine.Add(';');
-                                    TextFileLine.Add('2');
-                                    TextFileLine.Add('5');
-                                    LastBlink = false;
-                                }
-                            }
-                            TextFileLine.Add('m');
+                            TextFileLine.Add(48 + TextBuffer.Item_ColorB);
                         }
-                        if ((TempB >= 8) && (TempB <= 15))
+                        if ((TextBuffer.Item_ColorB >= 8) && (TextBuffer.Item_ColorB <= 15))
                         {
-                            if (AnsiColorBackBlink)
-                            {
-                                TextFileLine.Add(27);
-                                TextFileLine.Add('[');
-                                TextFileLine.Add('4');
-                                TextFileLine.Add(40 + TempB);
-                                if (AnsiColorBackBlink)
-                                {
-                                    if (!LastBlink)
-                                    {
-                                        TextFileLine.Add(';');
-                                        TextFileLine.Add('5');
-                                        LastBlink = true;
-                                    }
-                                }
-                                TextFileLine.Add('m');
-                            }
-                            else
-                            {
-                                TextFileLine.Add(27);
-                                TextFileLine.Add('[');
-                                TextFileLine.Add('1');
-                                TextFileLine.Add('0');
-                                TextFileLine.Add(40 + TempB);
-                                TextFileLine.Add('m');
-                            }
+                            TextFileLine.Add('1');
+                            TextFileLine.Add('0');
+                            TextFileLine.Add(40 + TextBuffer.Item_ColorB);
                         }
-                        LastB = TempB;
+                        TagSeparator = true;
+                        LastB = TextBuffer.Item_ColorB;
                     }
 
                     // Foreground color change
-                    if (LastF != TempF)
+                    if (LastF != TextBuffer.Item_ColorF)
                     {
-                        if ((TempF >= 0) && (TempF <= 7))
+                        if (TagSeparator) { TextFileLine.Add(';'); }
+                        if ((TextBuffer.Item_ColorF >= 0) && (TextBuffer.Item_ColorF <= 7))
                         {
-                            TextFileLine.Add(27);
-                            TextFileLine.Add('[');
                             TextFileLine.Add('3');
-                            TextFileLine.Add(48 + TempF);
-                            if (AnsiColorForeBold)
-                            {
-                                if (LastBold)
-                                {
-                                    TextFileLine.Add(';');
-                                    TextFileLine.Add('2');
-                                    TextFileLine.Add('2');
-                                    LastBold = false;
-                                }
-                            }
-                            TextFileLine.Add('m');
+                            TextFileLine.Add(48 + TextBuffer.Item_ColorF);
                         }
-                        if ((TempF >= 8) && (TempF <= 15))
+                        if ((TextBuffer.Item_ColorF >= 8) && (TextBuffer.Item_ColorF <= 15))
                         {
-                            if (AnsiColorForeBold)
-                            {
-                                TextFileLine.Add(27);
-                                TextFileLine.Add('[');
-                                TextFileLine.Add('3');
-                                TextFileLine.Add(40 + TempF);
-                                if (!LastBold)
-                                {
-                                    TextFileLine.Add(';');
-                                    TextFileLine.Add('1');
-                                    LastBold = true;
-                                }
-                                TextFileLine.Add('m');
-                            }
-                            else
-                            {
-                                TextFileLine.Add(27);
-                                TextFileLine.Add('[');
-                                TextFileLine.Add('9');
-                                TextFileLine.Add(40 + TempF);
-                                TextFileLine.Add('m');
-                            }
+                            TextFileLine.Add('9');
+                            TextFileLine.Add(40 + TextBuffer.Item_ColorF);
                         }
-                        LastF = TempF;
+                        TagSeparator = true;
+                        LastF = TextBuffer.Item_ColorF;
                     }
+
+                    // Attribute change
+                    if ((LastA & 0x7F) != (TextBuffer.Item_ColorA & 0x7F))
+                    {
+                        // Enable bold
+                        if (((LastA & 0x01) == 0) && ((TextBuffer.Item_ColorA & 0x01) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('1');
+                            TagSeparator = true;
+                        }
+
+                        // Disable bold
+                        if (((LastA & 0x01) > 0) && ((TextBuffer.Item_ColorA & 0x01) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('2');
+                            TagSeparator = true;
+                        }
+
+                        // Enable italic
+                        if (((LastA & 0x02) == 0) && ((TextBuffer.Item_ColorA & 0x02) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('3');
+                            TagSeparator = true;
+                        }
+
+                        // Disable italic
+                        if (((LastA & 0x02) > 0) && ((TextBuffer.Item_ColorA & 0x02) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('3');
+                            TagSeparator = true;
+                        }
+
+                        // Enable underline
+                        if (((LastA & 0x04) == 0) && ((TextBuffer.Item_ColorA & 0x04) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('4');
+                            TagSeparator = true;
+                        }
+
+                        // Disable underline
+                        if (((LastA & 0x04) > 0) && ((TextBuffer.Item_ColorA & 0x04) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('4');
+                            TagSeparator = true;
+                        }
+
+                        // Enable blink
+                        if (((LastA & 0x08) == 0) && ((TextBuffer.Item_ColorA & 0x08) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('5');
+                            TagSeparator = true;
+                        }
+
+                        // Disable blink
+                        if (((LastA & 0x08) > 0) && ((TextBuffer.Item_ColorA & 0x08) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('5');
+                            TagSeparator = true;
+                        }
+
+                        // Enable reverse
+                        if (((LastA & 0x10) == 0) && ((TextBuffer.Item_ColorA & 0x10) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('7');
+                            TagSeparator = true;
+                        }
+
+                        // Disable reverse
+                        if (((LastA & 0x10) > 0) && ((TextBuffer.Item_ColorA & 0x10) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('7');
+                            TagSeparator = true;
+                        }
+
+                        // Enable conceale
+                        if (((LastA & 0x20) == 0) && ((TextBuffer.Item_ColorA & 0x20) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('8');
+                            TagSeparator = true;
+                        }
+
+                        // Disable conceale
+                        if (((LastA & 0x20) > 0) && ((TextBuffer.Item_ColorA & 0x20) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('8');
+                            TagSeparator = true;
+                        }
+
+                        // Enable strikethrough
+                        if (((LastA & 0x40) == 0) && ((TextBuffer.Item_ColorA & 0x40) > 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('9');
+                            TagSeparator = true;
+                        }
+
+                        // Disable strikethrough
+                        if (((LastA & 0x40) > 0) && ((TextBuffer.Item_ColorA & 0x40) == 0))
+                        {
+                            if (TagSeparator) { TextFileLine.Add(';'); }
+                            TextFileLine.Add('2');
+                            TextFileLine.Add('9');
+                            TagSeparator = true;
+                        }
+
+                        LastA = TextBuffer.Item_ColorA;
+                    }
+
+                    // Attribute change suffix
+                    TextFileLine.Add('m');
                 }
                 if (ii < AnsiMaxX)
                 {
-                    TextFileLine.Add(TextBuffer[ii]);
+                    TextFileLine.Add(TextBuffer.Item_Char);
                     LastFontW = Core.FontCounter(LastFontW);
                 }
             }
 
-            if ((LastB >= 0) || (LastF >= 0) || (LastBlink) || (LastBold))
+            if ((LastB >= 0) || (LastF >= 0) || (LastA > 0))
             {
                 TextFileLine.Add(27);
                 TextFileLine.Add('[');
@@ -183,12 +242,11 @@ namespace TextPaint
                 TextFileLine.Add('m');
                 LastB = -1;
                 LastF = -1;
-                LastBlink = false;
-                LastBold = false;
+                LastA = 0;
             }
 
             // End of line characters
-            if (TextBuffer.Count < AnsiMaxX)
+            if (TextBuffer.CountLines() < AnsiMaxX)
             {
                 TextFileLine.Add(13);
                 TextFileLine.Add(10);

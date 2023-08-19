@@ -127,6 +127,27 @@ The colors are following:
 * **Bright gray** \- Space below the last line\.
 * **Black text in white background** \- Status bar\.
 
+## Load another file during session
+
+You can load another file without close and restart the TextPaint application\. If you write the full path for another file and press the F8, the another file will be loaded if the file exists and can be loaded\. Otherwise, the same file will be reloaded\.
+
+This feature allows to load other file by dropping the file icon onto the TextPaint console/window\. Before load other file, make sure, that:
+
+
+* TextPaint is in the State 1\.
+* One of the following conditions:
+  * The text writing direction is the right \(the **Text\-R** on the status bar\) and cursor is in the most left column\.
+  * The text writing direction is the down \(the **Text\-D** on the status bar\) and cursor is in the most top line\.
+
+Theoretically, there is possible loading the file in every text direction, but the **Text\-R** and **Text\-D** are the most recommended\.
+
+If you drop the file icon, the operating system will automatically write the full path for the file\. If you press the **F8** key, the text before the cursor \(the opposite direction than the write direction\) will be analyzed\. If the text represents the correct path, the other file fill be loaded\. In the console \(when **WinUse=0**\), the path will be cange in operating system specified method\. TextPaint can recognize the change in the path and automatically change the path back\. The operating system changess the path are as following and there is not possible to affect the console behavior:
+
+
+* **Windows**: Use the double quotes arounding the path\.
+* **Linux**: Use single quotes arounding the path or preceed the path with dollar character\.
+* **MacOS**: Precede every special character with backslach\.
+
 ## Context information
 
 When you press the **F1**, **F2**, **F3**, **F4** key one more time, after switchint to the state, there will be displayed short information about selected state\. Use arrow keys to scroll the text\.
@@ -147,7 +168,15 @@ At the bottom of console window, there is the status bar, with black text on whi
    * **Comma** \- At least one cell of the cursor is below the last line of text\.
 3. Character number and glyph under the most cursor cells\.
 4. Number of background and foreground color under the most cursor cells, the hyphen indicates, that color is not defined \(used default\)\.
-5. State indicator:
+5. Attribute state as 7\-character string under the most cursor cells, where underscore means disabled attribute and letter means enabled attribute as following:
+   * **B** \- Bold
+   * **I** \- Italic
+   * **U** \- Underscore
+   * **S** \- Strikethrough
+   * **K** \- Blink
+   * **R** \- Reserved
+   * **C** \- Concealed
+6. State indicator:
    * **Text** \- Write text \(**state 1**\), followed by direction indicator:
      * **R** \- **Right** \- From left to right\.
      * **RD** \- **Right/Down** \- From up\-left to down\-right\.
@@ -160,12 +189,12 @@ At the bottom of console window, there is the status bar, with black text on whi
    * **Char** \- Write character \(**state 2**\), followed by direction indicator the same as in the **state 1**\.
    * **Rect** \- Character drawing \(**state 3**\), rectangle shape\.
    * **Dia** \- Character drawing \(**state 3**\), diamond shape\.
-6. Elements in **state 3** only:
+7. Elements in **state 3** only:
    1. Shape size\.
    2. Character set used to draw figure in **state 3**:
       * Single character: Character code and glyph\.
       * Character set: Name defined in **Config\.txt** file\.
-7. Insert/delete mode:
+8. Insert/delete mode:
    1. **H\-block** \- Insert or delete text inside one line, at right from the cursor \- moves text horizontally\.
    2. **V\-block** \- Insert or delete text inside one column, below the cursor \- moves text vertically\.
    3. **H\-line** \- Insert or delete columns \- moves text horizontally\.
@@ -203,7 +232,9 @@ You can use the following keys while the character table is shown:
 * **Home**, **End** \- Flip 16 pages up or down \(go ahead 4096 characters\)\.
 * **F1**, **F2** \- Switch the plane \(go ahead 65536 characters\)\.
 * **F3** \- Switch to **color selector**\.
-* **F4** \- Browsing all pages, including invisible \(character selector state\)\. This function allows to browse through all pages even, when you loaded bitmap font and the font does not include characters for all pages\.
+* **F4** \- Function depends on the state:
+  * **Character selector**: Browsing all pages, including invisible\. This function allows to browse through all pages even, when you loaded bitmap font and the font does not include characters for all pages\.
+  * **Color selector**: Open the ANSI process parameters\.
 * **Insert** \- Switch between ordinary and favorite state:
   * **Ordinary**: If the pinted character exists in favorite set, there will be pointed\.
   * **Favorite**: There will be pointed the same character, which is pointed in favorite state\.
@@ -244,12 +275,20 @@ While the color selector is showm, you can use the following keys:
   * **Text \+ color** \- Edit text and color simultaneously\.
   * **Text** \- Edit text only without color changing\.
   * **Color** \- Edit color only without text changing\.
-* **Delete** \- Go to color being under the cursor\.
+* **Delete** \- Go to color and retrieve attributes being under the cursor\.
 * **Tab** \- Move color selector window from corner to corner\. You can use this if the window covers some text or window is bigger than screen\.
 * **Esc** \- Close without changing selected color\.
 * **Enter** \- Change selected color and close\.
+* **Digit keys** \- Toggle attributes as following:
+  * **1** \- Bold\.
+  * **2** \- Italic\.
+  * **3** \- Underline\.
+  * **4** \- Strikethrough\.
+  * **5** \- Blink\.
+  * **6** \- Reserved\.
+  * **7** \- Concealed\.
 
-You can change text without changing colors or colors without changing the text\. In order to do, switch to appropriate mode using **Insert** key\. The text and colors are independed layes\.
+You can change text without changing colors or colors without changing the text\. In order to do, switch to appropriate mode using **Insert** key\. The text and colors are independed layes\. Actually, the attributes are in the color layer and may be treated as specific colors, other from background and foreground\.
 
 ## ANSI file loading
 
@@ -266,6 +305,16 @@ If there file loaded with **ANSIRead=1** is actually plain text file, the file c
 * **21** \- Use LF character as CR\+LF \(EOL\), suitable for plain text files created on Unix and Linux, which uses LF as EOL\.
 * **12** \- Use CR character as CR\+LF \(EOL\), suitable for plain text files created on systems, which uses CR as EOL\.
 * **11** \- Use every CR character and every LF character as EOL separately\.
+
+## ANSI process parameters
+
+When you swich the selector into **Color state**, you can press the **F4** key for **ANSI process parameters**\.
+
+![](Readme/1_15.png "")
+
+Details of this function are described in the **Readme\_ANSI\.md**\.
+
+For exit from this function, press the **Enter** or **Esc** key\. The settings will take effect, when you reload the text file \(press **F8** key\)\. The changes will not be saved in the **config\.txt** file\.
 
 # Work states
 
@@ -508,7 +557,7 @@ In the TextPaint directory there is the **Config\.txt** file, which allows to co
 
 ## Appearance settings
 
-The settings affect the appearance of interface:
+The settings affects the appearance of interface:
 
 
 * **ColorNormal** \- Color of default background and foreground in all work modes\.
@@ -518,6 +567,23 @@ The settings affect the appearance of interface:
 * **ColorStatus** \- Color of status bar in **WorkMode=0** and **WorkMode=1**\.
 * **ColorPopup** \- Color of character selector and color selector in **WorkMode=0**, color of information window in **WorkMode=2**\.
 * **BeyondLineColumn** \- Number of columns, which will be displayed using **ColorNormal** instead of **ColorBeyondLine** regardless being beyond of the text line\. This setting may improve readibility of some ANSI files\. If you use negative value, there will be used the same value as **ANSIWidth**\.
+
+## Display settings
+
+The parameters affects the text display without affecting the application working, especially processing the ANSI file\. These parameters are usable in **WorkMode=1** and **WorkMode=2**\.
+
+
+* **DisplayBlink** \- Text blink mode, with three possible values:
+  * **0** \- Steady text\.
+  * **1** \- Dimming text and background like in VT100 terminal\.
+  * **2** \- Disappearing text like in DOS system on IBM PC\.
+* **DisplayAttrib** \- Text formatting attributes\. The value can be from 0 to 16 and can be calculated as the sum of the following values represents the binary attributes:
+  * **Bold** \- multiplied by 1\.
+  * **Italic** \- multiplied by 2\.
+  * **Underline** \- multiplied by 4\.
+  * **Strikethrough** \- multiplied by 8\.
+
+The settings are usable in the every **WinUse** mode\. While you use **WinUse=0**, the **DisplayBlink=1** and **DisplayBlink=2** will give the same effect\.
 
 ## Console settings
 
@@ -531,6 +597,7 @@ Settings related to console, affects when **WinUse=0** only\.
   * **0** \- Use console buffer moving\. This setting is recommended, while all characters are displayed correctly while text scrolling\.
   * **1** \- Use console buffer moving with rewriting non\-ASCII characters\. Use this setting if some characters are displayed incorrectly during text scrolling although the same characters are displayed correctly during writing/painting using Textpaint functions\. This may slightly slow down the text rendering during scrolling\. 
   * **2** \- Do not use console buffer moving\. Use this setting only if the text rendering crashes during trying to scroll\. This setting causes, that every character on screen is rewritten during text scrolling\.
+* **ConUseEscapeCodes** \- Use escape codes instead of \.NET functions for use color for display while **WinUse=0**\. This setting does not affect the **DisplayBlink** and **DisplayFormat** parameters\.
 
 ## Window settings
 
@@ -558,7 +625,10 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
 * **WinPaletteR** \- The red component of all 16 colors\.
 * **WinPaletteG** \- The green component of all 16 colors\.
 * **WinPaletteB** \- The blue component of all 16 colors\.
-* **WinPaletteFile** \- If provided, there is external file containing the palette\. If the file does not exist or is unreadable, the parameter will be ignored\. The structure of file are the same as **Config\.txt**, but it contains only three parameters: **WinPaletteR**, **WinPaletteG**, **WinPaletteB**\.
+* **WinPaletteBlinkR** \- The red component of all 16 colors for VT\-style blink\.
+* **WinPaletteBlinkG** \- The green component of all 16 colors for VT\-style blink\.
+* **WinPaletteBlinkB** \- The blue component of all 16 colors for VT\-style blink\.
+* **WinPaletteFile** \- If provided, there is external file containing the palette\. If the file does not exist or is unreadable, the parameter will be ignored\. The structure of file are the same as **Config\.txt**, but it contains only three parameters: **WinPaletteR**, **WinPaletteG**, **WinPaletteB**, **WinPaletteBlinkR**, **WinPaletteBlinkG**, **WinPaletteBlinkB**\.
 
 The **WinColorBlending** can be configured with the **WinColorBlending\_X** parameters, where **X** means the number from 1\. Every entry consists of 5 numbers:
 
@@ -600,6 +670,8 @@ WinPaletteB=00000000808080C080000000FFFFFFFF
 ```
 
 You can set the **WinPaletteR**, **WinPaletteG** and **WinPaletteB** parameter in other text file and you can provide the file name to **WinPaletteFile** parameter\. If there are both propertly defined **WinPaletteFile** and **WinPaletteR**/**WinPaletteG**/**WinPaletteB** parameters, the **WinPaletteFile** has higher priority\.
+
+The **WinPaletteBlinkR**, **WinPaletteBlinkG** and **WinPaletteBlinkB** works at the same way\.
 
 ## Cipher settings
 
@@ -864,12 +936,12 @@ There are samples for demonstration and test purposes in **WorkMode=0**\. Files 
 There are also samples, which are not created with **TextPaint**, but can be loaded into **TextPaint** or other terminal emulator or any ANSI file viewer:
 
 
-* **Colors16\.ans** \- Two ways to use all 16 standard colors\. If bold and blink is not ignored, **TextPaint** shows the same result in both ways\.
+* **Colors16\.ans** \- Two ways to use all 16 standard colors\. If bold and blink display are disabled, but bold and blink as color are enabled, **TextPaint** shows the same result in both ways\.
 * **Colors256\.ans** \- The 256\-color palette, **TextPaint** reada 256\-color codes, but converts such colors into standard 16 colors\. The file uses both semicolon and colon commands\.
 * **RGB\_R\.ans** \- The 24\-bit RGB color demonstration, red variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
 * **RGB\_G\.ans** \- The 24\-bit RGB color demonstration, green variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
 * **RGB\_B\.ans** \- The 24\-bit RGB color demonstration, blue variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
-* **TextFormat\.ans** \- Test of all VT100 text format flags \(bold, blink, negative, underline\)\. **TextPaint** ignores underline flag, but the file can be used for test other terminals\.
+* **TextFormat\.ans** \- Test of all standard VT100 text format attributes \(bold, blink, negative, underline\)\.
 
 
 

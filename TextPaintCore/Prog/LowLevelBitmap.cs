@@ -111,63 +111,104 @@ namespace TextPaint
             switch (FontName)
             {
                 case "GenericSerif":
-                    WinFontFace = SKTypeface.FromFamilyName("serif");
+                    FontName = "serif";
                     break;
                 case "GenericSansSerif":
-                    WinFontFace = SKTypeface.FromFamilyName("sans-serif");
+                    FontName = "sans-serif";
                     break;
                 case "GenericMonospace":
-                    WinFontFace = SKTypeface.FromFamilyName("monospace");
-                    break;
-                default:
-                    WinFontFace = SKTypeface.FromFamilyName(FontName);
+                    FontName = "monospace";
                     break;
             }
-            WinFont = new SKFont(WinFontFace, FontSize, 1, 0);
-            WinPaint = new SKPaint(WinFont);
-            WinPaint.TextAlign = SKTextAlign.Center;
-            switch (CharRender)
+            WinFontFace[0x0] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Normal);
+            WinFontFace[0x1] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Bold);
+            WinFontFace[0x2] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Italic);
+            WinFontFace[0x3] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.BoldItalic);
+            WinFontFace[0x4] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Normal);
+            WinFontFace[0x5] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Bold);
+            WinFontFace[0x6] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Italic);
+            WinFontFace[0x7] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.BoldItalic);
+            WinFontFace[0x8] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Normal);
+            WinFontFace[0x9] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Bold);
+            WinFontFace[0xA] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Italic);
+            WinFontFace[0xB] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.BoldItalic);
+            WinFontFace[0xC] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Normal);
+            WinFontFace[0xD] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Bold);
+            WinFontFace[0xE] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.Italic);
+            WinFontFace[0xF] = SKTypeface.FromFamilyName(FontName, SkiaSharp.SKFontStyle.BoldItalic);
+            for (int I = 0; I < 16; I++)
             {
-                default:
-                    WinPaint.IsAntialias = false;
-                    WinPaint.SubpixelText = false;
-                    break;
-                case 1:
-                    WinPaint.IsAntialias = true;
-                    WinPaint.SubpixelText = false;
-                    break;
+                WinFont[I] = new SKFont(WinFontFace[I], FontSize, 1, 0);
+                WinPaint[I] = new SKPaint(WinFont[I]);
+                WinPaint[I].TextAlign = SKTextAlign.Center;
+                switch (CharRender)
+                {
+                    default:
+                        WinPaint[I].IsAntialias = false;
+                        WinPaint[I].SubpixelText = false;
+                        break;
+                    case 1:
+                        WinPaint[I].IsAntialias = true;
+                        WinPaint[I].SubpixelText = false;
+                        break;
+                }
+                SKRect TextBounds = new SKRect();
+                CharW[I] = 0;
+                CharH[I] = 0;
+                int[] MeasureChars = new int[] { 'A', 'X', 'T', 'Y' };
+                for (int II = 0; II < MeasureChars.Length; II++)
+                {
+                    WinPaint[I].MeasureText(((char)MeasureChars[II]).ToString(), ref TextBounds);
+                    CharW[I] = CharW[I] + TextBounds.Width;
+                    CharH[I] = CharH[I] + TextBounds.Height;
+                }
+                CharW[I] = CharW[I] / (float)(MeasureChars.Length);
+                CharH[I] = CharH[I] / (float)(MeasureChars.Length);
             }
-            SKRect TextBounds = new SKRect();
-            CharW = 0;
-            CharH = 0;
-            int[] MeasureChars = new int[] { 'A', 'X', 'T', 'Y' };
-            for (int I = 0; I < MeasureChars.Length; I++)
-            {
-                WinPaint.MeasureText(((char)MeasureChars[I]).ToString(), ref TextBounds);
-                CharW = CharW + TextBounds.Width;
-                CharH = CharH + TextBounds.Height;
-            }
-            CharW = CharW / (float)(MeasureChars.Length);
-            CharH = CharH / (float)(MeasureChars.Length);
         }
 
-        public void DrawText(float X, float Y, float W, float H, float ScaleH, float ScaleV, string T, byte R, byte G, byte B)
+        public void DrawText(float X, float Y, float W, float H, float ScaleH, float ScaleV, string T, byte R, byte G, byte B, bool FontB, bool FontI, bool FontU, bool FontS)
         {
             try
             {
+                int N = (FontB ? 1 : 0) + (FontI ? 2 : 0) + (FontU ? 4 : 0) + (FontU ? 8 : 0);
+
+                WinPaint[N].StrokeWidth = 0;
+
                 X = 0 - (X / ScaleH);
                 Y = 0 - (Y / ScaleV);
                 W = W / ScaleH;
                 H = H / ScaleV;
 
                 SKBitmap ToBitmapBmpX = ToBitmapX();
-                WinPaint.Color = new SKColor(R, G, B);
+                WinPaint[N].Color = new SKColor(R, G, B);
                 SKCanvas BmpG = new SKCanvas(ToBitmapBmpX);
                 BmpG.Scale(ScaleH, ScaleV, 0, 0);
 
                 float X_ = (W) / 2.0f;
-                float Y_ = H - ((H - CharH) / 2.0f);
-                BmpG.DrawText(T, X + X_, Y + Y_, WinPaint);
+                float Y_ = H - ((H - CharH[N]) / 2.0f);
+                BmpG.DrawText(T, X + X_, Y + Y_, WinPaint[N]);
+
+                if (FontU || FontS)
+                {
+                    float PosB = (Y + Y_);
+                    //float Pos1 = X + X_ - (CharW[N] / 2);
+                    //float Pos2 = X + X_ + (CharW[N] / 2);
+                    float Pos1 = 0;
+                    float Pos2 = W;
+
+                    if (FontU)
+                    {
+                        WinPaint[N].StrokeWidth = (float)WinFont[N].Metrics.UnderlineThickness;
+                        BmpG.DrawLine(Pos1, PosB + (float)WinFont[N].Metrics.UnderlinePosition, Pos2, PosB + (float)WinFont[N].Metrics.UnderlinePosition, WinPaint[N]);
+                    }
+
+                    if (FontS)
+                    {
+                        WinPaint[N].StrokeWidth = (float)WinFont[N].Metrics.StrikeoutThickness;
+                        BmpG.DrawLine(Pos1, PosB + (float)WinFont[N].Metrics.StrikeoutPosition, Pos2, PosB + (float)WinFont[N].Metrics.StrikeoutPosition, WinPaint[N]);
+                    }
+                }
 
                 System.Runtime.InteropServices.Marshal.Copy(ToBitmapBmpX.GetPixels(), Data, 0, DataLength); 
                 ToBitmapChanged = true;
@@ -179,11 +220,11 @@ namespace TextPaint
 
 
 
-        private SKTypeface WinFontFace;
-        private SKFont WinFont;
-        private SKPaint WinPaint;
-        float CharW = 0;
-        float CharH = 0;
+        private SKTypeface[] WinFontFace = new SKTypeface[16];
+        private SKFont[] WinFont = new SKFont[16];
+        private SKPaint[] WinPaint = new SKPaint[16];
+        float[] CharW = new float[16];
+        float[] CharH = new float[16];
         private WriteableBitmap ToBitmapBmp;
     }
 }

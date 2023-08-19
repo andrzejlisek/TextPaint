@@ -15,8 +15,6 @@ namespace TextPaint
 
         public bool UseAnsiLoad = false;
         public bool UseAnsiSave = false;
-        public bool AnsiColorBackBlink = false;
-        public bool AnsiColorForeBold = false;
         public int FileReadSteps = 0;
 
 
@@ -61,7 +59,7 @@ namespace TextPaint
         }
 
 
-        public static void ColorFromInt(int Col, out int Back, out int Fore)
+        public static void ColorFromInt(int Col, out int Back, out int Fore, out int Attrib)
         {
             Back = -1;
             Fore = -1;
@@ -73,6 +71,7 @@ namespace TextPaint
             {
                 Fore = (Col >> 8) & 255;
             }
+            Attrib = 0;
         }
 
         public static void FontSFromInt(int Col, out int FontW, out int FontH)
@@ -83,6 +82,17 @@ namespace TextPaint
             FontH = (Col >> 10) & 1023;
         }
 
+        public bool FileExists(string FileName)
+        {
+            if (File.Exists(FileName))
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
 
         public void FileLoad(string FileName)
         {
@@ -91,8 +101,6 @@ namespace TextPaint
             ToggleDrawColo = true;
             ToggleDrawText = true;
             TextBuffer.Clear();
-            TextColBuf.Clear();
-            TextFonBuf.Clear();
             if ("".Equals(FileName))
             {
                 return;
@@ -131,96 +139,70 @@ namespace TextPaint
                         AnsiProcess(-1);
                     }
                     TextBuffer.Clear();
-                    TextColBuf.Clear();
-                    TextFonBuf.Clear();
+                    int i_ = 0;
 
 
                     // Before screen
-                    for (int i = 0; i < AnsiState_.__AnsiLineOccupy1.Count; i++)
+                    for (int i = 0; i < AnsiState_.__AnsiLineOccupy1__.CountLines(); i++)
                     {
-                        List<int> TextBufferLine = new List<int>();
-                        List<int> TextColBufLine = new List<int>();
-                        List<int> TextFonBufLine = new List<int>();
-                        int LineMax = (AnsiState_.__AnsiLineOccupy1[i].Count / __AnsiLineOccupyFactor) - 1;
+                        TextBuffer.AppendLine();
+                        int LineMax = (AnsiState_.__AnsiLineOccupy1__.CountItems(i)) - 1;
                         for (int ii = 0; ii <= LineMax; ii++)
                         {
-                            TextBufferLine.Add(AnsiState_.__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 0]);
-                            int ColorB = AnsiState_.__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 1];
-                            int ColorF = AnsiState_.__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 2];
-                            int FontW = AnsiState_.__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 3];
-                            int FontH = AnsiState_.__AnsiLineOccupy1[i][ii * __AnsiLineOccupyFactor + 4];
-                            TextColBufLine.Add(ColorToInt(ColorB, ColorF));
-                            TextFonBufLine.Add(FontSToInt(FontW, FontH));
+                            AnsiState_.__AnsiLineOccupy1__.Get(i, ii);
+                            TextBuffer.CopyItem(AnsiState_.__AnsiLineOccupy1__);
+                            TextBuffer.Append(i_);
                         }
-
-                        TextBuffer.Add(TextBufferLine);
-                        TextColBuf.Add(TextColBufLine);
-                        TextFonBuf.Add(TextFonBufLine);
+                        i_++;
                     }
 
                     // Screen
-                    for (int i = 0; i < AnsiState_.__AnsiLineOccupy.Count; i++)
+                    for (int i = 0; i < AnsiState_.__AnsiLineOccupy__.CountLines(); i++)
                     {
-                        List<int> TextBufferLine = new List<int>();
-                        List<int> TextColBufLine = new List<int>();
-                        List<int> TextFonBufLine = new List<int>();
-                        int LineMax = (AnsiState_.__AnsiLineOccupy[i].Count / __AnsiLineOccupyFactor) - 1;
+                        TextBuffer.AppendLine();
+                        int LineMax = (AnsiState_.__AnsiLineOccupy__.CountItems(i)) - 1;
                         for (int ii = 0; ii <= LineMax; ii++)
                         {
-                            TextBufferLine.Add(AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 0]);
-                            int ColorB = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 1];
-                            int ColorF = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 2];
-                            int FontW = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 3];
-                            int FontH = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 4];
-                            TextColBufLine.Add(ColorToInt(ColorB, ColorF));
-                            TextFonBufLine.Add(FontSToInt(FontW, FontH));
+                            AnsiState_.__AnsiLineOccupy__.Get(i, ii);
+                            TextBuffer.CopyItem(AnsiState_.__AnsiLineOccupy__);
+                            TextBuffer.Append(i_);
                         }
-
-                        TextBuffer.Add(TextBufferLine);
-                        TextColBuf.Add(TextColBufLine);
-                        TextFonBuf.Add(TextFonBufLine);
+                        i_++;
                     }
 
                     // After screen
-                    for (int i = (AnsiState_.__AnsiLineOccupy2.Count - 1); i >= 0; i--)
+                    for (int i = (AnsiState_.__AnsiLineOccupy2__.CountLines() - 1); i >= 0; i--)
                     {
-                        List<int> TextBufferLine = new List<int>();
-                        List<int> TextColBufLine = new List<int>();
-                        List<int> TextFonBufLine = new List<int>();
-                        int LineMax = (AnsiState_.__AnsiLineOccupy2[i].Count / __AnsiLineOccupyFactor) - 1;
+                        TextBuffer.AppendLine();
+                        int LineMax = (AnsiState_.__AnsiLineOccupy2__.CountItems(i)) - 1;
                         for (int ii = 0; ii <= LineMax; ii++)
                         {
-                            TextBufferLine.Add(AnsiState_.__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 0]);
-                            int ColorB = AnsiState_.__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 1];
-                            int ColorF = AnsiState_.__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 2];
-                            int FontW = AnsiState_.__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 3];
-                            int FontH = AnsiState_.__AnsiLineOccupy2[i][ii * __AnsiLineOccupyFactor + 4];
-                            TextColBufLine.Add(ColorToInt(ColorB, ColorF));
-                            TextFonBufLine.Add(FontSToInt(FontW, FontH));
+                            AnsiState_.__AnsiLineOccupy2__.Get(i, ii);
+                            TextBuffer.CopyItem(AnsiState_.__AnsiLineOccupy2__);
+                            TextBuffer.Append(i_);
                         }
-
-                        TextBuffer.Add(TextBufferLine);
-                        TextColBuf.Add(TextColBufLine);
-                        TextFonBuf.Add(TextFonBufLine);
+                        i_++;
                     }
                 }
                 else
                 {
+                    TextBuffer.BlankChar();
                     Buf = SR.ReadLine();
+                    int i_ = 0;
                     while (Buf != null)
                     {
                         TestLines++;
                         List<int> TextFileLine = TextCipher_.Crypt(TextWork.StrToInt(Buf), true);
-                        TextBuffer.Add(TextFileLine);
-                        TextColBuf.Add(TextWork.BlkCol(TextFileLine.Count));
-                        TextFonBuf.Add(TextWork.BlkCol(TextFileLine.Count));
+                        TextBuffer.AppendLine();
+                        TextBuffer.SetLineString(i_, TextFileLine);
                         Buf = SR.ReadLine();
+                        i_++;
                     }
                 }
                 AnsiEnd();
                 SR.Close();
                 FS.Close();
-                TextBufferTrim();
+                TextBuffer.TrimLines();
                 UndoBufferClear();
             }
             catch (Exception E)
@@ -229,28 +211,16 @@ namespace TextPaint
                 AnsiProcessSupply(TextWork.StrToInt(E.Message));
                 AnsiProcess(-1);
                 TextBuffer.Clear();
-                TextColBuf.Clear();
-                TextFonBuf.Clear();
-                for (int i = 0; i < AnsiState_.__AnsiLineOccupy.Count; i++)
+                for (int i = 0; i < AnsiState_.__AnsiLineOccupy__.CountLines(); i++)
                 {
-                    List<int> TextBufferLine = new List<int>();
-                    List<int> TextColBufLine = new List<int>();
-                    List<int> TextFonBufLine = new List<int>();
-                    int LineMax = (AnsiState_.__AnsiLineOccupy[i].Count / __AnsiLineOccupyFactor) - 1;
+                    int LineMax = (AnsiState_.__AnsiLineOccupy__.CountItems(i)) - 1;
+                    TextBuffer.AppendLine();
                     for (int ii = 0; ii <= LineMax; ii++)
                     {
-                        TextBufferLine.Add(AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 0]);
-                        int ColorB = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 1];
-                        int ColorF = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 2];
-                        int FontW = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 3];
-                        int FontH = AnsiState_.__AnsiLineOccupy[i][ii * __AnsiLineOccupyFactor + 4];
-                        TextColBufLine.Add(ColorToInt(ColorB, ColorF));
-                        TextFonBufLine.Add(FontSToInt(FontW, FontH));
+                        AnsiState_.__AnsiLineOccupy__.Get(i, ii);
+                        TextBuffer.CopyItem(AnsiState_.__AnsiLineOccupy__);
+                        TextBuffer.Append(i);
                     }
-
-                    TextBuffer.Add(TextBufferLine);
-                    TextColBuf.Add(TextColBufLine);
-                    TextFonBuf.Add(TextFonBufLine);
                 }
                 AnsiEnd();
             }
@@ -284,19 +254,19 @@ namespace TextPaint
                 }
                 AnsiFile AnsiFile_ = new AnsiFile();
                 AnsiFile_.Reset();
-                for (int i = 0; i < TextBuffer.Count; i++)
+                for (int i = 0; i < TextBuffer.CountLines(); i++)
                 {
                     List<int> TextFileLine;
                     if (UseAnsiSave)
                     {
                         bool LinePrefix = (i == 0);
-                        bool LinePostfix = (i == (TextBuffer.Count - 1));
-                        TextFileLine = AnsiFile_.Process(TextBuffer[i], TextColBuf[i], TextFonBuf[i], LinePrefix, LinePostfix, AnsiMaxX, AnsiColorBackBlink, AnsiColorForeBold);
+                        bool LinePostfix = (i == (TextBuffer.CountLines() - 1));
+                        TextFileLine = AnsiFile_.Process(TextBuffer, i, LinePrefix, LinePostfix, AnsiMaxX);
                         SW.Write(TextWork.IntToStr(TextCipher_.Crypt(TextFileLine, false)));
                     }
                     else
                     {
-                        TextFileLine = TextBuffer[i];
+                        TextFileLine = TextBuffer.GetLineString(i);
                         SW.WriteLine(TextWork.IntToStr(TextCipher_.Crypt(TextFileLine, false)));
                     }
                 }

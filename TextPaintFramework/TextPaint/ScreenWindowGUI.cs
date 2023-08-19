@@ -11,6 +11,12 @@ namespace TextPaint
 
         public ScreenWindowGUI(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen)
         {
+            if (WinFixed_ > 0)
+            {
+                WinAutoAllowed = true;
+                WinAuto = CF.ParamGetB("ANSIAutoSize");
+            }
+            ConsoleBitmap_ = new LowLevelBitmap[2];
             if (!DummyScreen)
             {
                 XWidth = ConsoleW * CellW;
@@ -94,13 +100,27 @@ namespace TextPaint
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
+            ConsoleBitmap_Counter++;
+            if (ConsoleBitmap_Counter >= 5)
+            {
+                ConsoleBitmap_Counter = 0;
+                ConsoleBitmap_Disp = 1 - ConsoleBitmap_Disp;
+                if (WinPicturePanel)
+                {
+                    ConsoleScreen_Panel.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
+                    ConsoleScreen_Panel.Refresh();
+                }
+                else
+                {
+                    ConsoleScreen_PictureBox.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
+                    ConsoleScreen_PictureBox.Refresh();
+                }
+            }
             if (DuringResize > 0)
             {
                 DuringResize--;
                 if (DuringResizeEnd || (DuringResize == 1))
                 {
-                    //Console.WriteLine("Zmiana rozmiaru stop 1___" + XWidth + "__" + Form_.ClientSize.Width);
-                    //Console.WriteLine("Zmiana rozmiaru stop 2");
                     XWidth = Form_.ClientSize.Width;
                     XHeight = Form_.ClientSize.Height;
                     CursorTimerEvent(true);
@@ -111,9 +131,7 @@ namespace TextPaint
             }
             if ((XWidth != Form_.ClientSize.Width) || (XHeight != Form_.ClientSize.Height))
             {
-                //Console.WriteLine("Zmiana rozmiaru start 1___" + XWidth + "__" + Form_.ClientSize.Width);
                 DuringResize = 6;
-                //Console.WriteLine("Zmiana rozmiaru start 2");
             }
             else
             {
@@ -216,7 +234,9 @@ namespace TextPaint
         Window_PictureBoxEx ConsoleScreen_PictureBox;
         Window_PictureBoxPanel ConsoleScreen_Panel;
         Panel ConsoleCursor_;
-        LowLevelBitmap ConsoleBitmap_;
+        LowLevelBitmap[] ConsoleBitmap_;
+        int ConsoleBitmap_Disp = 0;
+        int ConsoleBitmap_Counter = 0;
 
         protected override void FormCtrlRefresh()
         {
@@ -252,24 +272,25 @@ namespace TextPaint
             }
         }
 
-        public override void FormCtrlSetBitmap(LowLevelBitmap Bmp)
+        public override void FormCtrlSetBitmap(LowLevelBitmap Bmp0, LowLevelBitmap Bmp1)
         {
             if (Form_ == null)
             {
                 return;
             }
-            ConsoleBitmap_ = Bmp;
+            ConsoleBitmap_[0] = Bmp0;
+            ConsoleBitmap_[1] = Bmp1;
             if (WinPicturePanel)
             {
                 ConsoleScreen_Panel.DrawW = WinBmpW;
                 ConsoleScreen_Panel.DrawH = WinBmpH;
-                ConsoleScreen_Panel.Image_ = Bmp;
+                ConsoleScreen_Panel.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
             }
             else
             {
                 ConsoleScreen_PictureBox.DrawW = WinBmpW;
                 ConsoleScreen_PictureBox.DrawH = WinBmpH;
-                ConsoleScreen_PictureBox.Image_ = Bmp;
+                ConsoleScreen_PictureBox.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
             }
         }
 

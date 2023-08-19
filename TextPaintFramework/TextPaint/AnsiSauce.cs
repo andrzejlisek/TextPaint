@@ -205,12 +205,15 @@ namespace TextPaint
 
             if (SauceIdx < 0)
             {
-                SauceIdx = Raw.Length - 129;
-                if (GetByte(SauceIdx + 1) != 'S') { SauceIdx = -1; }
-                if (GetByte(SauceIdx + 2) != 'A') { SauceIdx = -1; }
-                if (GetByte(SauceIdx + 3) != 'U') { SauceIdx = -1; }
-                if (GetByte(SauceIdx + 4) != 'C') { SauceIdx = -1; }
-                if (GetByte(SauceIdx + 5) != 'E') { SauceIdx = -1; }
+                if (Raw != null)
+                {
+                    SauceIdx = Raw.Length - 129;
+                    if (GetByte(SauceIdx + 1) != 'S') { SauceIdx = -1; }
+                    if (GetByte(SauceIdx + 2) != 'A') { SauceIdx = -1; }
+                    if (GetByte(SauceIdx + 3) != 'U') { SauceIdx = -1; }
+                    if (GetByte(SauceIdx + 4) != 'C') { SauceIdx = -1; }
+                    if (GetByte(SauceIdx + 5) != 'E') { SauceIdx = -1; }
+                }
             }
 
 

@@ -8,6 +8,7 @@ ConCursorDisplay=1
 ConUseMemo=2
 ConInputEncoding=utf-8
 ConOutputEncoding=utf-8
+ConUseEscapeCodes=0
 
 WinCellW=8
 WinCellH=16
@@ -42,6 +43,13 @@ WinPaletteR=00AA00AA00AA00AA55FF55FF55FF55FF
 WinPaletteG=0000AAAA0000AAAA5555FFFF5555FFFF
 WinPaletteB=00000000AAAAAAAA55555555FFFFFFFF
 WinPaletteFile=Palettes/DOS.txt
+
+WinPaletteBlinkR=00AA00AA00AA00AA55FF55FF55FF55FF
+WinPaletteBlinkG=0000AAAA0000AAAA5555FFFF5555FFFF
+WinPaletteBlinkB=00000000AAAAAAAA55555555FFFFFFFF
+
+DisplayBlink=1
+DisplayAttrib=15
 
 Space=20,A0,2800
 
@@ -122,15 +130,15 @@ ANSIReadLF=0
 ANSIWidth=0
 ANSIHeight=0
 ANSIDOS=0
-ANSIIgnoreBlink=0
-ANSIIgnoreBold=0
-ANSIReverseMode=0
+ANSI8bit=0
+ANSIColors=1
+ANSIReverseMode=2
+ANSIColorBlink=0
+ANSIColorBold=0
 ANSIIgnoreConcealed=0
 ANSIPrintBackspace=0
 ANSIPrintTab=0
 ANSIWrite=0
-ANSIWriteBlink=0
-ANSIWriteBold=0
 ANSIColorScheme=0
 ANSIScrollChars=1000
 ANSIScrollSmooth=4
@@ -175,4 +183,8 @@ RenderSliceX=0
 RenderSliceY=0
 RenderSliceW=0
 RenderSliceH=0
+RenderLeading=0
+RenderTrailing=0
+RenderBlinkPeriod=10
+RenderBlinkOffset=0
 

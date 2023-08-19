@@ -63,6 +63,9 @@ namespace TextPaint
                             case WorkStateSDef.DisplayInfo:
                                 Screen_Refresh();
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -145,6 +148,9 @@ namespace TextPaint
                             case WorkStateSDef.DisplayInfo:
                                 ExitInfo();
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -176,6 +182,11 @@ namespace TextPaint
                                     }
                                 }
                                 break;
+                            case WorkStateSDef.DispConf:
+                                {
+                                    DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                }
+                                break;
                         }
                     }
                     break;
@@ -194,6 +205,9 @@ namespace TextPaint
                             case WorkStateSDef.DisplayInfo:
                                 InfoPosV--;
                                 DisplayInfoRepaint = true;
+                                break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
                                 break;
                         }
                     }
@@ -214,6 +228,9 @@ namespace TextPaint
                                 InfoPosV++;
                                 DisplayInfoRepaint = true;
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -232,6 +249,9 @@ namespace TextPaint
                             case WorkStateSDef.DisplayInfo:
                                 InfoPosH--;
                                 DisplayInfoRepaint = true;
+                                break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
                                 break;
                         }
                     }
@@ -252,6 +272,9 @@ namespace TextPaint
                                 InfoPosH++;
                                 DisplayInfoRepaint = true;
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -267,6 +290,9 @@ namespace TextPaint
                                 ActionRequestParam = -3;
                                 ActionRequest = 4;
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -281,6 +307,9 @@ namespace TextPaint
                             case WorkStateSDef.DisplayPlayRev:
                                 ActionRequestParam = 3;
                                 ActionRequest = 4;
+                                break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
                                 break;
                         }
                     }
@@ -300,6 +329,9 @@ namespace TextPaint
                                     Screen_.AppWorking = false;
                                     WorkStateS = WorkStateSDef.None;
                                 }
+                                break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
                                 break;
                         }
                     }
@@ -321,6 +353,9 @@ namespace TextPaint
                                 {
                                     ActionRequest = 2;
                                 }
+                                break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
                                 break;
                         }
                     }
@@ -363,6 +398,9 @@ namespace TextPaint
                                     ActionRequest = 1;
                                 }
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -395,6 +433,9 @@ namespace TextPaint
                                     ActionRequest = 1;
                                 }
                                 break;
+                            case WorkStateSDef.DispConf:
+                                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                                break;
                         }
                     }
                     break;
@@ -417,8 +458,7 @@ namespace TextPaint
                             {
                                 switch (KeyChar)
                                 {
-                                    case '+':
-                                    case '=':
+                                    case ']':
                                         FileDelayStepFactor++;
                                         if ((FileDelayStep__ * 2) < 1)
                                         {
@@ -426,21 +466,18 @@ namespace TextPaint
                                         }
                                         ActionRequest = 3;
                                         break;
-                                    case '-':
-                                    case '_':
+                                    case '[':
                                         if (FileDelayStep__ > 1)
                                         {
                                             FileDelayStepFactor--;
                                         }
                                         ActionRequest = 3;
                                         break;
-                                    case '*':
                                     case '/':
                                         FileDelayStepFactor = 0;
                                         ActionRequest = 3;
                                         break;
                                     case '`':
-                                    case '~':
                                         {
                                             if (Monitor.TryEnter(StatusMutex))
                                             {
@@ -457,8 +494,16 @@ namespace TextPaint
                                             }
                                         }
                                         break;
+                                    case '\\':
+                                        {
+                                            ActionRequest = 6;
+                                        }
+                                        break;
                                 }
                             }
+                            break;
+                        case WorkStateSDef.DispConf:
+                            DisplayConfig_.ProcessKey(KeyName, KeyChar);
                             break;
                     }
                     break;
@@ -518,6 +563,8 @@ namespace TextPaint
                 Core_.AnsiProcessSupply(FileCtX);
                 MovieLength = Core_.AnsiProcess(-1);
             }
+            AnsiSauce_.NonSauceInfo("Index", (PlaylistIdx + 1).ToString() + "/" + PlaylistFiles.Count.ToString());
+            AnsiSauce_.NonSauceInfo("File name", Path.GetFileName(Core_.CurrentFileName));
             AnsiSauce_.NonSauceInfo("Steps", MovieLength);
             AnsiSauce_.NonSauceInfo("Characters", Core_.AnsiState_.AnsiBufferI);
             AnsiSauce_.NonSauceInfo("Overwrites/writes", Core_.AnsiState_.PrintCharCounterOver + "/" + Core_.AnsiState_.PrintCharCounter);
@@ -673,6 +720,12 @@ namespace TextPaint
                                 DisplayInfo(true);
                             }
                             break;
+                        case 6:
+                            {
+                                DispBuffer___ = DispBuffer;
+                                DisplayConfigOpen();
+                            }
+                            break;
                     }
                     ActionRequest = 0;
                 }
@@ -706,7 +759,7 @@ namespace TextPaint
                             Screen_WriteLine();
                             Screen_WriteText("Tab - Show/hide status");
                             Screen_WriteLine();
-                            Screen_WriteText("[~][`] - Change status information");
+                            Screen_WriteText("` - Change status information");
                             Screen_WriteLine();
                             Screen_WriteText("Space - File information");
                             Screen_WriteLine();
@@ -722,13 +775,15 @@ namespace TextPaint
                             Screen_WriteLine();
                             Screen_WriteText("End - Move to end of animation");
                             Screen_WriteLine();
-                            Screen_WriteText("[+][=] - Increase playing speed");
+                            Screen_WriteText("] - Increase playing speed");
                             Screen_WriteLine();
-                            Screen_WriteText("[-][_] - Decrease playing speed");
+                            Screen_WriteText("[ - Decrease playing speed");
                             Screen_WriteLine();
-                            Screen_WriteText("[*][/] - Reset playing speed");
+                            Screen_WriteText("/ - Reset playing speed");
                             Screen_WriteLine();
                             Screen_WriteText("Page Up/Page Down - Previous/Next file");
+                            Screen_WriteLine();
+                            Screen_WriteText("\\ - Display configuration");
                             Screen_WriteLine();
                             Screen_WriteLine();
                             Screen_WriteLine();
@@ -879,15 +934,18 @@ namespace TextPaint
                                     }
                                 }
                             }
-                            if (DisplayPaused)
+                            if (WorkStateS != WorkStateSDef.DispConf)
                             {
-                                WorkStateS = WorkStateSDef.DisplayPause;
-                                Core_.AnsiRepaint(false);
-                                DisplayStatusText(DispBuffer);
-                            }
-                            else
-                            {
-                                WorkStateS = WorkStateSDef.DisplayFwd;
+                                if (DisplayPaused)
+                                {
+                                    WorkStateS = WorkStateSDef.DisplayPause;
+                                    Core_.AnsiRepaint(false);
+                                    DisplayStatusText(DispBuffer);
+                                }
+                                else
+                                {
+                                    WorkStateS = WorkStateSDef.DisplayFwd;
+                                }
                             }
                             WorkSeekOneChar = false;
                         }
@@ -972,15 +1030,18 @@ namespace TextPaint
                                     }
                                 }
                             }
-                            if (DisplayPaused)
+                            if (WorkStateS != WorkStateSDef.DispConf)
                             {
-                                WorkStateS = WorkStateSDef.DisplayPause;
-                                Core_.AnsiRepaint(false);
-                                DisplayStatusText(DispBuffer);
-                            }
-                            else
-                            {
-                                WorkStateS = WorkStateSDef.DisplayRev;
+                                if (DisplayPaused)
+                                {
+                                    WorkStateS = WorkStateSDef.DisplayPause;
+                                    Core_.AnsiRepaint(false);
+                                    DisplayStatusText(DispBuffer);
+                                }
+                                else
+                                {
+                                    WorkStateS = WorkStateSDef.DisplayRev;
+                                }
                             }
                             WorkSeekOneChar = false;
                         }
@@ -1001,6 +1062,8 @@ namespace TextPaint
                         break;
                     case WorkStateSDef.DisplayRev: // Advance backward
                         WorkStateS = WorkStateSDef.DisplayPlayRev;
+                        break;
+                    case WorkStateSDef.DispConf:
                         break;
                 }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -50,8 +50,25 @@ namespace TextPaint
             }
         }
 
-        public void RenderStart(string RenderFile_, int RenderStep_, int RenderOffset_, int RenderFrame_, bool RenderCursor_, string RenderType_)
+        public void RenderStart(ConfigFile CF)
         {
+            string RenderFile_ = CF.ParamGetS("RenderFile");
+            int RenderStep_ = CF.ParamGetI("RenderStep");
+            int RenderOffset_ = CF.ParamGetI("RenderOffset");
+            int RenderFrame_ = CF.ParamGetI("RenderFrame");
+            bool RenderCursor_ = CF.ParamGetB("RenderCursor");
+            string RenderType_ = CF.ParamGetS("RenderType");
+
+            int RenderLeading = CF.ParamGetI("RenderLeading");
+            int RenderTrailing = CF.ParamGetI("RenderTrailing");
+            int RenderBlinkPeriod = CF.ParamGetI("RenderBlinkPeriod");
+            int RenderBlinkOffset = CF.ParamGetI("RenderBlinkOffset");
+
+            while (RenderBlinkOffset < 0)
+            {
+                RenderBlinkOffset = RenderBlinkOffset +(RenderBlinkPeriod + RenderBlinkPeriod);
+            }
+
             if ("?ENCODING?".Equals(CurrentFileName.ToUpperInvariant()))
             {
                 Console.WriteLine("Creating encoding files...");
@@ -83,24 +100,24 @@ namespace TextPaint
                     if (OBE.DefImport(e))
                     {
                         string EncodingFileName = Path.Combine(RenderFile_, e.CodePage.ToString().PadLeft(5, '0') + ".txt");
-                        ConfigFile CF = new ConfigFile();
+                        ConfigFile CF0 = new ConfigFile();
                         for (int i = 0; i < EncNameL.Count; i++)
                         {
                             switch (i)
                             {
                                 case 0:
-                                    CF.ParamSet("Codepage", EncNameL[i]);
+                                    CF0.ParamSet("Codepage", EncNameL[i]);
                                     break;
                                 case 1:
-                                    CF.ParamSet("Name", EncNameL[i]);
+                                    CF0.ParamSet("Name", EncNameL[i]);
                                     break;
                                 case 2:
-                                    CF.ParamSet("AlternativeName", EncNameL[i]);
+                                    CF0.ParamSet("AlternativeName", EncNameL[i]);
                                     break;
                             }
                         }
-                        OBE.DefExport(CF);
-                        CF.FileSave(EncodingFileName);
+                        OBE.DefExport(CF0);
+                        CF0.FileSave(EncodingFileName);
                         FileI++;
                         Console.WriteLine("created");
                     }
@@ -253,8 +270,45 @@ namespace TextPaint
                 int ScrMaxY = 0;
                 if (UseAnsiLoad)
                 {
+                    int RenderDummyLead = 0;
+
+                    int RenderBlinkCounter = RenderBlinkOffset % RenderBlinkPeriod;
+                    bool RenderBlinkSwitch = (RenderBlinkOffset % (RenderBlinkPeriod + RenderBlinkPeriod)) >= RenderBlinkPeriod;
+
                     Buf = SR.ReadToEnd();
                     List<int> TextFileLine_ = TextCipher_.Crypt(TextWork.StrToInt(Buf), true);
+
+                    if (RenderStep > 0)
+                    {
+                        if (RenderLeading > 0)
+                        {
+                            RenderDummyLead = 4;
+
+                            List<int> Dummy = new List<int>();
+                            int I = RenderLeading;
+                            while (I > 0)
+                            {
+                                Dummy.Add(0x1B);
+                                I--;
+                            }
+                            Dummy.Add(0x1B);
+                            Dummy.Add('[');
+                            Dummy.Add('0');
+                            Dummy.Add('m');
+
+                            TextFileLine_.InsertRange(0, Dummy);
+                        }
+                        if (RenderTrailing > 0)
+                        {
+                            int I = RenderTrailing;
+                            while (I > 0)
+                            {
+                                TextFileLine_.Add(0x1B);
+                                I--;
+                            }
+                        }
+                    }
+
                     RenderCounterI = 0;
                     AnsiProcessSupply(TextFileLine_);
                     if (RenderStep > 0)
@@ -264,7 +318,18 @@ namespace TextPaint
                             RenderOffset_ = 0;
                         }
 
-                        RenderSave(RenderFileName(RenderCounterI));
+                        if (RenderDummyLead > 0)
+                        {
+                            AnsiProcess(RenderDummyLead);
+                        }
+
+                        RenderSave(RenderFileName(RenderCounterI), RenderBlinkSwitch);
+                        RenderBlinkCounter++;
+                        if (RenderBlinkCounter >= RenderBlinkPeriod)
+                        {
+                            RenderBlinkSwitch = !RenderBlinkSwitch;
+                            RenderBlinkCounter = 0;
+                        }
                         Console.WriteLine("Frame " + RenderCounterI + " - " + (AnsiState_.AnsiBufferI * 100 / AnsiBuffer.Count) + "%");
                         int RenderStep___ = RenderStep;
                         if (RenderOffset_ > 0)
@@ -284,7 +349,13 @@ namespace TextPaint
                             {
                                 BellList.Add(RenderCounterI);
                             }
-                            RenderSave(RenderFileName(RenderCounterI));
+                            RenderSave(RenderFileName(RenderCounterI), RenderBlinkSwitch);
+                            RenderBlinkCounter++;
+                            if (RenderBlinkCounter >= RenderBlinkPeriod)
+                            {
+                                RenderBlinkSwitch = !RenderBlinkSwitch;
+                                RenderBlinkCounter = 0;
+                            }
                         }
                         if (RenderCursor_)
                         {
@@ -321,8 +392,8 @@ namespace TextPaint
                         {
                             AnsiProcess(-1);
                         }
-                        int ScrRealH = AnsiState_.__AnsiLineOccupy.Count + AnsiState_.__AnsiLineOccupy1.Count + AnsiState_.__AnsiLineOccupy2.Count;
-                        RenderBufOffset = AnsiState_.__AnsiLineOccupy1.Count;
+                        int ScrRealH = AnsiState_.__AnsiLineOccupy__.CountLines() + AnsiState_.__AnsiLineOccupy1__.CountLines() + AnsiState_.__AnsiLineOccupy2__.CountLines();
+                        RenderBufOffset = AnsiState_.__AnsiLineOccupy1__.CountLines();
                         ((ScreenWindow)Screen_).DummyResize(Screen_.WinW, Math.Max(ScrRealH, AnsiState_.__AnsiY + RenderBufOffset + 1));
                         AnsiRepaint(true);
                         if (RenderCursor_)
@@ -335,7 +406,7 @@ namespace TextPaint
                             ScrMaxX = __ScreenMaxX + 1;
                             ScrMaxY = __ScreenMaxY + 1;
                         }
-                        RenderSave(RenderFileName(0));
+                        RenderSave(RenderFileName(0), RenderBlinkSwitch);
                     }
                 }
                 else
@@ -351,33 +422,34 @@ namespace TextPaint
                         {
                             ScrMaxX = TextFileLine.Count;
                         }
-                        TextBuffer.Add(TextFileLine);
-                        TextColBuf.Add(TextWork.BlkCol(TextFileLine.Count));
+                        TextBuffer.AppendLine();
+                        TextBuffer.SetLineString(TextBuffer.CountLines() - 1, TextFileLine);
                         ScrMaxY++;
                         Buf = SR.ReadLine();
                     }
                     AnsiState_.__AnsiX = 0;
                     AnsiState_.__AnsiY = 0;
-                    if (TextBuffer.Count > 0)
+                    if (TextBuffer.CountLines() > 0)
                     {
-                        AnsiState_.__AnsiY = TextBuffer.Count - 1;
-                        AnsiState_.__AnsiX = TextBuffer[AnsiState_.__AnsiY].Count;
+                        AnsiState_.__AnsiY = TextBuffer.CountLines() - 1;
+                        AnsiState_.__AnsiX = TextBuffer.CountItems(AnsiState_.__AnsiY);
                     }
                     ((ScreenWindow)Screen_).DummyResize(ScrMaxX, ScrMaxY);
                     Screen_.Clear(TextNormalBack, TextNormalFore);
-                    for (int YY = 0; YY < TextBuffer.Count; YY++)
+                    for (int YY = 0; YY < TextBuffer.CountLines(); YY++)
                     {
-                        for (int XX = 0; XX < TextBuffer[YY].Count; XX++)
+                        for (int XX = 0; XX < TextBuffer.CountItems(YY); XX++)
                         {
-                            Screen_.PutChar(XX, YY, TextBuffer[YY][XX], TextNormalBack, TextNormalFore, 0, 0);
+                            TextBuffer.Get(YY, XX);
+                            Screen_.PutChar(XX, YY, TextBuffer.Item_Char, TextNormalBack, TextNormalFore, 0, 0, 0);
                         }
                     }
-                    RenderSave(RenderFileName(0));
+                    RenderSave(RenderFileName(0), false);
                 }
                 AnsiEnd();
                 SR.Close();
                 FS.Close();
-                TextBufferTrim();
+                TextBuffer.TrimLines();
                 UndoBufferClear();
                 Console.WriteLine("Rendering canvas size: " + Screen_.WinW + "x" + Screen_.WinH);
                 Console.WriteLine("Used text area: " + ScrMaxX + "x" + ScrMaxY);
@@ -393,7 +465,7 @@ namespace TextPaint
             }
         }
 
-        void RenderSave(string FileName)
+        void RenderSave(string FileName, bool Blink)
         {
             int ExtPos = FileName.LastIndexOf('.');
             int SliceX = 0;
@@ -407,7 +479,7 @@ namespace TextPaint
             // No slice
             if ((RenderSliceW <= 0) && (RenderSliceH <= 0))
             {
-                RenderSaveOneFile(FileName, SliceX, SliceY, SliceW, SliceH);
+                RenderSaveOneFile(FileName, Blink, SliceX, SliceY, SliceW, SliceH);
             }
 
             // Slice horizontally
@@ -434,7 +506,7 @@ namespace TextPaint
                     {
                         FileNameS = FileName + SliceNumber;
                     }
-                    RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                    RenderSaveOneFile(FileNameS, Blink, SliceX, SliceY, SliceW, SliceH);
                     SliceX += RenderSliceW;
                     SliceNumX++;
                 }
@@ -464,7 +536,7 @@ namespace TextPaint
                     {
                         FileNameS = FileName + SliceNumber;
                     }
-                    RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                    RenderSaveOneFile(FileNameS, Blink, SliceX, SliceY, SliceW, SliceH);
                     SliceY += RenderSliceH;
                     SliceNumY++;
                 }
@@ -510,7 +582,7 @@ namespace TextPaint
                         {
                             FileNameS = FileName + SliceNumber;
                         }
-                        RenderSaveOneFile(FileNameS, SliceX, SliceY, SliceW, SliceH);
+                        RenderSaveOneFile(FileNameS, Blink, SliceX, SliceY, SliceW, SliceH);
                         SliceX += RenderSliceW;
                         SliceNumX++;
                     }
@@ -520,7 +592,7 @@ namespace TextPaint
             }
         }
 
-        void RenderSaveOneFile(string FileName, int X, int Y, int W, int H)
+        void RenderSaveOneFile(string FileName, bool Blink, int X, int Y, int W, int H)
         {
             //string FileNameDisp = FileName;
             //if (FileNameDisp.Length > 30) { FileNameDisp = FileNameDisp.Substring(FileNameDisp.Length - 30); }
@@ -537,7 +609,7 @@ namespace TextPaint
             switch (RenderType)
             {
                 default:
-                    LowLevelBitmap Bmp = ((ScreenWindow)Screen_).DummyGetScreenBitmap(RenderCursor, TextNormalBack, TextNormalFore, X, Y, W, H);
+                    LowLevelBitmap Bmp = ((ScreenWindow)Screen_).DummyGetScreenBitmap(Blink, RenderCursor, TextNormalBack, TextNormalFore, X, Y, W, H);
                     Bmp.SaveToFile(FileName);
                     break;
                 case RenderTypeDef.TEXT:

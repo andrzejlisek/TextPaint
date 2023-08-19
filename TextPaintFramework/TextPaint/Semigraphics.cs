@@ -37,6 +37,44 @@ namespace TextPaint
         public List<string> Frame2N = new List<string>();
 
 
+        DisplayConfig DisplayConfig_;
+
+        void DisplayConfigRepaint(bool AnsiReload, bool Menu)
+        {
+            Core_.ScreenRefresh(true);
+            if (Menu)
+            {
+                DisplayConfig_.DisplayMenu();
+            }
+        }
+
+        void DisplayConfigOpen()
+        {
+            DisplayConfig_.Open();
+            DisplayConfig_.MenuPos = CharPosMode;
+            SelectCharClose(2);
+            Core_.ScreenRefresh(true);
+            DisplayConfig_.DisplayMenu();
+        }
+
+        void DisplayConfigClose(bool WindowClose, int NewW, int NewH)
+        {
+            CharPosMode = DisplayConfig_.MenuPos;
+            if ((NewW > 0) && (NewH >= 0))
+            {
+                Core_.Screen_.AppResize(NewW, NewH);
+                Core_.CoreEvent("Resize", '\0', false, false, false);
+            }
+            DisplayConfigRepaint(false, false);
+            SelectCharInit();
+
+            if (WindowClose)
+            {
+                Core_.CoreEvent("WindowClose", '\0', false, false, false);
+            }
+        }
+
+
         List<int> WinBitmapPage = new List<int>();
         bool WinBitmapEnabled = true;
 
@@ -116,6 +154,9 @@ namespace TextPaint
         public Semigraphics(Core Core__, string FontName)
         {
             Core_ = Core__;
+            DisplayConfig_ = new DisplayConfig(Core_);
+            DisplayConfig_.ConfigRepaint += DisplayConfigRepaint;
+            DisplayConfig_.ConfigClose += DisplayConfigClose;
 
             WinBitmapPage.Clear();
             if ((FontName != "") && System.IO.File.Exists(Core.FullPath(FontName)))
@@ -259,7 +300,8 @@ namespace TextPaint
             }
 
             DrawCharI = TextWork.SpaceChar0;
-            DrawColoI = 0;
+            DrawColoBI = -1;
+            DrawColoFI = -1;
 
             SetFrame(0, 0);
         }
@@ -328,7 +370,9 @@ namespace TextPaint
         
         public bool SelectCharState = false;
         public int SelectChar___ = 0;
-        public int SelectColo___ = 0;
+        public int SelectColoB___ = -1;
+        public int SelectColoF___ = -1;
+        public int SelectColoA___ = 0;
         public int SelectToFav = -1;
 
         public int SelectChar___X()
@@ -388,16 +432,22 @@ namespace TextPaint
             }
 
             SelectChar___ = DrawCharI;
-            SelectColo___ = DrawColoI;
+            SelectColoB___ = DrawColoBI;
+            SelectColoF___ = DrawColoFI;
+            SelectColoA___ = DrawColoAI;
             if ((TabChar >= 0) || (TabChar <= (-256)))
             {
                 SelectChar___ = TabChar;
                 TabChar = -1;
             }
-            if (TabColo >= -1)
+            if ((TabColoB >= -1) && (TabColoF >= -1))
             {
-                SelectColo___ = TabColo;
-                TabColo = -2;
+                SelectColoB___ = TabColoB;
+                SelectColoF___ = TabColoF;
+                SelectColoA___ = TabColoA;
+                TabColoB = -2;
+                TabColoF = -2;
+                TabColoA = -2;
             }
             SelectCharState = true;
             SelectCharRepaintBack();
@@ -410,114 +460,114 @@ namespace TextPaint
             {
                 int C = SelectCharGetCode();
                 string C_ = TextWork.CharCode(C, 2);
-                Core_.Screen_.PutChar(CharPosX + 1, CharPosY + 1, C_[0], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, C_[1], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, C_[2], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + 4, CharPosY + 1, C_[3], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + 5, CharPosY + 1, C_[4], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + 7, CharPosY + 1, C, Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, '[', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ']', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                Core_.Screen_.PutChar(CharPosX + 1, CharPosY + 1, C_[0], Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, C_[1], Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, C_[2], Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 4, CharPosY + 1, C_[3], Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 5, CharPosY + 1, C_[4], Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 7, CharPosY + 1, C, Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, '[', Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ']', Core_.PopupBack, Core_.PopupFore);
 
                 if (SelectChar___ < 0)
                 {
                     int TempCharCode = SelectChar___Y() * 16 + SelectChar___X();
                     if ((TempCharCode >= 32) && (TempCharCode <= 126))
                     {
-                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, '[', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, TempCharCode, Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ']', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, '[', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, TempCharCode, Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ']', Core_.PopupBack, Core_.PopupFore);
                     }
                     else
                     {
-                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, 'F', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, 'V', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, 'F', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, 'V', Core_.PopupBack, Core_.PopupFore);
                     }
                 }
                 else
                 {
-                    Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                 }
                 if (!WinBitmapEnabled)
                 {
-                    Core_.Screen_.PutChar(CharPosX + 30, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 31, CharPosY + 1, 'L', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 32, CharPosY + 1, 'L', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 30, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 31, CharPosY + 1, 'L', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 32, CharPosY + 1, 'L', Core_.PopupBack, Core_.PopupFore);
                 }
                 else
                 {
-                    Core_.Screen_.PutChar(CharPosX + 30, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 31, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + 32, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 30, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 31, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 32, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                 }
                 Core_.Screen_.SetCursorPosition(CharPosX + SelectChar___X() * 2 + 2, CharPosY + SelectChar___Y() + 2);
             }
             if (SelectorState == 2)
             {
-                int TempB;
-                int TempF;
-                Core.ColorFromInt(SelectColo___, out TempB, out TempF);
+                int TempB = SelectColoB___;
+                int TempF = SelectColoF___;
+                int TempA = SelectColoA___;
                 if ((TempB >= 0) && (TempF >= 0))
                 {
-                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + TempB + 2, '[', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + TempB + 2, ']', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + TempB + 2, '[', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + TempB + 2, ']', Core_.PopupBack, Core_.PopupFore);
                 }
                 else
                 {
                     if (TempB >= 0)
                     {
-                        Core_.Screen_.PutChar(CharPosX + 0 * 2 + 1, CharPosY + TempB + 2, '[', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 15 * 2 + 3, CharPosY + TempB + 2, ']', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                        Core_.Screen_.PutChar(CharPosX + 0 * 2 + 1, CharPosY + TempB + 2, '[', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 15 * 2 + 3, CharPosY + TempB + 2, ']', Core_.PopupBack, Core_.PopupFore);
                     }
                     if (TempF >= 0)
                     {
                         for (int i = 0; i < 16; i++)
                         {
-                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + i + 2, '[', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + i + 2, ']', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + i + 2, '[', Core_.PopupBack, Core_.PopupFore);
+                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + i + 2, ']', Core_.PopupBack, Core_.PopupFore);
                         }
                     }
                 }
                 if (TempB < 0)
                 {
                     TempB = 0;
-                    Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, '-', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, '-', Core_.PopupBack, Core_.PopupFore);
                 }
                 else
                 {
-                    Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, TempB.ToString("X")[0], Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 2, CharPosY + 1, TempB.ToString("X")[0], Core_.PopupBack, Core_.PopupFore);
                 }
                 if (TempF < 0)
                 {
                     TempF = 0;
-                    Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, '-', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, '-', Core_.PopupBack, Core_.PopupFore);
                 }
                 else
                 {
-                    Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, TempF.ToString("X")[0], Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, TempF.ToString("X")[0], Core_.PopupBack, Core_.PopupFore);
                 }
 
-                string StateMsg = "Text+color   ";
+                string StateMsg = " Text+color ";
                 if (!Core_.ToggleDrawText)
                 {
-                    StateMsg = "Color        ";
+                    StateMsg = " Color      ";
                 }
                 if (!Core_.ToggleDrawColo)
                 {
-                    StateMsg = "Text         ";
+                    StateMsg = " Text       ";
                 }
 
                 string EOL1 = ANSI_CR_.ToString();
                 string EOL2 = ANSI_LF_.ToString();
 
-                StateMsg = StateMsg + EOL1 + EOL2 + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(12);
+                StateMsg = Core_.GetAttribText(TempA) + StateMsg + EOL1 + EOL2 + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(7);
 
                 for (int i = 0; i < StateMsg.Length; i++)
                 {
-                    Core_.Screen_.PutChar(CharPosX + 6 + i, CharPosY + 1, StateMsg[i], Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + 5 + i, CharPosY + 1, StateMsg[i], Core_.PopupBack, Core_.PopupFore);
                 }
 
 
@@ -533,18 +583,18 @@ namespace TextPaint
             {
                 for (int X = 0; X < CharW; X++)
                 {
-                    Core_.Screen_.PutChar(CharPosX + X, CharPosY + Y, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + X, CharPosY + Y, ' ', Core_.PopupBack, Core_.PopupFore);
                 }
             }
             for (int i = 0; i < CharW; i++)
             {
-                Core_.Screen_.PutChar(CharPosX + i, CharPosY + 0, ' ', Core_.PopupFore, Core_.PopupBack, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + i, CharPosY + CharH - 1, ' ', Core_.PopupFore, Core_.PopupBack, 0, 0);
+                Core_.Screen_.PutChar(CharPosX + i, CharPosY + 0, ' ', Core_.PopupFore, Core_.PopupBack);
+                Core_.Screen_.PutChar(CharPosX + i, CharPosY + CharH - 1, ' ', Core_.PopupFore, Core_.PopupBack);
             }
             for (int i = 0; i < CharH; i++)
             {
-                Core_.Screen_.PutChar(CharPosX + 0, CharPosY + i, ' ', Core_.PopupFore, Core_.PopupBack, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + CharW - 1, CharPosY + i, ' ', Core_.PopupFore, Core_.PopupBack, 0, 0);
+                Core_.Screen_.PutChar(CharPosX + 0, CharPosY + i, ' ', Core_.PopupFore, Core_.PopupBack);
+                Core_.Screen_.PutChar(CharPosX + CharW - 1, CharPosY + i, ' ', Core_.PopupFore, Core_.PopupBack);
             }
             if (SelectorState == 1)
             {
@@ -552,18 +602,23 @@ namespace TextPaint
                 {
                     int FavPos = 26;
                     string C_ = TextWork.CharCode(SelectToFav, 2);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 0, CharPosY + 1, C_[0], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 1, CharPosY + 1, C_[1], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 2, CharPosY + 1, C_[2], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 3, CharPosY + 1, C_[3], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 4, CharPosY + 1, C_[4], Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + FavPos + 6, CharPosY + 1, SelectToFav, Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 0, CharPosY + 1, C_[0], Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 1, CharPosY + 1, C_[1], Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 2, CharPosY + 1, C_[2], Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 3, CharPosY + 1, C_[3], Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 4, CharPosY + 1, C_[4], Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + FavPos + 6, CharPosY + 1, SelectToFav, Core_.PopupBack, Core_.PopupFore);
                 }
             }
         }
         
         public void SelectCharRepaint()
         {
+            if (DisplayConfig_.IsOpen)
+            {
+                return;
+            }
+
             SelectCharRepaintBack();
             if (SelectorState == 1)
             {
@@ -574,7 +629,7 @@ namespace TextPaint
                     {
                         for (int X = 0; X < 16; X++)
                         {
-                            Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, C, Core_.PopupBack, Core_.PopupFore, 0, 0);
+                            Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, C, Core_.PopupBack, Core_.PopupFore);
                             C++;
                         }
                     }
@@ -586,7 +641,7 @@ namespace TextPaint
                     {
                         for (int X = 0; X < 16; X++)
                         {
-                            Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, FavChar[C], Core_.PopupBack, Core_.PopupFore, 0, 0);
+                            Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, FavChar[C], Core_.PopupBack, Core_.PopupFore);
                             C++;
                         }
                     }
@@ -599,7 +654,7 @@ namespace TextPaint
                 {
                     for (int X = 0; X < 16; X++)
                     {
-                        Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, '#', Y, X, 0, 0);
+                        Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, '#', Y, X);
                         C++;
                     }
                 }
@@ -623,8 +678,8 @@ namespace TextPaint
         {
             if (SelectorState == 1)
             {
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
                 bool FavPage = (SelectChar___ < 0);
                 int PageDisplayed = FavPage ? 0 : (SelectChar___ >> 8);
 
@@ -748,27 +803,27 @@ namespace TextPaint
             }
             if (SelectorState == 2)
             {
-                int TempB;
-                int TempF;
-                Core.ColorFromInt(SelectColo___, out TempB, out TempF);
+                int TempB = SelectColoB___;
+                int TempF = SelectColoF___;
+                int TempA = SelectColoA___;
                 if ((TempB >= 0) && (TempF >= 0))
                 {
-                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore);
                 }
                 else
                 {
                     if (TempB >= 0)
                     {
-                        Core_.Screen_.PutChar(CharPosX + 0 * 2 + 1, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                        Core_.Screen_.PutChar(CharPosX + 15 * 2 + 3, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                        Core_.Screen_.PutChar(CharPosX + 0 * 2 + 1, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 15 * 2 + 3, CharPosY + TempB + 2, ' ', Core_.PopupBack, Core_.PopupFore);
                     }
                     if (TempF >= 0)
                     {
                         for (int i = 0; i < 16; i++)
                         {
-                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + i + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
-                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + i + 2, ' ', Core_.PopupBack, Core_.PopupFore, 0, 0);
+                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 1, CharPosY + i + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                            Core_.Screen_.PutChar(CharPosX + TempF * 2 + 3, CharPosY + i + 2, ' ', Core_.PopupBack, Core_.PopupFore);
                         }
                     }
                 }
@@ -819,7 +874,9 @@ namespace TextPaint
                         break;
                 }
 
-                SelectColo___ = Core.ColorToInt(TempB, TempF);
+                SelectColoB___ = TempB;
+                SelectColoF___ = TempF;
+                SelectColoA___ = TempA;
 
                 SelectCharCode();
             }
@@ -827,13 +884,21 @@ namespace TextPaint
         }
 
         public int TabChar = -1;
-        public int TabColo = -2;
+        public int TabColoB = -2;
+        public int TabColoF = -2;
+        public int TabColoA = -2;
         public int CharPosMode = 0;
         public int CharPosX = 0;
         public int CharPosY = 0;
 
         public void SelectCharEvent(string KeyName, char KeyChar)
         {
+            if (DisplayConfig_.IsOpen)
+            {
+                DisplayConfig_.ProcessKey(KeyName, KeyChar);
+                return;
+            }
+
             switch (KeyName)
             {
                 default:
@@ -901,6 +966,10 @@ namespace TextPaint
                     if (SelectorState == 1)
                     {
                         WinBitmapEnabled = !WinBitmapEnabled;
+                    }
+                    if (SelectorState == 2)
+                    {
+                        DisplayConfigOpen();
                     }
                     SelectCharRepaint();
                     break;
@@ -1000,8 +1069,59 @@ namespace TextPaint
                         }
                         if (SelectorState == 2)
                         {
-                            SelectColo___ = CursorColo;
+                            SelectColoB___ = CursorColoB;
+                            SelectColoF___ = CursorColoF;
+                            SelectColoA___ = CursorColoA;
                         }
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D1":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 0, !Core_.GetAttribBit(SelectColoA___, 0));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D2":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 1, !Core_.GetAttribBit(SelectColoA___, 1));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D3":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 2, !Core_.GetAttribBit(SelectColoA___, 2));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D4":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 6, !Core_.GetAttribBit(SelectColoA___, 6));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D5":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 3, !Core_.GetAttribBit(SelectColoA___, 3));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D6":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 4, !Core_.GetAttribBit(SelectColoA___, 4));
+                        SelectCharRepaint();
+                    }
+                    return;
+                case "D7":
+                    if (SelectorState == 2)
+                    {
+                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 5, !Core_.GetAttribBit(SelectColoA___, 5));
                         SelectCharRepaint();
                     }
                     return;
@@ -1011,11 +1131,14 @@ namespace TextPaint
         public void SelectCharClose(int Set)
         {
             TabChar = -1;
-            TabColo = -2;
+            TabColoB = -2;
+            TabColoF = -2;
             if ((Set == 1) || (Set == 3))
             {
                 DrawCharI = SelectCharGetCode();
-                DrawColoI = SelectColo___;
+                DrawColoBI = SelectColoB___;
+                DrawColoFI = SelectColoF___;
+                DrawColoAI = SelectColoA___;
                 Core_.AnsiMaxX = AnsiMaxX_;
                 Core_.AnsiMaxY = AnsiMaxY_;
                 Core_.ANSI_CR = ANSI_CR_;
@@ -1030,22 +1153,31 @@ namespace TextPaint
             if (Set == 2)
             {
                 TabChar = SelectChar___;
-                TabColo = SelectColo___;
+                TabColoB = SelectColoB___;
+                TabColoF = SelectColoF___;
+                TabColoA = SelectColoA___;
             }
-            SelectCharState = false;
-            Core_.CoreEvent("", '\0', false, false, false);
-            Core_.Screen_.PutChar(Core_.Screen_.WinW - 1, Core_.Screen_.WinH - 1, ' ', Core_.PopupFore, Core_.PopupBack, 0, 0);
-            if (Set == 3)
+            if (!DisplayConfig_.IsOpen)
             {
-                Core_.CoreEvent("WindowClose", '\0', false, false, false);
+                SelectCharState = false;
+                Core_.CoreEvent("", '\0', false, false, false);
+                Core_.Screen_.PutChar(Core_.Screen_.WinW - 1, Core_.Screen_.WinH - 1, ' ', Core_.PopupFore, Core_.PopupBack);
+                if (Set == 3)
+                {
+                    Core_.CoreEvent("WindowClose", '\0', false, false, false);
+                }
             }
         }
 
         public int DrawCharI;
-        public int DrawColoI;
+        public int DrawColoBI;
+        public int DrawColoFI;
+        public int DrawColoAI;
         public int DrawCharI_;
         public int CursorChar = 32;
-        public int CursorColo = 0;
+        public int CursorColoB = -1;
+        public int CursorColoF = -1;
+        public int CursorColoA = 0;
 
         public void DrawCharCustomSet(int C)
         {
@@ -1395,7 +1527,12 @@ namespace TextPaint
         
         public void CharPut(int X, int Y, int C)
         {
-            Core_.CharPut(Core_.CursorX + X, Core_.CursorY + Y, C, DrawColoI, 0, false);
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.BlankChar();
+            Item.Item_Char = C;
+            Item.Item_ColorB = DrawColoBI;
+            Item.Item_ColorF = DrawColoFI;
+            Core_.CharPut(Core_.CursorX + X, Core_.CursorY + Y, Item, false);
         }
 
         public int CharGet(int X, int Y)
