@@ -7,6 +7,45 @@ namespace TextPaint
 {
     public class Server
     {
+        public string TerminalResetCommand = "";
+
+        public Server()
+        {
+            // Reset command
+            TerminalResetCommand = "";
+
+            // Main screen
+            TerminalResetCommand += "1B_[_?_4_7_l";
+            TerminalResetCommand += "1B_[_?_1_0_4_7_l";
+
+            // 80 columns
+            TerminalResetCommand += "1B_[_?_3_l";
+
+            // Jump scroll
+            TerminalResetCommand += "1B_[_?_4_l";
+
+            // Normal (non-inverted) display
+            TerminalResetCommand += "1B_[_?_5_l";
+
+            // Disable origin
+            TerminalResetCommand += "1B_[_?_6_l";
+
+            // Enable auto wrap
+            TerminalResetCommand += "1B_[_?_7_h";
+
+            // Reset character set
+            TerminalResetCommand += "1B_(_B1B_)_B1B_*_B1B_+_B15";
+
+            // Reset top and bottom margin
+            TerminalResetCommand += "1B_[_r";
+
+            // Reset left and right margin
+            TerminalResetCommand += "1B_[_?_6_9_h1B_[_s1B_[_?_6_9_l";
+
+            // Reset text attributes and clear screen
+            TerminalResetCommand += "1B_[_0_m1B_[_2_J1B_[_0_;_0_H";
+        }
+
         bool ServerWorks = false;
         int ListenPort = 0;
 

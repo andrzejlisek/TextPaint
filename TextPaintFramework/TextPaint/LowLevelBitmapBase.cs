@@ -9,6 +9,22 @@ namespace TextPaint
         {
         }
 
+        public static int ColorRgbToInt(int R, int G, int B)
+        {
+            return R + (G << 8) + (B << 16);
+        }
+
+        public static int[] ColorIntToRgb(int RGB)
+        {
+            int[] RGB_ = new int[3];
+            RGB_[0] = RGB & 255;
+            RGB = RGB >> 8;
+            RGB_[1] = RGB & 255;
+            RGB = RGB >> 8;
+            RGB_[2] = RGB & 255;
+            return RGB_;
+        }
+
         protected void CreateBase(int W, int H, byte R, byte G, byte B)
         {
             Width = W;
@@ -33,7 +49,7 @@ namespace TextPaint
             Height = H;
             StretchW = -1;
             StretchH = -1;
-            Data = new byte[W * H * ColorDataFactor];
+            Data = new byte[(W * H) << ColorDataFactorSh];
             DataLength = Data.Length;
             ToBitmapChanged = true;
             for (int i = 0; i < DataLength; i++)
@@ -47,23 +63,44 @@ namespace TextPaint
         }
 
         protected int ColorDataFactor = 4;
+        protected int ColorDataFactorSh = 2;
+
+        public int GetPixelLevel(int X, int Y)
+        {
+            Monitor.Enter(Data);
+            int B = Data[((Y * Width + X) << ColorDataFactorSh) + 0];
+            int G = Data[((Y * Width + X) << ColorDataFactorSh) + 1];
+            int R = Data[((Y * Width + X) << ColorDataFactorSh) + 2];
+            Monitor.Exit(Data);
+            return ((R + G + B) / 3);
+        }
 
         public bool GetPixelBinary(int X, int Y)
         {
             Monitor.Enter(Data);
-            int B = Data[(Y * Width + X) * ColorDataFactor + 0];
-            int G = Data[(Y * Width + X) * ColorDataFactor + 1];
-            int R = Data[(Y * Width + X) * ColorDataFactor + 2];
+            int B = Data[((Y * Width + X) << ColorDataFactorSh) + 0];
+            int G = Data[((Y * Width + X) << ColorDataFactorSh) + 1];
+            int R = Data[((Y * Width + X) << ColorDataFactorSh) + 2];
             Monitor.Exit(Data);
             return ((R + G + B) >= 383);
+        }
+
+        public int GetPixel(int X, int Y)
+        {
+            Monitor.Enter(Data);
+            int B = Data[((Y * Width + X) << ColorDataFactorSh) + 0];
+            int G = Data[((Y * Width + X) << ColorDataFactorSh) + 1];
+            int R = Data[((Y * Width + X) << ColorDataFactorSh) + 2];
+            Monitor.Exit(Data);
+            return ColorRgbToInt(R, G, B);
         }
 
         public void GetPixel(int X, int Y, out byte R, out byte G, out byte B)
         {
             Monitor.Enter(Data);
-            B = Data[(Y * Width + X) * ColorDataFactor + 0];
-            G = Data[(Y * Width + X) * ColorDataFactor + 1];
-            R = Data[(Y * Width + X) * ColorDataFactor + 2];
+            B = Data[((Y * Width + X) << ColorDataFactorSh) + 0];
+            G = Data[((Y * Width + X) << ColorDataFactorSh) + 1];
+            R = Data[((Y * Width + X) << ColorDataFactorSh) + 2];
             Monitor.Exit(Data);
         }
 
@@ -71,19 +108,34 @@ namespace TextPaint
         {
             Monitor.Enter(Data);
             ToBitmapChanged = true;
-            Data[(Y * Width + X) * ColorDataFactor + 0] = B;
-            Data[(Y * Width + X) * ColorDataFactor + 1] = G;
-            Data[(Y * Width + X) * ColorDataFactor + 2] = R;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 0] = B;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 1] = G;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 2] = R;
             Monitor.Exit(Data);
         }
 
-        public void SetPixel(int X, int Y, byte L)
+        public void SetPixel(int X, int Y, int RGB)
+        {
+            Monitor.Enter(Data);
+            byte R = (byte)(RGB & 255);
+            RGB = RGB >> 8;
+            byte G = (byte)(RGB & 255);
+            RGB = RGB >> 8;
+            byte B = (byte)(RGB & 255);
+            ToBitmapChanged = true;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 0] = B;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 1] = G;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 2] = R;
+            Monitor.Exit(Data);
+        }
+
+        public void SetPixelGray(int X, int Y, byte L)
         {
             Monitor.Enter(Data);
             ToBitmapChanged = true;
-            Data[(Y * Width + X) * ColorDataFactor + 0] = L;
-            Data[(Y * Width + X) * ColorDataFactor + 1] = L;
-            Data[(Y * Width + X) * ColorDataFactor + 2] = L;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 0] = L;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 1] = L;
+            Data[((Y * Width + X) << ColorDataFactorSh) + 2] = L;
             Monitor.Exit(Data);
         }
 
@@ -159,11 +211,11 @@ namespace TextPaint
         {
             Monitor.Enter(Data);
             ToBitmapChanged = true;
-            int W_ = W * ColorDataFactor;
-            int Width0 = Bmp.Width * ColorDataFactor;
-            int Width_ = Width * ColorDataFactor;
-            int SrcP = (((SrcY) * Bmp.Width) + SrcX) * ColorDataFactor;
-            int DstP = (((DstY) * Width) + DstX) * ColorDataFactor;
+            int W_ = W << ColorDataFactorSh;
+            int Width0 = Bmp.Width << ColorDataFactorSh;
+            int Width_ = Width << ColorDataFactorSh;
+            int SrcP = (((SrcY) * Bmp.Width) + SrcX) << ColorDataFactorSh;
+            int DstP = (((DstY) * Width) + DstX) << ColorDataFactorSh;
             if (SrcP > DstP)
             {
                 for (int Y = 0; Y < H; Y++)
@@ -207,7 +259,7 @@ namespace TextPaint
                 NewBmp = true;
                 StretchW = W;
                 StretchH = H;
-                StretchDataL = W * H * ColorDataFactor;
+                StretchDataL = (W * H) << ColorDataFactorSh;
                 StretchData = new byte[StretchDataL];
 
                 StretchX = new int[W];
@@ -228,17 +280,25 @@ namespace TextPaint
                         StretchY[I] = Height - 1;
                     }
                 }
+                for (int Y = 0; Y < H; Y++)
+                {
+                    for (int X = 0; X < W; X++)
+                    {
+                        int PtrI = (StretchY[Y] * Width + StretchX[X]) << ColorDataFactorSh;
+                        int PtrO = (Y * W + X) << ColorDataFactorSh;
+                        StretchData[PtrO + 3] = (byte)255;
+                    }
+                }
             }
             for (int Y = 0; Y < H; Y++)
             {
                 for (int X = 0; X < W; X++)
                 {
-                    int PtrI = (StretchY[Y] * Width + StretchX[X]) * ColorDataFactor;
-                    int PtrO = (Y * W + X) * ColorDataFactor;
+                    int PtrI = (StretchY[Y] * Width + StretchX[X]) << ColorDataFactorSh;
+                    int PtrO = (Y * W + X) << ColorDataFactorSh;
                     StretchData[PtrO + 0] = Data[PtrI + 0];
                     StretchData[PtrO + 1] = Data[PtrI + 1];
                     StretchData[PtrO + 2] = Data[PtrI + 2];
-                    StretchData[PtrO + 3] = (byte)255;
                 }
             }
             return NewBmp;

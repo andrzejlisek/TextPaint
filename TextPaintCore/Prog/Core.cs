@@ -17,8 +17,25 @@ namespace TextPaint
     /// <summary>
     /// Description of Core.
     /// </summary>
-    public partial class Core
+    public class Core
     {
+        public int TextNormalBack = 0;
+        public int TextNormalFore = 7;
+        public int TextBeyondLineBack = 8;
+        public int TextBeyondLineFore = 7;
+        public int TextBeyondEndBack = 7;
+        public int TextBeyondEndFore = 7;
+        public int TextBeyondLineMargin = 0;
+
+        public int CursorBack = 15;
+        public int CursorFore = 0;
+        public int StatusBack = 15;
+        public int StatusFore = 0;
+        public int PopupBack = 0;
+        public int PopupFore = 15;
+
+        public CoreFile CoreFile_;
+
         const int MaxlineSize = 10000;
 
         // 0 - Text editor
@@ -28,7 +45,8 @@ namespace TextPaint
         // 4 - Render
         public int WorkMode = 0;
 
-        public Telnet Telnet_;
+        public TelnetServer TelnetServer_;
+        public TelnetClient TelnetClient_;
 
         public Stack<int> TempMemo = new Stack<int>();
         public Stack<bool> TempMemoB = new Stack<bool>();
@@ -40,7 +58,7 @@ namespace TextPaint
 
         private bool UseWindow = false;
 
-        private TextCipher TextCipher_;
+        public TextCipher TextCipher_;
 
         private InfoScreen InfoScreen_ = new InfoScreen();
 
@@ -56,9 +74,6 @@ namespace TextPaint
         int[] EncodingArray;
         List<int> EncodingKey1 = new List<int>();
         List<int> EncodingKey2 = new List<int>();
-
-        bool __AnsiLineOccupy1_Use = false;
-        bool __AnsiLineOccupy2_Use = false;
 
         void EncodingAddParam(string ParamName, string DisplayName, ConfigFile CF)
         {
@@ -129,72 +144,16 @@ namespace TextPaint
             return Dir;
         }
 
-        void CreateColor256()
-        {
-            int C11 = 63 - 1;
-            int C12 = 64 + 1;
-            int C21 = 191 - 1;
-            int C22 = 192 + 2;
-            int[] Val6 = new int[] { 0, 51, 102, 153, 204, 255 };
-            Color256[0] = AnsiColor16(0, 0, 0);
-            Color256[1] = AnsiColor16(255, C11, C11);
-            Color256[2] = AnsiColor16(C11, 255, C11);
-            Color256[3] = AnsiColor16(C21, C21, 0);
-            Color256[4] = AnsiColor16(C11, C11, 255);
-            Color256[5] = AnsiColor16(C21, 0, C21);
-            Color256[6] = AnsiColor16(0, C21, C21);
-            Color256[7] = AnsiColor16(128, 128, 128);
-            Color256[8] = AnsiColor16(127, 127, 127);
-            Color256[9] = AnsiColor16(255, C12, C12);
-            Color256[10] = AnsiColor16(C12, 255, C12);
-            Color256[11] = AnsiColor16(C22, C22, 0);
-            Color256[12] = AnsiColor16(C12, C12, 255);
-            Color256[13] = AnsiColor16(C22, 0, C22);
-            Color256[14] = AnsiColor16(0, C22, C22);
-            Color256[15] = AnsiColor16(255, 255, 255);
-            for (int i_R = 0; i_R < 6; i_R++)
-            {
-                for (int i_G = 0; i_G < 6; i_G++)
-                {
-                    for (int i_B = 0; i_B < 6; i_B++)
-                    {
-                        int i_ = i_R * 36 + i_G * 6 + i_B + 16;
-                        Color256[i_] = AnsiColor16(Val6[i_R], Val6[i_G], Val6[i_B]);
-                    }
-                }
-            }
-            Color256[232 + 0] = AnsiColor16(0, 0, 0);
-            Color256[232 + 1] = AnsiColor16(11, 11, 11);
-            Color256[232 + 2] = AnsiColor16(22, 22, 22);
-            Color256[232 + 3] = AnsiColor16(33, 33, 33);
-            Color256[232 + 4] = AnsiColor16(44, 44, 44);
-            Color256[232 + 5] = AnsiColor16(55, 55, 55);
-            Color256[232 + 6] = AnsiColor16(67, 67, 67);
-            Color256[232 + 7] = AnsiColor16(78, 78, 78);
-            Color256[232 + 8] = AnsiColor16(89, 89, 89);
-            Color256[232 + 9] = AnsiColor16(100, 100, 100);
-            Color256[232 + 10] = AnsiColor16(111, 111, 111);
-            Color256[232 + 11] = AnsiColor16(122, 122, 122);
-            Color256[232 + 12] = AnsiColor16(133, 133, 133);
-            Color256[232 + 13] = AnsiColor16(144, 144, 144);
-            Color256[232 + 14] = AnsiColor16(155, 155, 155);
-            Color256[232 + 15] = AnsiColor16(166, 166, 166);
-            Color256[232 + 16] = AnsiColor16(177, 177, 177);
-            Color256[232 + 17] = AnsiColor16(188, 188, 188);
-            Color256[232 + 18] = AnsiColor16(200, 200, 200);
-            Color256[232 + 19] = AnsiColor16(211, 211, 211);
-            Color256[232 + 20] = AnsiColor16(222, 222, 222);
-            Color256[232 + 21] = AnsiColor16(233, 233, 233);
-            Color256[232 + 22] = AnsiColor16(244, 244, 244);
-            Color256[232 + 23] = AnsiColor16(255, 255, 255);
-        }
 
         public Core()
         {
-            CommandEndChar = TextWork.StrToInt(CommandEndChar_);
         }
 
-        AnsiLineOccupyEx TextBuffer = new AnsiLineOccupyEx();
+        public CoreAnsi CoreAnsi_;
+
+        public CoreRender CoreRender_;
+
+        public AnsiLineOccupyEx TextBuffer = new AnsiLineOccupyEx();
 
         AnsiLineOccupyEx ScrChar_ = new AnsiLineOccupyEx();
         AnsiLineOccupyEx ScrCharDisp_ = new AnsiLineOccupyEx();
@@ -206,8 +165,6 @@ namespace TextPaint
         public int CursorY = 0;
         int DisplayX = 0;
         int DisplayY = 0;
-        int WinW;
-        int WinH;
         int WinTxtW;
         int WinTxtH;
 
@@ -217,14 +174,11 @@ namespace TextPaint
         int CursorType = 0;
         bool CursorDisplay = true;
 
-        bool FramePencil = false;
+        int FramePencil = 0;
         int FramePencilLastCross = 0;
         int TextMoveDir = 0;
 
         int TextInsDelMode = 0;
-
-        public string FileREnc = "";
-        public string FileWEnc = "";
 
         public List<int> BlankDispLineC()
         {
@@ -538,6 +492,31 @@ namespace TextPaint
             CharPut(X, Y, Item, false);
         }
 
+        public void CharPutDbl(int X, int Y, int Offset, int Ch)
+        {
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.Item_Char = Ch;
+            Item.Item_ColorB = Semigraphics_.DrawColoBI;
+            Item.Item_ColorF = Semigraphics_.DrawColoFI;
+            Item.Item_ColorA = Semigraphics_.DrawColoAI;
+            Item.Item_FontW = -1;
+            Item.Item_FontH = -1;
+            CharPut(X, Y, Item, false);
+
+            int Ch_ = Screen_.CharDouble(Ch);
+            if (Ch_ != 0)
+            {
+                AnsiLineOccupyItem Item_ = new AnsiLineOccupyItem();
+                Item_.Item_Char = Ch_;
+                Item_.Item_ColorB = Semigraphics_.DrawColoBI;
+                Item_.Item_ColorF = Semigraphics_.DrawColoFI;
+                Item_.Item_ColorA = Semigraphics_.DrawColoAI;
+                Item_.Item_FontW = -1;
+                Item_.Item_FontH = -1;
+                CharPut(X + Offset, Y, Item_, false);
+            }
+        }
+
         public void CharPut(int X, int Y, AnsiLineOccupyItem Item, bool SingleCell)
         {
             AnsiLineOccupyItem Item_ = new AnsiLineOccupyItem();
@@ -588,8 +567,8 @@ namespace TextPaint
                     {
                         if (ToggleDrawText)
                         {
-                            Item.Item_FontW = FontSizeCode(CursorFontW_, XX);
-                            Item.Item_FontH = FontSizeCode(CursorFontH_, YY);
+                            Item.Item_FontW = CoreStatic.FontSizeCode(CursorFontW_, XX);
+                            Item.Item_FontH = CoreStatic.FontSizeCode(CursorFontH_, YY);
                         }
                     }
 
@@ -1182,57 +1161,15 @@ namespace TextPaint
 
             TextCipher_ = new TextCipher(CF, this);
 
-            CurrentFileName_ = PrepareFileName(CurrentFileName_);
+            CurrentFileName_ = CoreStatic.PrepareFileName(CurrentFileName_);
 
             if ("".Equals(CurrentFileName_))
             {
                 CurrentFileName_ = AppDir() + "Config.txt";
             }
 
-
-            // Load character maps
-            string[] CharDOS = CF.ParamGetS("ANSICharsDOS").Split(',');
-            string[] CharsVT100 = CF.ParamGetS("ANSICharsVT100").Split(',');
-            string[] CharsVT52 = CF.ParamGetS("ANSICharsVT52").Split(',');
-            for (int i = 0; i < 32; i++)
-            {
-                if (CharDOS.Length >= 32)
-                {
-                    int T = TextWork.CodeChar(CharDOS[i]);
-                    if (T >= 32)
-                    {
-                        DosControl[i] = T;
-                    }
-                    else
-                    {
-                        DosControl[i] = 32;
-                    }
-                }
-                if (CharsVT100.Length >= 32)
-                {
-                    int T = TextWork.CodeChar(CharsVT100[i]);
-                    if (T >= 32)
-                    {
-                        VT100_SemigraphChars[i] = T;
-                    }
-                    else
-                    {
-                        VT100_SemigraphChars[i] = 32;
-                    }
-                }
-                if (CharsVT52.Length >= 32)
-                {
-                    int T = TextWork.CodeChar(CharsVT52[i]);
-                    if (T >= 32)
-                    {
-                        VT52_SemigraphChars[i] = T;
-                    }
-                    else
-                    {
-                        VT52_SemigraphChars[i] = 32;
-                    }
-                }
-            }
+            CoreAnsi_ = new CoreAnsi(this, CF);
+            CoreFile_ = new CoreFile(this, CF);
 
 
             // Create key substitute map
@@ -1254,64 +1191,12 @@ namespace TextPaint
 
             CurrentFileName = CurrentFileName_;
             
-            WinW = -1;
-            WinH = -1;
             ScrChar_ = new AnsiLineOccupyEx();
             TextBuffer = new AnsiLineOccupyEx();
             ScrCharDisp_ = new AnsiLineOccupyEx();
             TextBuffer.Clear();
-            FileREnc = CF.ParamGetS("FileReadEncoding");
-            FileWEnc = CF.ParamGetS("FileWriteEncoding");
-            FileReadSteps = CF.ParamGetI("FileReadSteps");
-            UseAnsiLoad = CF.ParamGetB("ANSIRead");
-            UseAnsiSave = CF.ParamGetB("ANSIWrite");
-            AnsiMaxX = CF.ParamGetI("ANSIWidth");
-            AnsiMaxY = CF.ParamGetI("ANSIHeight");
-            __AnsiLineOccupy1_Use = CF.ParamGetB("ANSIBufferAbove");
-            __AnsiLineOccupy2_Use = CF.ParamGetB("ANSIBufferBelow");
-            ANSI_CR = CF.ParamGetI("ANSIReadCR");
-            ANSI_LF = CF.ParamGetI("ANSIReadLF");
             TextBeyondLineMargin = CF.ParamGetI("BeyondLineMargin");
 
-            ANSIDOS = CF.ParamGetB("ANSIDOS");
-            ANSI8bit = CF.ParamGetB("ANSI8bit");
-            ANSIPrintBackspace = CF.ParamGetB("ANSIPrintBackspace");
-            ANSIPrintTab = CF.ParamGetB("ANSIPrintTab");
-
-            AnsiTerminalResize(AnsiMaxX, AnsiMaxY);
-
-            ANSIScrollChars = CF.ParamGetI("ANSIScrollChars");
-            ANSIScrollBuffer = CF.ParamGetI("ANSIScrollBuffer");
-            ANSIScrollSmooth = CF.ParamGetI("ANSIScrollSmooth");
-
-            ColorThresholdBlackWhite = CF.ParamGetI("ANSIColorThresholdBlackWhite");
-            ColorThresholdGray = CF.ParamGetI("ANSIColorThresholdGray");
-            CreateColor256();
-
-            if (WorkMode == 2)
-            {
-                if (CF.ParamGetL("TerminalTimeResolution") <= 0)
-                {
-                    ANSIScrollChars = 0;
-                    ANSIScrollBuffer = 0;
-                    ANSIScrollSmooth = 0;
-                }
-                if (CF.ParamGetI("TerminalStep") <= 0)
-                {
-                    ANSIScrollChars = 0;
-                    ANSIScrollBuffer = 0;
-                    ANSIScrollSmooth = 0;
-                }
-            }
-
-            if (ANSIScrollChars <= 0)
-            {
-                ANSIScrollSmooth = 0;
-            }
-            if (ANSIScrollSmooth > 4)
-            {
-                ANSIScrollSmooth = 0;
-            }
 
             ReadColor(CF.ParamGetS("ColorNormal"), ref TextNormalBack, ref TextNormalFore);
             ReadColor(CF.ParamGetS("ColorBeyondLine"), ref TextBeyondLineBack, ref TextBeyondLineFore);
@@ -1335,10 +1220,8 @@ namespace TextPaint
             {
                 if (UseWindow)
                 {
-                    int WinW__ = 80;
-                    int WinH__ = 25;
-                    CF.ParamGet("WinW", ref WinW__);
-                    CF.ParamGet("WinH", ref WinH__);
+                    int WinW__ = CF.ParamGetI("WinW", 80);
+                    int WinH__ = CF.ParamGetI("WinH", 25);
                     if (WinW__ < 1)
                     {
                         WinW__ = Console.WindowWidth;
@@ -1351,22 +1234,32 @@ namespace TextPaint
                     }
                     Screen_ = new ScreenWindowGUI(this, CF.ParamGetI("WinFixed"), CF, WinW__, WinH__, ColorBlending, ColorBlendingConfig, false);
                     ((ScreenWindow)Screen_).SteadyCursor = CF.ParamGetB("WinSteadyCursor");
+                    Screen_.AppResize(WinW__, WinH__, true);
                 }
                 else
                 {
                     Screen_ = new ScreenConsole(this, CF.ParamGetI("WinFixed"), CF, TextNormalBack, TextNormalFore);
                     Screen_.UseMemo = CF.ParamGetI("ConUseMemo");
+                    int InitW = Console.WindowWidth;
+                    int InitH = Console.WindowHeight;
+                    if ((InitW < 1) || (InitH < 1))
+                    {
+                        ((ScreenConsole)Screen_).DetectSize();
+                        InitW = Screen_.WinW;
+                        InitH = Screen_.WinH;
+                    }
+                    Screen_.AppResize(InitW, InitH, true);
                 }
                 Screen_.BellMethod = CF.ParamGetI("Bell");
             }
 
             if (WorkMode == 1)
             {
-                Telnet_ = new Telnet(this, CF);
+                TelnetServer_ = new TelnetServer(this, CF);
             }
             if (WorkMode == 2)
             {
-                Telnet_ = new Telnet(this, CF);
+                TelnetClient_ = new TelnetClient(this, CF);
             }
             if (WorkMode == 3)
             {
@@ -1440,16 +1333,16 @@ namespace TextPaint
             KeyCounterLast = "";
             if (WorkMode != 4)
             {
+                AppRefresh();
+                ScreenRefresh(true);
+                //!!StartUp();
                 Screen_.StartApp();
             }
             else
             {
-                Screen_ = new ScreenWindowGUI(this, 0, CF, 1, 1, ColorBlending, ColorBlendingConfig, true);
-                RenderSliceX = CF.ParamGetI("RenderSliceX");
-                RenderSliceY = CF.ParamGetI("RenderSliceY");
-                RenderSliceW = CF.ParamGetI("RenderSliceW");
-                RenderSliceH = CF.ParamGetI("RenderSliceH");
-                RenderStart(CF);
+                Screen_ = new ScreenWindowGUI(this, 1, CF, 1, 1, ColorBlending, ColorBlendingConfig, true);
+                CoreRender_ = new CoreRender(this, CF);
+                CoreRender_.RenderStart(CF);
             }
         }
 
@@ -1462,15 +1355,15 @@ namespace TextPaint
             }
             if (WorkMode == 1)
             {
-                Telnet_.Open(false);
+                TelnetServer_.TelnetServerStart();
             }
             if (WorkMode == 2)
             {
-                Telnet_.Open(true);
+                TelnetClient_.TelnetClientStart();
             }
             if (WorkMode == 3)
             {
-                Screen_.SetCursorPosition(0, WinH - 1);
+                Screen_.SetCursorPosition(0, Screen_.WinH - 1);
             }
         }
 
@@ -1490,13 +1383,17 @@ namespace TextPaint
                     if (ScrCharDisp_.Item_FontW != ScrChar_.Item_FontW) Difference = true;
                     if (ScrCharDisp_.Item_FontH != ScrChar_.Item_FontH) Difference = true;
                     if (ScrCharDisp_.Item_Type != ScrChar_.Item_Type) Difference = true;
+                    if (Screen_.CharDouble(ScrCharDisp_.Item_Char) != 0)
+                    {
+                        Difference = true;
+                    }
                     if (Force || Difference)
                     {
                         bool InsideText = true;
                         switch (ScrChar_.Item_Type)
                         {
                             case 1:
-                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && ((X + DisplayX) < AnsiMaxX)))
+                                if (((X + DisplayX) < TextBeyondLineMargin) || ((TextBeyondLineMargin < 0) && ((X + DisplayX) < CoreAnsi_.AnsiMaxX)))
                                 {
                                     ScrChar_.Item_ColorB = -1;
                                     ScrChar_.Item_ColorF = -1;
@@ -1525,76 +1422,17 @@ namespace TextPaint
                         ScrCharDisp_.Set(Y, X);
                         if (InsideText)
                         {
-                            if (Force)
+                            /*if (Force)
                             {
                                 Screen_.PutChar(X, Y, 32, -1, -1);
-                            }
+                            }*/
                             Screen_.PutChar(X, Y, ScrChar_.Item_Char, ScrChar_.Item_ColorB, ScrChar_.Item_ColorF, ScrChar_.Item_FontW, ScrChar_.Item_FontH, ScrChar_.Item_ColorA);
                         }
                         else
                         {
-                            Screen_.PutChar(X, Y, ScrChar_.Item_Char, ScrChar_.Item_ColorB, ScrChar_.Item_ColorF);
+                            Screen_.PutChar(X, Y, ScrChar_.Item_Char, ScrChar_.Item_ColorB, ScrChar_.Item_ColorF, ScrChar_.Item_FontW, ScrChar_.Item_FontH);
                         }
                     }
-                }
-            }
-        }
-
-        bool WindowResizeInfo = false;
-        public void WindowResize()
-        {
-            if (WorkMode == 0)
-            {
-                if (Screen_.WindowResize() || (WindowResizeInfo != InfoScreen_.Shown) || InfoScreen_.Shown)
-                {
-                    WindowResizeInfo = InfoScreen_.Shown;
-                    WinW = Screen_.WinW;
-                    WinH = Screen_.WinH;
-                    WinTxtW = WinW;
-                    WinTxtH = WinH - 1;
-
-                    ScrChar_.Clear();
-                    ScrCharDisp_.Clear();
-                    ScrCharDisp_.BlankChar();
-                    ScrCharDisp_.Item_Type = 32;
-                    for (int i = 0; i < WinTxtH; i++)
-                    {
-                        ScrChar_.AppendLine();
-                        ScrCharDisp_.AppendLine();
-                        ScrCharDisp_.PadRight(i, WinTxtW);
-                    }
-                    TextDisplay(0);
-                    CursorLimit();
-                }
-            }
-            if ((WorkMode == 1) || (WorkMode == 2))
-            {
-                if (Screen_.WindowResize())
-                {
-                    WinW = Screen_.WinW;
-                    WinH = Screen_.WinH;
-                    if (Telnet_ != null)
-                    {
-                        if (WorkMode == 1)
-                        {
-                            Telnet_.ForceRepaint = true;
-                        }
-                        if (WorkMode == 2)
-                        {
-                            Telnet_.TelnetRepaint();
-                        }
-                    }
-                }
-                WinW = Screen_.WinW;
-                WinH = Screen_.WinH;
-            }
-            if (WorkMode == 3)
-            {
-                if (Screen_.WindowResize())
-                {
-                    WinW = Screen_.WinW;
-                    WinH = Screen_.WinH;
-                    Screen_.Clear(TextNormalBack, TextNormalFore);
                 }
             }
         }
@@ -1619,12 +1457,12 @@ namespace TextPaint
         }
 
         int StatusCursorChar = 32;
+        int StatusCursorCharDbl = 0;
         int StatusCursorColoB = -1;
         int StatusCursorColoF = -1;
         int StatusCursorColoA = 0;
         public void ScreenRefresh(bool Force)
         {
-            WindowResize();
             if (WorkMode == 0)
             {
                 CursorLine(true);
@@ -1633,6 +1471,10 @@ namespace TextPaint
                 {
                     StringBuilder StatusText = new StringBuilder();
                     Semigraphics_.CursorChar = ElementGetVal(CursorX, CursorY, true, false, 0);
+                    if (Screen_.CharDoubleInv(Semigraphics_.CursorChar) >= 32)
+                    {
+                        Semigraphics_.CursorChar = Screen_.CharDoubleInv(Semigraphics_.CursorChar);
+                    }
                     Semigraphics_.CursorColoB = ElementGetVal(CursorX, CursorY, true, false, 1);
                     Semigraphics_.CursorColoF = ElementGetVal(CursorX, CursorY, true, false, 2);
                     Semigraphics_.CursorColoA = ElementGetVal(CursorX, CursorY, true, false, 3);
@@ -1678,12 +1520,21 @@ namespace TextPaint
                         if (!InfoScreen_.Shown)
                         {
                             StatusCursorChar = Semigraphics_.CursorChar;
+                            StatusCursorCharDbl = Screen_.CharDouble(StatusCursorChar);
                             StatusCursorColoB = Semigraphics_.CursorColoB;
                             StatusCursorColoF = Semigraphics_.CursorColoF;
                             StatusCursorColoA = Semigraphics_.CursorColoA;
 
                         }
-                        StatusText.Append(" " + TextWork.CharCode(StatusCursorChar, 1) + " " + TextWork.CharToStr(StatusCursorChar) + " ");
+                        StatusText.Append(" ");
+                        StatusText.Append(TextWork.CharCode(StatusCursorChar, 1));
+                        StatusText.Append(" ");
+                        StatusText.Append(TextWork.CharToStr(StatusCursorChar));
+                        if (StatusCursorCharDbl != 0)
+                        {
+                            StatusText.Append(" ");
+                        }
+                        StatusText.Append(" ");
                         if ((StatusCursorColoB >= 0) && (StatusCursorColoB <= 15))
                         {
                             StatusText.Append(StatusCursorColoB.ToString("X"));
@@ -1701,7 +1552,7 @@ namespace TextPaint
                             StatusText.Append("-");
                         }
                         StatusText.Append(" ");
-                        StatusText.Append(GetAttribText(StatusCursorColoA));
+                        StatusText.Append(CoreStatic.GetAttribText(StatusCursorColoA));
                         StatusText.Append(" ");
                     }
 
@@ -1736,6 +1587,10 @@ namespace TextPaint
                             {
                                 StatusText.Append("Dia " + (Math.Abs(CursorXSize) + 1) + "x" + (Math.Abs(CursorYSize) + 1) + "  " + Semigraphics_.GetFrameName(2));
                             }
+                            if (Screen_.CharDouble(Semigraphics_.DrawCharI) != 0)
+                            {
+                                StatusText.Append(" ");
+                            }
                             break;
                         case WorkStateDef.DrawPixel:
                             StatusText.Append(PixelPaint_.GetStatusInfo());
@@ -1758,7 +1613,7 @@ namespace TextPaint
                     Screen_.SetStatusText(StatusText.ToString(), StatusBack, StatusFore);
                     if (InfoScreen_.Shown)
                     {
-                        Screen_.SetCursorPosition(WinW - 1, WinH - 1);
+                        Screen_.SetCursorPosition(Screen_.WinW - 1, Screen_.WinH - 1);
                     }
                     else
                     {
@@ -1856,181 +1711,9 @@ namespace TextPaint
             CoreEvent_(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
         }
 
-        public void CoreEvent_(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        private void CoreEvent_0(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
         {
-            if (WorkMode != 0)
-            {
-                if ((WorkMode == 1) || (WorkMode == 2))
-                {
-                    Telnet_.CoreEvent(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
-                }
-                if (WorkMode == 3)
-                {
-                    WindowResize();
-
-                    if (!("Resize".Equals(KeyName)))
-                    {
-                        if ((KeyCounter >= 3) || ("WindowClose".Equals(KeyName)))
-                        {
-                            Screen_.CloseApp(TextNormalBack, TextNormalFore);
-                        }
-                        else
-                        {
-                            string KeyId = KeyName + "|" + ((int)KeyChar).ToString() + "|" + ModShift.ToString() + ModCtrl.ToString() + ModAlt.ToString();
-                            if (KeyCounterLast == KeyId)
-                            {
-                                KeyCounter++;
-                            }
-                            else
-                            {
-                                KeyCounterLast = KeyId;
-                                KeyCounter = 0;
-                            }
-
-                            List<int> KeyInfoText = new List<int>();
-
-                            Screen_.Move(0, 1, 0, 0, WinW, WinH - 1);
-                            if (EncodingByte < 0)
-                            {
-                                if (EncodingKey2.Contains(KeyChar))
-                                {
-                                    if (EncodingListI > 0)
-                                    {
-                                        if (EncodingInfo[EncodingListI - 1] != null)
-                                        {
-                                            if (EncodingCodePage[EncodingListI - 1] < 0)
-                                            {
-                                                EncodingArray = EncodingFile[EncodingListI - 1];
-                                                EncodingListI--;
-                                                EncodingByte = 0;
-                                            }
-                                            else
-                                            {
-                                                OneByteEncoding OBE = new OneByteEncoding();
-                                                if (OBE.DefImport(TextWork.EncodingFromName(EncodingCodePage[EncodingListI - 1].ToString())))
-                                                {
-                                                    EncodingArray = OBE.DefExport();
-                                                    EncodingListI--;
-                                                    EncodingByte = 0;
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                                if (EncodingKey1.Contains(KeyChar))
-                                {
-                                    EncodingListI -= 2;
-                                    if (EncodingListI < 0)
-                                    {
-                                        EncodingListI += EncodingList.Count;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                if (EncodingKey2.Contains(KeyChar))
-                                {
-                                    EncodingByte += 15;
-                                    if (EncodingByte >= (256 + 16))
-                                    {
-                                        EncodingByte -= (256 + 16);
-                                    }
-                                }
-                                if (EncodingKey1.Contains(KeyChar))
-                                {
-                                    EncodingByte = -1;
-                                }
-                            }
-                            if (EncodingByte < 0)
-                            {
-                                KeyInfoText.AddRange(TextWork.StrToInt(EncodingList[EncodingListI]));
-                            }
-                            else
-                            {
-                                KeyInfoText.AddRange(EncodingInfo[EncodingListI]);
-                                if (EncodingByte < 16)
-                                {
-                                    for (int i = 0; i < 16; i++)
-                                    {
-                                        int ii = EncodingByte * 16 + i;
-                                        KeyInfoText.Add(EncodingArray[ii]);
-                                    }
-                                }
-                                else
-                                {
-                                    KeyInfoText.Add(((EncodingByte - 16) / 16).ToString("X")[0]);
-                                    KeyInfoText.Add(((EncodingByte - 16) % 16).ToString("X")[0]);
-                                    KeyInfoText.Add('=');
-                                    KeyInfoText.AddRange(TextWork.StrToInt(TextWork.CharCode(EncodingArray[(EncodingByte - 16)], 0)));
-                                    KeyInfoText.Add(32);
-                                    KeyInfoText.Add(39);
-                                    KeyInfoText.Add(EncodingArray[(EncodingByte - 16)]);
-                                    KeyInfoText.Add(39);
-                                }
-                                while (KeyInfoText.Count < EncodingListL)
-                                {
-                                    KeyInfoText.Add(32);
-                                }
-                            }
-                            KeyInfoText.Add(34);
-                            KeyInfoText.AddRange(TextWork.StrToInt(KeyName));
-                            KeyInfoText.Add(34);
-                            KeyInfoText.Add(32);
-                            KeyInfoText.AddRange(TextWork.StrToInt(((int)KeyChar).ToString()));
-                            KeyInfoText.Add(32);
-                            KeyInfoText.AddRange(TextWork.StrToInt(TextWork.CharCode((int)KeyChar, 0) + "h"));
-                            if (KeyChar >= 32)
-                            {
-                                KeyInfoText.Add(32);
-                                KeyInfoText.Add(39);
-                                KeyInfoText.Add(KeyChar);
-                                KeyInfoText.Add(39);
-                            }
-                            KeyInfoText.Add(32);
-                            if (ModShift)
-                            {
-                                KeyInfoText.AddRange(TextWork.StrToInt("[Shift]"));
-                            }
-                            if (ModCtrl)
-                            {
-                                KeyInfoText.AddRange(TextWork.StrToInt("[Ctrl]"));
-                            }
-                            if (ModAlt)
-                            {
-                                KeyInfoText.AddRange(TextWork.StrToInt("[Alt]"));
-                            }
-                            if (EncodingByte < 0)
-                            {
-                                EncodingListI++;
-                                if (EncodingListI == EncodingList.Count)
-                                {
-                                    EncodingListI = 0;
-                                }
-                            }
-                            else
-                            {
-                                EncodingByte++;
-                                if (EncodingByte >= (256 + 16))
-                                {
-                                    EncodingByte -= (256 + 16);
-                                }
-                            }
-                            while (KeyInfoText.Count < WinW)
-                            {
-                                KeyInfoText.Add(32);
-                            }
-                            for (int i = 0; i < WinW; i++)
-                            {
-                                Screen_.PutChar(i, WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore);
-                            }
-
-                            Screen_.SetCursorPosition(0, WinH - 1);
-                        }
-                    }
-                }
-                return;
-            }
-
+            bool InfoScreenShown = InfoScreen_.Shown;
             if (InfoScreen_.ScreenKey(KeyName, KeyChar))
             {
                 if ((InfoScreen_.RequestHide) || (InfoScreen_.RequestClose))
@@ -2101,10 +1784,17 @@ namespace TextPaint
                                 break;
                         }
                         TextRepaint(false);
-                        Screen_.SetCursorPosition(WinW - 1, WinH - 1);
+                        Screen_.SetCursorPosition(Screen_.WinW - 1, Screen_.WinH - 1);
                     }
                 }
-                ScreenRefresh(false);
+                if (InfoScreenShown != InfoScreen_.Shown)
+                {
+                    AppRefresh();
+                }
+                else
+                {
+                    ScreenRefresh(false);
+                }
                 return;
             }
 
@@ -2120,20 +1810,24 @@ namespace TextPaint
                 Semigraphics_.SelectCharEvent(KeyName, KeyChar);
                 return;
             }
-            
+
             CursorLine(false);
             switch (KeyName)
             {
+                case "MouseMove":
+                    return;
+                case "MouseBtn":
+                    return;
                 case "FileDrop1":
                     return;
                 case "FileDrop2":
                     return;
                 case "F9":
                     PixelCharSet();
-                    Semigraphics_.AnsiMaxX_ = AnsiMaxX;
-                    Semigraphics_.AnsiMaxY_ = AnsiMaxY;
-                    Semigraphics_.ANSI_CR_ = ANSI_CR;
-                    Semigraphics_.ANSI_LF_ = ANSI_LF;
+                    Semigraphics_.AnsiMaxX_ = CoreAnsi_.AnsiMaxX;
+                    Semigraphics_.AnsiMaxY_ = CoreAnsi_.AnsiMaxY;
+                    Semigraphics_.ANSI_CR_ = CoreAnsi_.ANSI_CR;
+                    Semigraphics_.ANSI_LF_ = CoreAnsi_.ANSI_LF;
                     Semigraphics_.SelectCharInit();
                     return;
                 case "Tab":
@@ -2275,40 +1969,86 @@ namespace TextPaint
 
                             case "Backspace":
                                 {
-                                    if (TextMoveDir == 0) { MoveCursor(2); }
-                                    if (TextMoveDir == 2) { MoveCursor(0); }
-                                    if (TextMoveDir == 4) { MoveCursor(3); }
-                                    if (TextMoveDir == 6) { MoveCursor(1); }
-                                    if (TextMoveDir == 1) { MoveCursor(6); }
-                                    if (TextMoveDir == 3) { MoveCursor(4); }
-                                    if (TextMoveDir == 5) { MoveCursor(7); }
-                                    if (TextMoveDir == 7) { MoveCursor(5); }
+                                    switch (TextMoveDir)
+                                    {
+                                        case 0: MoveCursor(2); break;
+                                        case 2: MoveCursor(0); break;
+                                        case 4: MoveCursor(3); break;
+                                        case 6: MoveCursor(1); break;
+                                        case 1: MoveCursor(6); break;
+                                        case 3: MoveCursor(4); break;
+                                        case 5: MoveCursor(7); break;
+                                        case 7: MoveCursor(5); break;
+                                    }
                                 }
                                 break;
-                                
+
                             default:
                                 if (KeyChar >= 32)
                                 {
                                     UndoBufferStart();
+                                    int CharToPut = -1;
+                                    int CharToPutDbl = 0;
                                     if (WorkState == WorkStateDef.WriteChar)
                                     {
                                         if (KeyChar <= 255)
                                         {
-                                            CharPut0(CursorX, CursorY, Semigraphics_.FavChar[KeyChar]);
+                                            CharToPut = Semigraphics_.FavChar[KeyChar];
                                         }
                                     }
                                     else
                                     {
-                                        CharPut0(CursorX, CursorY, KeyChar);
+                                        CharToPut = KeyChar;
                                     }
-                                    if (TextMoveDir == 0) { MoveCursor(3); }
-                                    if (TextMoveDir == 2) { MoveCursor(1); }
-                                    if (TextMoveDir == 4) { MoveCursor(2); }
-                                    if (TextMoveDir == 6) { MoveCursor(0); }
-                                    if (TextMoveDir == 1) { MoveCursor(7); }
-                                    if (TextMoveDir == 3) { MoveCursor(5); }
-                                    if (TextMoveDir == 5) { MoveCursor(6); }
-                                    if (TextMoveDir == 7) { MoveCursor(4); }
+                                    if (CharToPut >= 0)
+                                    {
+                                        CharToPutDbl = Screen_.CharDouble(CharToPut);
+                                        if (CharToPutDbl != 0)
+                                        {
+                                            switch (TextMoveDir)
+                                            {
+                                                case 3:
+                                                case 4:
+                                                case 5:
+                                                case 6:
+                                                    MoveCursor(2);
+                                                    break;
+                                            }
+                                        }
+                                        CharPut0(CursorX, CursorY, CharToPut);
+
+                                    }
+
+                                    if (CharToPutDbl != 0)
+                                    {
+                                        MoveCursor(3);
+                                        CharPut0(CursorX, CursorY, CharToPutDbl);
+                                        switch (TextMoveDir)
+                                        {
+                                            case 0: MoveCursor(3); break;
+                                            case 2: MoveCursor(2); MoveCursor(1); break;
+                                            case 4: MoveCursor(2); MoveCursor(2); break;
+                                            case 6: MoveCursor(0); break;
+                                            case 1: MoveCursor(7); break;
+                                            case 3: MoveCursor(2); MoveCursor(5); break;
+                                            case 5: MoveCursor(2); MoveCursor(6); break;
+                                            case 7: MoveCursor(4); break;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        switch (TextMoveDir)
+                                        {
+                                            case 0: MoveCursor(3); break;
+                                            case 2: MoveCursor(1); break;
+                                            case 4: MoveCursor(2); break;
+                                            case 6: MoveCursor(0); break;
+                                            case 1: MoveCursor(7); break;
+                                            case 3: MoveCursor(5); break;
+                                            case 5: MoveCursor(6); break;
+                                            case 7: MoveCursor(4); break;
+                                        }
+                                    }
                                     UndoBufferStop();
                                 }
                                 break;
@@ -2320,173 +2060,197 @@ namespace TextPaint
                         switch (KeyName)
                         {
                             case "UpArrow":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
                                     switch (FramePencilLastCross)
                                     {
                                         case 0:
                                             {
-                                                Semigraphics_.FrameCharPut(0, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(0, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 3:
                                             {
-                                                Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 1:
                                             {
-                                                Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                     }
                                 }
                                 MoveCursor(0);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     FramePencilLastCross = 0;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "DownArrow":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
                                     switch (FramePencilLastCross)
                                     {
                                         case 0:
                                             {
-                                                Semigraphics_.FrameCharPut(1, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(1, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 2:
                                             {
-                                                Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 4:
                                             {
-                                                Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                     }
                                 }
                                 MoveCursor(1);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     FramePencilLastCross = 0;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "LeftArrow":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
                                     switch (FramePencilLastCross)
                                     {
                                         case 0:
                                             {
-                                                Semigraphics_.FrameCharPut(2, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(2, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 2:
                                             {
-                                                Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 3:
                                             {
-                                                Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                     }
                                 }
                                 MoveCursor(2);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(2);
+                                    }
                                     FramePencilLastCross = 0;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "RightArrow":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
                                     switch (FramePencilLastCross)
                                     {
                                         case 0:
                                             {
-                                                Semigraphics_.FrameCharPut(3, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(3, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 1:
                                             {
-                                                Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                         case 4:
                                             {
-                                                Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH);
+                                                Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH, FramePencil == 2);
                                             }
                                             break;
                                     }
                                 }
                                 MoveCursor(3);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(3);
+                                    }
                                     FramePencilLastCross = 0;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "PageUp":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
-                                    Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH);
+                                    Semigraphics_.FrameCharPut(4, CursorFontW, CursorFontH, FramePencil == 2);
                                 }
                                 MoveCursor(4);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(3);
+                                    }
                                     FramePencilLastCross = 1;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "End":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
-                                    Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH);
+                                    Semigraphics_.FrameCharPut(5, CursorFontW, CursorFontH, FramePencil == 2);
                                 }
                                 MoveCursor(5);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(2);
+                                    }
                                     FramePencilLastCross = 2;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "Home":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
-                                    Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH);
+                                    Semigraphics_.FrameCharPut(6, CursorFontW, CursorFontH, FramePencil == 2);
                                 }
                                 MoveCursor(6);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(2);
+                                    }
                                     FramePencilLastCross = 3;
                                     UndoBufferStop();
                                 }
                                 break;
                             case "PageDown":
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
                                     UndoBufferStart();
-                                    Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH);
+                                    Semigraphics_.FrameCharPut(7, CursorFontW, CursorFontH, FramePencil == 2);
                                 }
                                 MoveCursor(7);
-                                if (FramePencil)
+                                if (FramePencil > 0)
                                 {
+                                    if (FramePencil == 2)
+                                    {
+                                        MoveCursor(3);
+                                    }
                                     FramePencilLastCross = 4;
                                     UndoBufferStop();
                                 }
@@ -2504,7 +2268,7 @@ namespace TextPaint
                             case "D":
                                 CursorXSize++;
                                 break;
-                                
+
                             case "Q":
                                 CursorEquivPos(-1);
                                 break;
@@ -2555,7 +2319,21 @@ namespace TextPaint
                                 UndoBufferStop();
                                 break;
                             case "D5": // Frame
-                                FramePencil = !FramePencil;
+                                if (FramePencil > 0)
+                                {
+                                    FramePencil = 0;
+                                }
+                                else
+                                {
+                                    if (Semigraphics_.DoubleDrawMode())
+                                    {
+                                        FramePencil = 2;
+                                    }
+                                    else
+                                    {
+                                        FramePencil = 1;
+                                    }
+                                }
                                 FramePencilLastCross = 0;
                                 break;
 
@@ -2564,11 +2342,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[2]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[2]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[13]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[13]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2577,11 +2355,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[3]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[3]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[14]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[14]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2590,11 +2368,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[4]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[4]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[15]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[15]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2603,11 +2381,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[5]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[5]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[16]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[16]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2616,11 +2394,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[6]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[6]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[17]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[17]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2629,11 +2407,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[7]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[7]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[18]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[18]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2642,11 +2420,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[8]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[8]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[19]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[19]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2655,11 +2433,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[9]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[9]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[20]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[20]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2668,11 +2446,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[10]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[10]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[21]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[21]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2682,11 +2460,11 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[1]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[1]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[12]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[12]);
                                 }
                                 UndoBufferStop();
                                 break;
@@ -2695,18 +2473,18 @@ namespace TextPaint
                                 UndoBufferStart();
                                 if (Semigraphics_.DiamondType == 0)
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[0]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[0]);
                                 }
                                 else
                                 {
-                                    CharPut(CursorX, CursorY, Semigraphics_.FrameChar[11]);
+                                    CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.FrameChar[11]);
                                 }
                                 UndoBufferStop();
                                 break;
                             case "Space":
                             case "NumPad0":
                                 UndoBufferStart();
-                                CharPut(CursorX, CursorY, Semigraphics_.DrawCharI);
+                                CharPutDbl(CursorX, CursorY, CursorFontW, Semigraphics_.DrawCharI);
                                 UndoBufferStop();
                                 break;
 
@@ -2734,7 +2512,7 @@ namespace TextPaint
                                     UndoBufferStop();
                                 }
                                 break;
-                                
+
                             case "C":
                                 Clipboard_.DiamondType = Semigraphics_.DiamondType;
                                 Clipboard_.TextClipboardWork(CursorX, CursorY, CursorXSize, CursorYSize, CursorFontW, CursorFontH, false);
@@ -2968,7 +2746,360 @@ namespace TextPaint
                     }
                     break;
             }
-            ScreenRefresh(false);
+            if (InfoScreenShown != InfoScreen_.Shown)
+            {
+                AppRefresh();
+            }
+            else
+            {
+                ScreenRefresh(false);
+            }
+        }
+
+        private void CoreEvent_1(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        {
+            TelnetServer_.CoreEvent_Server(KeyName, KeyChar, ((int)KeyChar), ModShift, ModCtrl, ModAlt);
+        }
+
+        private void CoreEvent_2(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        {
+            TelnetClient_.CoreEvent_Client(KeyName, KeyChar, ((int)KeyChar), ModShift, ModCtrl, ModAlt);
+        }
+
+        private void CoreEvent_3(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        {
+            if ((KeyCounter >= 3) || ("WindowClose".Equals(KeyName)))
+            {
+                Screen_.CloseApp(TextNormalBack, TextNormalFore);
+            }
+            else
+            {
+                bool AllowedEvent = true;
+                if (KeyName.StartsWith("Resize")) { AllowedEvent = false; }
+                if (KeyName.StartsWith("Mouse")) { AllowedEvent = false; }
+                if (AllowedEvent)
+                {
+                    string KeyId = KeyName + "|" + ((int)KeyChar).ToString() + "|" + ModShift.ToString() + ModCtrl.ToString() + ModAlt.ToString();
+                    if (KeyCounterLast == KeyId)
+                    {
+                        KeyCounter++;
+                    }
+                    else
+                    {
+                        KeyCounterLast = KeyId;
+                        KeyCounter = 0;
+                    }
+
+                    List<int> KeyInfoText = new List<int>();
+
+                    Screen_.Move(0, 1, 0, 0, Screen_.WinW, Screen_.WinH - 1);
+                    if (EncodingByte < 0)
+                    {
+                        if (EncodingKey2.Contains(KeyChar))
+                        {
+                            if (EncodingListI > 0)
+                            {
+                                if (EncodingInfo[EncodingListI - 1] != null)
+                                {
+                                    if (EncodingCodePage[EncodingListI - 1] < 0)
+                                    {
+                                        EncodingArray = EncodingFile[EncodingListI - 1];
+                                        EncodingListI--;
+                                        EncodingByte = 0;
+                                    }
+                                    else
+                                    {
+                                        OneByteEncoding OBE = new OneByteEncoding();
+                                        if (OBE.DefImport(TextWork.EncodingFromName(EncodingCodePage[EncodingListI - 1].ToString())))
+                                        {
+                                            EncodingArray = OBE.DefExport();
+                                            EncodingListI--;
+                                            EncodingByte = 0;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        if (EncodingKey1.Contains(KeyChar))
+                        {
+                            EncodingListI -= 2;
+                            if (EncodingListI < 0)
+                            {
+                                EncodingListI += EncodingList.Count;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (EncodingKey2.Contains(KeyChar))
+                        {
+                            EncodingByte += 15;
+                            if (EncodingByte >= (256 + 16))
+                            {
+                                EncodingByte -= (256 + 16);
+                            }
+                        }
+                        if (EncodingKey1.Contains(KeyChar))
+                        {
+                            EncodingByte = -1;
+                        }
+                    }
+                    if (EncodingByte < 0)
+                    {
+                        KeyInfoText.AddRange(TextWork.StrToInt(EncodingList[EncodingListI]));
+                    }
+                    else
+                    {
+                        KeyInfoText.AddRange(EncodingInfo[EncodingListI]);
+                        if (EncodingByte < 16)
+                        {
+                            for (int i = 0; i < 16; i++)
+                            {
+                                int ii = EncodingByte * 16 + i;
+                                KeyInfoText.Add(EncodingArray[ii]);
+                            }
+                        }
+                        else
+                        {
+                            KeyInfoText.Add(((EncodingByte - 16) / 16).ToString("X")[0]);
+                            KeyInfoText.Add(((EncodingByte - 16) % 16).ToString("X")[0]);
+                            KeyInfoText.Add('=');
+                            KeyInfoText.AddRange(TextWork.StrToInt(TextWork.CharCode(EncodingArray[(EncodingByte - 16)], 0)));
+                            KeyInfoText.Add(32);
+                            KeyInfoText.Add(39);
+                            KeyInfoText.Add(EncodingArray[(EncodingByte - 16)]);
+                            KeyInfoText.Add(39);
+                        }
+                        while (KeyInfoText.Count < EncodingListL)
+                        {
+                            KeyInfoText.Add(32);
+                        }
+                    }
+                    KeyInfoText.Add(34);
+                    KeyInfoText.AddRange(TextWork.StrToInt(KeyName));
+                    KeyInfoText.Add(34);
+                    KeyInfoText.Add(32);
+                    KeyInfoText.AddRange(TextWork.StrToInt(((int)KeyChar).ToString()));
+                    KeyInfoText.Add(32);
+                    KeyInfoText.AddRange(TextWork.StrToInt(TextWork.CharCode((int)KeyChar, 0) + "h"));
+                    if (KeyChar >= 32)
+                    {
+                        KeyInfoText.Add(32);
+                        KeyInfoText.Add(39);
+                        KeyInfoText.Add(KeyChar);
+                        KeyInfoText.Add(39);
+                    }
+                    KeyInfoText.Add(32);
+                    if (ModShift)
+                    {
+                        KeyInfoText.AddRange(TextWork.StrToInt("[Shift]"));
+                    }
+                    if (ModCtrl)
+                    {
+                        KeyInfoText.AddRange(TextWork.StrToInt("[Ctrl]"));
+                    }
+                    if (ModAlt)
+                    {
+                        KeyInfoText.AddRange(TextWork.StrToInt("[Alt]"));
+                    }
+                    if (EncodingByte < 0)
+                    {
+                        EncodingListI++;
+                        if (EncodingListI == EncodingList.Count)
+                        {
+                            EncodingListI = 0;
+                        }
+                    }
+                    else
+                    {
+                        EncodingByte++;
+                        if (EncodingByte >= (256 + 16))
+                        {
+                            EncodingByte -= (256 + 16);
+                        }
+                    }
+                    while (KeyInfoText.Count < Screen_.WinW)
+                    {
+                        KeyInfoText.Add(32);
+                    }
+                    for (int i = 0; i < Screen_.WinW; i++)
+                    {
+                        Screen_.PutChar(i, Screen_.WinH - 1, KeyInfoText[i], TextNormalBack, TextNormalFore);
+                    }
+
+                    Screen_.SetCursorPosition(0, Screen_.WinH - 1);
+                }
+            }
+        }
+
+        object EventMonitor = new object();
+
+        int EventSizeW = 0;
+        int EventSizeH = 0;
+        public int EventMouseX = -1;
+        public int EventMouseY = -1;
+
+        int EventMouseCopyX1;
+        int EventMouseCopyY1;
+        int EventMouseCopyX2;
+        int EventMouseCopyY2;
+
+        private void EditorScreenRefresh()
+        {
+            WinTxtW = Screen_.WinW;
+            WinTxtH = Screen_.WinH - 1;
+
+            ScrChar_.Clear();
+            ScrCharDisp_.Clear();
+            ScrCharDisp_.BlankChar();
+            ScrCharDisp_.Item_Type = 32;
+            for (int i = 0; i < WinTxtH; i++)
+            {
+                ScrChar_.AppendLine();
+                ScrCharDisp_.AppendLine();
+                ScrCharDisp_.PadRight(i, WinTxtW);
+            }
+            TextDisplay(0);
+            CursorLimit();
+        }
+
+        private void AppRefresh()
+        {
+            AppResize(Screen_.WinW, Screen_.WinH, true);
+        }
+
+        public void AppResize(int NewW, int NewH, bool Force)
+        {
+            if (Screen_.AppResize(NewW, NewH, Force))
+            {
+                switch (WorkMode)
+                {
+                    case 0:
+                        {
+                            EditorScreenRefresh();
+                            ScreenRefresh(true);
+                        }
+                        break;
+                    case 1:
+                        {
+                            if (TelnetServer_ != null)
+                            {
+                                TelnetServer_.ForceRepaint = true;
+                            }
+                        }
+                        break;
+                    case 2:
+                        {
+                            if (TelnetClient_ != null)
+                            {
+                                CoreAnsi_.AnsiRepaint(false);
+                                TelnetClient_.Repaint();
+                            }
+                        }
+                        break;
+                    case 3:
+                        {
+                            Screen_.Clear(TextNormalBack, TextNormalFore);
+                        }
+                        break;
+                }
+            }
+        }
+
+        public void CoreEvent_(string KeyName, char KeyChar, bool ModShift, bool ModCtrl, bool ModAlt)
+        {
+            Monitor.Enter(EventMonitor);
+            switch (KeyName)
+            {
+                case "ResizeW":
+                    {
+                        EventSizeW = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "ResizeH":
+                    {
+                        EventSizeH = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "Resize":
+                    {
+                        AppResize(EventSizeW, EventSizeH, true);
+                        break;
+                    }
+                case "MouseX":
+                    {
+                        EventMouseX = (int)KeyChar;
+                        if (EventMouseX == Screen_.MouseZero) { EventMouseX = -1; }
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseY":
+                    {
+                        EventMouseY = (int)KeyChar;
+                        if (EventMouseY == Screen_.MouseZero) { EventMouseY = -1; }
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseMove":
+                    {
+                        break;
+                    }
+                case "MouseBtn":
+                    {
+                        break;
+                    }
+                case "MouseCopyX1":
+                    {
+                        EventMouseCopyX1 = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseCopyY1":
+                    {
+                        EventMouseCopyY1 = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseCopyX2":
+                    {
+                        EventMouseCopyX2 = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseCopyY2":
+                    {
+                        EventMouseCopyY2 = (int)KeyChar;
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+                case "MouseCopy":
+                    {
+                        if ((WorkMode == 1) || (WorkMode == 2))
+                        {
+                            Clipboard_.TextClipboardCopy(CoreAnsi_.AnsiState_.GetScreen(EventMouseCopyX1, EventMouseCopyY1, EventMouseCopyX2, EventMouseCopyY2));
+                        }
+                        Monitor.Exit(EventMonitor);
+                        return;
+                    }
+            }
+            switch (WorkMode)
+            {
+                case 0:
+                    CoreEvent_0(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                    break;
+                case 1:
+                    CoreEvent_1(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                    break;
+                case 2:
+                    CoreEvent_2(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                    break;
+                case 3:
+                    CoreEvent_3(KeyName, KeyChar, ModShift, ModCtrl, ModAlt);
+                    break;
+            }
+            Monitor.Exit(EventMonitor);
         }
 
 
@@ -2994,7 +3125,7 @@ namespace TextPaint
 
         public void FileSave0_()
         {
-            FileSave(CurrentFileName);
+            CoreFile_.FileSave(CurrentFileName);
         }
 
         void FileLoad0(bool ForceDummyLoad)
@@ -3050,11 +3181,11 @@ namespace TextPaint
             }
 
 
-            string NewFile = PrepareFileName(NewFile_);
+            string NewFile = CoreStatic.PrepareFileName(NewFile_);
 
             if (!("".Equals(NewFile)))
             {
-                if (ForceDummyLoad || (FileExists(NewFile)))
+                if (ForceDummyLoad || (CoreStatic.FileExists(NewFile)))
                 {
                     CurrentFileName = NewFile;
                     CursorX = 0;
@@ -3088,7 +3219,7 @@ namespace TextPaint
             TempMemo.Push(ToggleDrawColo ? 1 : 0);
             ToggleDrawText = true;
             ToggleDrawColo = true;
-            FileLoad(CurrentFileName);
+            CoreFile_.FileLoad(CurrentFileName);
             TextDisplay(0);
             ScreenRefresh(true);
             ToggleDrawColo = (TempMemo.Pop() != 0);
@@ -3418,8 +3549,8 @@ namespace TextPaint
                                     }
                                     if (ToggleDrawText)
                                     {
-                                        TextBuffer.Item_FontW = FontSizeCode(CursorFontW, i_XX);
-                                        TextBuffer.Item_FontH = FontSizeCode(CursorFontH, i_YY);
+                                        TextBuffer.Item_FontW = CoreStatic.FontSizeCode(CursorFontW, i_XX);
+                                        TextBuffer.Item_FontH = CoreStatic.FontSizeCode(CursorFontH, i_YY);
                                     }
                                     if (ToggleDrawText)
                                     {
@@ -3976,5 +4107,48 @@ namespace TextPaint
             CursorLimit();
             TextDisplay(0);
         }
+
+        public int CursorFontW = 1;
+        public int CursorFontH = 1;
+
+        public int FontMaxSize = 32;
+        public int FontMaxSizeCode = 527;
+
+        public int CursorXBase()
+        {
+            return CursorX % CursorFontW;
+        }
+
+        public int CursorYBase()
+        {
+            return CursorY % CursorFontH;
+        }
+
+        int CursorX0()
+        {
+            int T = (CursorX - DisplayX) % CursorFontW;
+            if (T == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return 0 - (CursorFontW - T);
+            }
+        }
+
+        int CursorY0()
+        {
+            int T = (CursorY - DisplayY) % CursorFontH;
+            if (T == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return 0 - (CursorFontH - T);
+            }
+        }
+
     }
 }

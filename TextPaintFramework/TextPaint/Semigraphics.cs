@@ -62,8 +62,7 @@ namespace TextPaint
             CharPosMode = DisplayConfig_.MenuPos;
             if ((NewW > 0) && (NewH >= 0))
             {
-                Core_.Screen_.AppResize(NewW, NewH);
-                Core_.CoreEvent("Resize", '\0', false, false, false);
+                Core_.AppResize(NewW, NewH, false);
             }
             DisplayConfigRepaint(false, false);
             SelectCharInit();
@@ -157,44 +156,29 @@ namespace TextPaint
             DisplayConfig_ = new DisplayConfig(Core_);
             DisplayConfig_.ConfigRepaint += DisplayConfigRepaint;
             DisplayConfig_.ConfigClose += DisplayConfigClose;
-
             WinBitmapPage.Clear();
-            if ((FontName != "") && System.IO.File.Exists(Core.FullPath(FontName)))
+        }
+
+        public void CreateFontList(ScreenFont ScreenFont_)
+        {
+            WinBitmapPage.Clear();
+            foreach (var item in ScreenFont_.WinBitmapPage)
             {
-                LowLevelBitmap FontTempBmp = new LowLevelBitmap(Core.FullPath(FontName));
-                int Idx = 0;
-                int Val0 = -1;
-                int ValPlane = 0;
-                for (int i = 0; i < FontTempBmp.Height; i++)
+                int Plane = item.Key >> 8;
+                bool PlaneSecondExists = false;
+                for (int i = 0; i < ScreenFont_.PlaneSecond.Length; i++)
                 {
-                    int Val = 0;
-                    if (FontTempBmp.GetPixelBinary(0, i)) { Val += 32768; }
-                    if (FontTempBmp.GetPixelBinary(1, i)) { Val += 16384; }
-                    if (FontTempBmp.GetPixelBinary(2, i)) { Val += 8192; }
-                    if (FontTempBmp.GetPixelBinary(3, i)) { Val += 4096; }
-                    if (FontTempBmp.GetPixelBinary(4, i)) { Val += 2048; }
-                    if (FontTempBmp.GetPixelBinary(5, i)) { Val += 1024; }
-                    if (FontTempBmp.GetPixelBinary(6, i)) { Val += 512; }
-                    if (FontTempBmp.GetPixelBinary(7, i)) { Val += 256; }
-                    if (FontTempBmp.GetPixelBinary(8, i)) { Val += 128; }
-                    if (FontTempBmp.GetPixelBinary(9, i)) { Val += 64; }
-                    if (FontTempBmp.GetPixelBinary(10, i)) { Val += 32; }
-                    if (FontTempBmp.GetPixelBinary(11, i)) { Val += 16; }
-                    if (FontTempBmp.GetPixelBinary(12, i)) { Val += 8; }
-                    if (FontTempBmp.GetPixelBinary(13, i)) { Val += 4; }
-                    if (FontTempBmp.GetPixelBinary(14, i)) { Val += 2; }
-                    if (FontTempBmp.GetPixelBinary(15, i)) { Val += 1; }
-                    if (Val0 != Val)
+                    if ((ScreenFont_.PlaneSecond[i] == Plane) && (ScreenFont_.PlaneSecond[i] >= 0))
                     {
-                        WinBitmapPage.Add(ValPlane + Val);
-                        Idx++;
-                        Val0 = Val;
+                        PlaneSecondExists = true;
                     }
                 }
-                WinBitmapPage.Sort();
+                if (!PlaneSecondExists)
+                {
+                    WinBitmapPage.Add(item.Key);
+                }
             }
-
-
+            WinBitmapPage.Sort();
         }
 
         ConfigFile FavCharFile;
@@ -300,6 +284,7 @@ namespace TextPaint
             }
 
             DrawCharI = TextWork.SpaceChar0;
+            DrawCharIdbl = 0;
             DrawColoBI = -1;
             DrawColoFI = -1;
 
@@ -407,6 +392,10 @@ namespace TextPaint
             return (0 - SelectChar___) - 256;
         }
 
+        public int SelectChar___FavGetX()
+        {
+            return (0 - (SelectChar___ - 1)) - 256;
+        }
 
 
         public void SelectCharInit()
@@ -458,6 +447,8 @@ namespace TextPaint
         {
             if (SelectorState == 1)
             {
+                int CX = SelectCharGetCodeX();
+                int CXdbl = (CX >= 0) ? Core_.Screen_.CharDouble(SelectCharGetCodeX()) : 0;
                 int C = SelectCharGetCode();
                 string C_ = TextWork.CharCode(C, 2);
                 Core_.Screen_.PutChar(CharPosX + 1, CharPosY + 1, C_[0], Core_.PopupBack, Core_.PopupFore);
@@ -465,31 +456,49 @@ namespace TextPaint
                 Core_.Screen_.PutChar(CharPosX + 3, CharPosY + 1, C_[2], Core_.PopupBack, Core_.PopupFore);
                 Core_.Screen_.PutChar(CharPosX + 4, CharPosY + 1, C_[3], Core_.PopupBack, Core_.PopupFore);
                 Core_.Screen_.PutChar(CharPosX + 5, CharPosY + 1, C_[4], Core_.PopupBack, Core_.PopupFore);
+
+                Core_.Screen_.PutChar(CharPosX + 6, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 7, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 8, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                 Core_.Screen_.PutChar(CharPosX + 7, CharPosY + 1, C, Core_.PopupBack, Core_.PopupFore);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, '[', Core_.PopupBack, Core_.PopupFore);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ']', Core_.PopupBack, Core_.PopupFore);
+                int Cdbl = Core_.Screen_.CharDouble(C);
+                if (CXdbl != 0)
+                {
+                    Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 0, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                }
+                if (Cdbl != 0)
+                {
+                    Core_.Screen_.PutChar(CharPosX + 8, CharPosY + 1, Cdbl, Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, '>', Core_.PopupBack, Core_.PopupFore);
+                }
+                else
+                {
+                    Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, '[', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ']', Core_.PopupBack, Core_.PopupFore);
+                }
 
                 if (SelectChar___ < 0)
                 {
                     int TempCharCode = SelectChar___Y() * 16 + SelectChar___X();
                     if ((TempCharCode >= 32) && (TempCharCode <= 126))
                     {
-                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, '[', Core_.PopupBack, Core_.PopupFore);
-                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, TempCharCode, Core_.PopupBack, Core_.PopupFore);
-                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ']', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, '[', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, TempCharCode, Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 12, CharPosY + 1, ']', Core_.PopupBack, Core_.PopupFore);
                     }
                     else
                     {
-                        Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, 'F', Core_.PopupBack, Core_.PopupFore);
-                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore);
-                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, 'V', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, 'F', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, 'A', Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + 12, CharPosY + 1, 'V', Core_.PopupBack, Core_.PopupFore);
                     }
                 }
                 else
                 {
-                    Core_.Screen_.PutChar(CharPosX + 9, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                     Core_.Screen_.PutChar(CharPosX + 10, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                     Core_.Screen_.PutChar(CharPosX + 11, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
+                    Core_.Screen_.PutChar(CharPosX + 12, CharPosY + 1, ' ', Core_.PopupBack, Core_.PopupFore);
                 }
                 if (!WinBitmapEnabled)
                 {
@@ -563,7 +572,7 @@ namespace TextPaint
                 string EOL1 = ANSI_CR_.ToString();
                 string EOL2 = ANSI_LF_.ToString();
 
-                StateMsg = Core_.GetAttribText(TempA) + StateMsg + EOL1 + EOL2 + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(7);
+                StateMsg = CoreStatic.GetAttribText(TempA) + StateMsg + EOL1 + EOL2 + (AnsiMaxX_ + "x" + AnsiMaxY_).PadLeft(7);
 
                 for (int i = 0; i < StateMsg.Length; i++)
                 {
@@ -625,11 +634,17 @@ namespace TextPaint
                 if (SelectChar___ >= 0)
                 {
                     int C = SelectChar___Page() * 256;
+                    int Cdbl = 0;
                     for (int Y = 0; Y < 16; Y++)
                     {
                         for (int X = 0; X < 16; X++)
                         {
                             Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, C, Core_.PopupBack, Core_.PopupFore);
+                            Cdbl = Core_.Screen_.CharDouble(C);
+                            if (Cdbl != 0)
+                            {
+                                Core_.Screen_.PutChar(CharPosX + X * 2 + 3, CharPosY + Y + 2, Cdbl, Core_.PopupBack, Core_.PopupFore);
+                            }
                             C++;
                         }
                     }
@@ -637,11 +652,17 @@ namespace TextPaint
                 else
                 {
                     int C = 0;
+                    int Cdbl = 0;
                     for (int Y = 0; Y < 16; Y++)
                     {
                         for (int X = 0; X < 16; X++)
                         {
                             Core_.Screen_.PutChar(CharPosX + X * 2 + 2, CharPosY + Y + 2, FavChar[C], Core_.PopupBack, Core_.PopupFore);
+                            Cdbl = Core_.Screen_.CharDouble(FavChar[C]);
+                            if (Cdbl != 0)
+                            {
+                                Core_.Screen_.PutChar(CharPosX + X * 2 + 3, CharPosY + Y + 2, Cdbl, Core_.PopupBack, Core_.PopupFore);
+                            }
                             C++;
                         }
                     }
@@ -673,13 +694,42 @@ namespace TextPaint
                 return FavChar[SelectChar___FavGet()];
             }
         }
-        
+
+        int SelectCharGetCodeX()
+        {
+            if (SelectChar___X() == 0)
+            {
+                return -1;
+            }
+            if ((SelectChar___ - 1) >= 0)
+            {
+                return (SelectChar___ - 1);
+            }
+            else
+            {
+                return FavChar[SelectChar___FavGetX()];
+            }
+        }
+
         void SelectCharChange(int T)
         {
             if (SelectorState == 1)
             {
                 Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
-                Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                if (SelectChar___X() > 0)
+                {
+                    int CX = SelectCharGetCodeX();
+                    int CXdbl = Core_.Screen_.CharDouble(CX);
+                    if (CXdbl != 0)
+                    {
+                        Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 0, CharPosY + SelectChar___Y() + 2, CX, Core_.PopupBack, Core_.PopupFore);
+                        Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 1, CharPosY + SelectChar___Y() + 2, CXdbl, Core_.PopupBack, Core_.PopupFore);
+                    }
+                }
+                if (Core_.Screen_.CharDouble(SelectCharGetCode()) == 0)
+                {
+                    Core_.Screen_.PutChar(CharPosX + SelectChar___X() * 2 + 3, CharPosY + SelectChar___Y() + 2, ' ', Core_.PopupBack, Core_.PopupFore);
+                }
                 bool FavPage = (SelectChar___ < 0);
                 int PageDisplayed = FavPage ? 0 : (SelectChar___ >> 8);
 
@@ -902,18 +952,55 @@ namespace TextPaint
             switch (KeyName)
             {
                 default:
-                    if (((int)KeyChar >= 32) && ((int)KeyChar <= 255))
+                    if (SelectorState == 1)
                     {
-                        int C = SelectCharGetCode();
-                        if (SelectChar___ >= 0)
+                        if (((int)KeyChar >= 32) && ((int)KeyChar <= 255))
                         {
-                            FavCharSet(KeyChar, C);
+                            int C = SelectCharGetCode();
+                            if (SelectChar___ >= 0)
+                            {
+                                FavCharSet(KeyChar, C);
+                            }
+                            else
+                            {
+                                SelectChar___FavSet(KeyChar);
+                            }
+                            SelectCharRepaint();
                         }
-                        else
+                    }
+                    if (SelectorState == 2)
+                    {
+                        switch (KeyName)
                         {
-                            SelectChar___FavSet(KeyChar);
+                            case "D1":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 0, !CoreStatic.GetAttribBit(SelectColoA___, 0));
+                                SelectCharRepaint();
+                                return;
+                            case "D2":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 1, !CoreStatic.GetAttribBit(SelectColoA___, 1));
+                                SelectCharRepaint();
+                                return;
+                            case "D3":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 2, !CoreStatic.GetAttribBit(SelectColoA___, 2));
+                                SelectCharRepaint();
+                                return;
+                            case "D4":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 6, !CoreStatic.GetAttribBit(SelectColoA___, 6));
+                                SelectCharRepaint();
+                                return;
+                            case "D5":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 3, !CoreStatic.GetAttribBit(SelectColoA___, 3));
+                                SelectCharRepaint();
+                                return;
+                            case "D6":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 4, !CoreStatic.GetAttribBit(SelectColoA___, 4));
+                                SelectCharRepaint();
+                                return;
+                            case "D7":
+                                SelectColoA___ = CoreStatic.SetAttribBit(SelectColoA___, 5, !CoreStatic.GetAttribBit(SelectColoA___, 5));
+                                SelectCharRepaint();
+                                return;
                         }
-                        SelectCharRepaint();
                     }
                     break;
                 case "Resize":
@@ -1076,55 +1163,6 @@ namespace TextPaint
                         SelectCharRepaint();
                     }
                     return;
-                case "D1":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 0, !Core_.GetAttribBit(SelectColoA___, 0));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D2":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 1, !Core_.GetAttribBit(SelectColoA___, 1));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D3":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 2, !Core_.GetAttribBit(SelectColoA___, 2));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D4":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 6, !Core_.GetAttribBit(SelectColoA___, 6));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D5":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 3, !Core_.GetAttribBit(SelectColoA___, 3));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D6":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 4, !Core_.GetAttribBit(SelectColoA___, 4));
-                        SelectCharRepaint();
-                    }
-                    return;
-                case "D7":
-                    if (SelectorState == 2)
-                    {
-                        SelectColoA___ = Core_.SetAttribBit(SelectColoA___, 5, !Core_.GetAttribBit(SelectColoA___, 5));
-                        SelectCharRepaint();
-                    }
-                    return;
             }
         }
         
@@ -1136,13 +1174,14 @@ namespace TextPaint
             if ((Set == 1) || (Set == 3))
             {
                 DrawCharI = SelectCharGetCode();
+                DrawCharIdbl = Core_.Screen_.CharDouble(DrawCharI);
                 DrawColoBI = SelectColoB___;
                 DrawColoFI = SelectColoF___;
                 DrawColoAI = SelectColoA___;
-                Core_.AnsiMaxX = AnsiMaxX_;
-                Core_.AnsiMaxY = AnsiMaxY_;
-                Core_.ANSI_CR = ANSI_CR_;
-                Core_.ANSI_LF = ANSI_LF_;
+                Core_.CoreAnsi_.AnsiMaxX = AnsiMaxX_;
+                Core_.CoreAnsi_.AnsiMaxY = AnsiMaxY_;
+                Core_.CoreAnsi_.ANSI_CR = ANSI_CR_;
+                Core_.CoreAnsi_.ANSI_LF = ANSI_LF_;
                 for (int i = 0; i < 11; i++)
                 {
                     Frame1C[0][i] = DrawCharI;
@@ -1170,6 +1209,7 @@ namespace TextPaint
         }
 
         public int DrawCharI;
+        public int DrawCharIdbl;
         public int DrawColoBI;
         public int DrawColoFI;
         public int DrawColoAI;
@@ -1183,19 +1223,20 @@ namespace TextPaint
         {
             DrawCharI_ = DrawCharI;
             DrawCharI = C;
-
+            DrawCharIdbl = Core_.Screen_.CharDouble(DrawCharI);
         }
 
         public int DrawCharCustomGet()
         {
             int C = DrawCharI;
             DrawCharI = DrawCharI_;
+            DrawCharIdbl = Core_.Screen_.CharDouble(DrawCharI);
             return C;
         }
 
 
 
-        public void FrameCharPut1(int X, int Y, bool ForceT, bool ForceB, bool ForceL, bool ForceR, int FontW, int FontH)
+        public void FrameCharPut1(int X, int Y, bool ForceT, bool ForceB, bool ForceL, bool ForceR, int FontW, int FontH, bool DoubleChar)
         {
             int CharSide = 0;
             List<int> CharT  = new List<int>(new int[] { FrameChar[1],  FrameChar[2],  FrameChar[3],  FrameChar[4],  FrameChar[5],  FrameChar[6],  FrameChar[7]  });
@@ -1204,64 +1245,83 @@ namespace TextPaint
             List<int> CharR  = new List<int>(new int[] { FrameChar[0],  FrameChar[3],  FrameChar[4],  FrameChar[6],  FrameChar[7],  FrameChar[9],  FrameChar[10] });
             CharSide += ((ForceT || CharT.Contains(CharGet(X + 0, Y - FontH))) ? 1 : 0);
             CharSide += ((ForceB || CharB.Contains(CharGet(X + 0, Y + FontH))) ? 2 : 0);
-            CharSide += ((ForceL || CharL.Contains(CharGet(X - FontW, Y + 0))) ? 4 : 0);
-            CharSide += ((ForceR || CharR.Contains(CharGet(X + FontW, Y + 0))) ? 8 : 0);
+            if (DoubleChar)
+            {
+                CharSide += ((ForceL || CharL.Contains(CharGet(X - FontW - FontW, Y + 0))) ? 4 : 0);
+                CharSide += ((ForceR || CharR.Contains(CharGet(X + FontW + FontW, Y + 0))) ? 8 : 0);
+            }
+            else
+            {
+                CharSide += ((ForceL || CharL.Contains(CharGet(X - FontW, Y + 0))) ? 4 : 0);
+                CharSide += ((ForceR || CharR.Contains(CharGet(X + FontW, Y + 0))) ? 8 : 0);
+            }
             switch (CharSide)
             {
-                case 0:  CharPut(X, Y, FrameChar[6]);  break;
-                case 1:  CharPut(X, Y, FrameChar[1]);  break;
-                case 2:  CharPut(X, Y, FrameChar[1]);  break;
-                case 3:  CharPut(X, Y, FrameChar[1]);  break;
-                case 4:  CharPut(X, Y, FrameChar[0]);  break;
-                case 5:  CharPut(X, Y, FrameChar[10]); break;
-                case 6:  CharPut(X, Y, FrameChar[4]);  break;
-                case 7:  CharPut(X, Y, FrameChar[7]);  break;
-                case 8:  CharPut(X, Y, FrameChar[0]);  break;
-                case 9:  CharPut(X, Y, FrameChar[8]);  break;
-                case 10: CharPut(X, Y, FrameChar[2]);  break;
-                case 11: CharPut(X, Y, FrameChar[5]);  break;
-                case 12: CharPut(X, Y, FrameChar[0]);  break;
-                case 13: CharPut(X, Y, FrameChar[9]);  break;
-                case 14: CharPut(X, Y, FrameChar[3]);  break;
-                case 15: CharPut(X, Y, FrameChar[6]);  break;
+                case 0:  CharPutDbl(X, Y, FrameChar[6], FontW); break;
+                case 1:  CharPutDbl(X, Y, FrameChar[1], FontW); break;
+                case 2:  CharPutDbl(X, Y, FrameChar[1], FontW); break;
+                case 3:  CharPutDbl(X, Y, FrameChar[1], FontW); break;
+                case 4:  CharPutDbl(X, Y, FrameChar[0], FontW); break;
+                case 5:  CharPutDbl(X, Y, FrameChar[10], FontW); break;
+                case 6:  CharPutDbl(X, Y, FrameChar[4], FontW); break;
+                case 7:  CharPutDbl(X, Y, FrameChar[7], FontW); break;
+                case 8:  CharPutDbl(X, Y, FrameChar[0], FontW); break;
+                case 9:  CharPutDbl(X, Y, FrameChar[8], FontW); break;
+                case 10: CharPutDbl(X, Y, FrameChar[2], FontW); break;
+                case 11: CharPutDbl(X, Y, FrameChar[5], FontW); break;
+                case 12: CharPutDbl(X, Y, FrameChar[0], FontW); break;
+                case 13: CharPutDbl(X, Y, FrameChar[9], FontW); break;
+                case 14: CharPutDbl(X, Y, FrameChar[3], FontW); break;
+                case 15: CharPutDbl(X, Y, FrameChar[6], FontW); break;
             }
         }
 
-        public void FrameCharPut2(int X, int Y, bool ForceTR, bool ForceBL, bool ForceTL, bool ForceBR, int FontW, int FontH)
+        public void FrameCharPut2(int X, int Y, bool ForceTR, bool ForceBL, bool ForceTL, bool ForceBR, int FontW, int FontH, bool DoubleChar)
         {
             int CharSide = 0;
             List<int> CharTR = new List<int>(new int[] { FrameChar[12], FrameChar[13], FrameChar[14], FrameChar[15], FrameChar[16], FrameChar[17], FrameChar[18] });
             List<int> CharBL = new List<int>(new int[] { FrameChar[12], FrameChar[16], FrameChar[17], FrameChar[18], FrameChar[19], FrameChar[20], FrameChar[21] });
             List<int> CharTL = new List<int>(new int[] { FrameChar[11], FrameChar[13], FrameChar[14], FrameChar[16], FrameChar[17], FrameChar[19], FrameChar[20] });
             List<int> CharBR = new List<int>(new int[] { FrameChar[11], FrameChar[14], FrameChar[15], FrameChar[17], FrameChar[18], FrameChar[20], FrameChar[21] });
-            CharSide += ((ForceTR || CharTR.Contains(CharGet(X + FontW, Y - FontH))) ? 1 : 0);
-            CharSide += ((ForceBL || CharBL.Contains(CharGet(X - FontW, Y + FontH))) ? 2 : 0);
-            CharSide += ((ForceTL || CharTL.Contains(CharGet(X - FontW, Y - FontH))) ? 4 : 0);
-            CharSide += ((ForceBR || CharBR.Contains(CharGet(X + FontW, Y + FontH))) ? 8 : 0);
+            if (DoubleChar)
+            {
+                CharSide += ((ForceTR || CharTR.Contains(CharGet(X + FontW + FontW, Y - FontH))) ? 1 : 0);
+                CharSide += ((ForceBL || CharBL.Contains(CharGet(X - FontW - FontW, Y + FontH))) ? 2 : 0);
+                CharSide += ((ForceTL || CharTL.Contains(CharGet(X - FontW - FontW, Y - FontH))) ? 4 : 0);
+                CharSide += ((ForceBR || CharBR.Contains(CharGet(X + FontW + FontW, Y + FontH))) ? 8 : 0);
+            }
+            else
+            {
+                CharSide += ((ForceTR || CharTR.Contains(CharGet(X + FontW, Y - FontH))) ? 1 : 0);
+                CharSide += ((ForceBL || CharBL.Contains(CharGet(X - FontW, Y + FontH))) ? 2 : 0);
+                CharSide += ((ForceTL || CharTL.Contains(CharGet(X - FontW, Y - FontH))) ? 4 : 0);
+                CharSide += ((ForceBR || CharBR.Contains(CharGet(X + FontW, Y + FontH))) ? 8 : 0);
+            }
             switch (CharSide)
             {
-                case 0:  CharPut(X, Y, FrameChar[17]); break;
-                case 1:  CharPut(X, Y, FrameChar[12]); break;
-                case 2:  CharPut(X, Y, FrameChar[12]); break;
-                case 3:  CharPut(X, Y, FrameChar[12]); break;
-                case 4:  CharPut(X, Y, FrameChar[11]); break;
-                case 5:  CharPut(X, Y, FrameChar[21]); break;
-                case 6:  CharPut(X, Y, FrameChar[15]); break;
-                case 7:  CharPut(X, Y, FrameChar[18]); break;
-                case 8:  CharPut(X, Y, FrameChar[11]); break;
-                case 9:  CharPut(X, Y, FrameChar[19]); break;
-                case 10: CharPut(X, Y, FrameChar[13]); break;
-                case 11: CharPut(X, Y, FrameChar[16]); break;
-                case 12: CharPut(X, Y, FrameChar[11]); break;
-                case 13: CharPut(X, Y, FrameChar[20]); break;
-                case 14: CharPut(X, Y, FrameChar[14]); break;
-                case 15: CharPut(X, Y, FrameChar[17]); break;
+                case 0:  CharPutDbl(X, Y, FrameChar[17], FontW); break;
+                case 1:  CharPutDbl(X, Y, FrameChar[12], FontW); break;
+                case 2:  CharPutDbl(X, Y, FrameChar[12], FontW); break;
+                case 3:  CharPutDbl(X, Y, FrameChar[12], FontW); break;
+                case 4:  CharPutDbl(X, Y, FrameChar[11], FontW); break;
+                case 5:  CharPutDbl(X, Y, FrameChar[21], FontW); break;
+                case 6:  CharPutDbl(X, Y, FrameChar[15], FontW); break;
+                case 7:  CharPutDbl(X, Y, FrameChar[18], FontW); break;
+                case 8:  CharPutDbl(X, Y, FrameChar[11], FontW); break;
+                case 9:  CharPutDbl(X, Y, FrameChar[19], FontW); break;
+                case 10: CharPutDbl(X, Y, FrameChar[13], FontW); break;
+                case 11: CharPutDbl(X, Y, FrameChar[16], FontW); break;
+                case 12: CharPutDbl(X, Y, FrameChar[11], FontW); break;
+                case 13: CharPutDbl(X, Y, FrameChar[20], FontW); break;
+                case 14: CharPutDbl(X, Y, FrameChar[14], FontW); break;
+                case 15: CharPutDbl(X, Y, FrameChar[17], FontW); break;
             }
         }
 
 
-        public void FrameCharPut(int Dir, int FontW, int FontH)
+        public void FrameCharPut(int Dir, int FontW, int FontH, bool CharDbl)
         {
+            int FontW_ = CharDbl ? (FontW + FontW) : FontW;
             int CharSide = 0;
             
             List<int> CharT  = new List<int>(new int[] { FrameChar[1],  FrameChar[2],  FrameChar[3],  FrameChar[4],  FrameChar[5],  FrameChar[6],  FrameChar[7]  });
@@ -1279,144 +1339,144 @@ namespace TextPaint
                 case 0:
                     {
                         CharSide += (CharB.Contains(CharGet( 0, FontH)) ? 1 : 0);
-                        CharSide += (CharL.Contains(CharGet(-FontW,  0)) ? 2 : 0);
-                        CharSide += (CharR.Contains(CharGet(FontW,  0)) ? 4 : 0);
+                        CharSide += (CharL.Contains(CharGet(-FontW_,  0)) ? 2 : 0);
+                        CharSide += (CharR.Contains(CharGet(FontW_,  0)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[1]);  break;
-                            case 1: CharPut(0, 0, FrameChar[1]);  break;
-                            case 2: CharPut(0, 0, FrameChar[10]); break;
-                            case 3: CharPut(0, 0, FrameChar[7]);  break;
-                            case 4: CharPut(0, 0, FrameChar[8]);  break;
-                            case 5: CharPut(0, 0, FrameChar[5]);  break;
-                            case 6: CharPut(0, 0, FrameChar[9]);  break;
-                            case 7: CharPut(0, 0, FrameChar[6]);  break;
+                            case 0: CharPutDbl(0, 0, FrameChar[1], FontW);  break;
+                            case 1: CharPutDbl(0, 0, FrameChar[1], FontW);  break;
+                            case 2: CharPutDbl(0, 0, FrameChar[10], FontW); break;
+                            case 3: CharPutDbl(0, 0, FrameChar[7], FontW);  break;
+                            case 4: CharPutDbl(0, 0, FrameChar[8], FontW);  break;
+                            case 5: CharPutDbl(0, 0, FrameChar[5], FontW);  break;
+                            case 6: CharPutDbl(0, 0, FrameChar[9], FontW);  break;
+                            case 7: CharPutDbl(0, 0, FrameChar[6], FontW);  break;
                         }
                     }
                     break;
                 case 1:
                     {
                         CharSide += (CharT.Contains(CharGet( 0, -FontH)) ? 1 : 0);
-                        CharSide += (CharR.Contains(CharGet(FontW,  0)) ? 2 : 0);
-                        CharSide += (CharL.Contains(CharGet(-FontW,  0)) ? 4 : 0);
+                        CharSide += (CharR.Contains(CharGet(FontW_,  0)) ? 2 : 0);
+                        CharSide += (CharL.Contains(CharGet(-FontW_,  0)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[1]);  break;
-                            case 1: CharPut(0, 0, FrameChar[1]);  break;
-                            case 2: CharPut(0, 0, FrameChar[2]);  break;
-                            case 3: CharPut(0, 0, FrameChar[5]);  break;
-                            case 4: CharPut(0, 0, FrameChar[4]);  break;
-                            case 5: CharPut(0, 0, FrameChar[7]);  break;
-                            case 6: CharPut(0, 0, FrameChar[3]);  break;
-                            case 7: CharPut(0, 0, FrameChar[6]);  break;
+                            case 0: CharPutDbl(0, 0, FrameChar[1], FontW);  break;
+                            case 1: CharPutDbl(0, 0, FrameChar[1], FontW);  break;
+                            case 2: CharPutDbl(0, 0, FrameChar[2], FontW);  break;
+                            case 3: CharPutDbl(0, 0, FrameChar[5], FontW);  break;
+                            case 4: CharPutDbl(0, 0, FrameChar[4], FontW);  break;
+                            case 5: CharPutDbl(0, 0, FrameChar[7], FontW);  break;
+                            case 6: CharPutDbl(0, 0, FrameChar[3], FontW);  break;
+                            case 7: CharPutDbl(0, 0, FrameChar[6], FontW);  break;
                         }
                     }
                     break;
                 case 2:
                     {
-                        CharSide += (CharR.Contains(CharGet(FontW,  0)) ? 1 : 0);
+                        CharSide += (CharR.Contains(CharGet(FontW_,  0)) ? 1 : 0);
                         CharSide += (CharB.Contains(CharGet( 0, FontH)) ? 2 : 0);
                         CharSide += (CharT.Contains(CharGet( 0, -FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[0]);  break;
-                            case 1: CharPut(0, 0, FrameChar[0]);  break;
-                            case 2: CharPut(0, 0, FrameChar[4]);  break;
-                            case 3: CharPut(0, 0, FrameChar[3]);  break;
-                            case 4: CharPut(0, 0, FrameChar[10]); break;
-                            case 5: CharPut(0, 0, FrameChar[9]);  break;
-                            case 6: CharPut(0, 0, FrameChar[7]);  break;
-                            case 7: CharPut(0, 0, FrameChar[6]);  break;
+                            case 0: CharPutDbl(0, 0, FrameChar[0], FontW);  break;
+                            case 1: CharPutDbl(0, 0, FrameChar[0], FontW);  break;
+                            case 2: CharPutDbl(0, 0, FrameChar[4], FontW);  break;
+                            case 3: CharPutDbl(0, 0, FrameChar[3], FontW);  break;
+                            case 4: CharPutDbl(0, 0, FrameChar[10], FontW); break;
+                            case 5: CharPutDbl(0, 0, FrameChar[9], FontW);  break;
+                            case 6: CharPutDbl(0, 0, FrameChar[7], FontW);  break;
+                            case 7: CharPutDbl(0, 0, FrameChar[6], FontW);  break;
                         }
                     }
                     break;
                 case 3:
                     {
-                        CharSide += (CharL.Contains(CharGet(-FontW,  0)) ? 1 : 0);
+                        CharSide += (CharL.Contains(CharGet(-FontW_,  0)) ? 1 : 0);
                         CharSide += (CharT.Contains(CharGet( 0, -FontH)) ? 2 : 0);
                         CharSide += (CharB.Contains(CharGet( 0, FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[0]);  break;
-                            case 1: CharPut(0, 0, FrameChar[0]);  break;
-                            case 2: CharPut(0, 0, FrameChar[8]);  break;
-                            case 3: CharPut(0, 0, FrameChar[9]);  break;
-                            case 4: CharPut(0, 0, FrameChar[2]);  break;
-                            case 5: CharPut(0, 0, FrameChar[3]);  break;
-                            case 6: CharPut(0, 0, FrameChar[5]);  break;
-                            case 7: CharPut(0, 0, FrameChar[6]);  break;
+                            case 0: CharPutDbl(0, 0, FrameChar[0], FontW);  break;
+                            case 1: CharPutDbl(0, 0, FrameChar[0], FontW);  break;
+                            case 2: CharPutDbl(0, 0, FrameChar[8], FontW);  break;
+                            case 3: CharPutDbl(0, 0, FrameChar[9], FontW);  break;
+                            case 4: CharPutDbl(0, 0, FrameChar[2], FontW);  break;
+                            case 5: CharPutDbl(0, 0, FrameChar[3], FontW);  break;
+                            case 6: CharPutDbl(0, 0, FrameChar[5], FontW);  break;
+                            case 7: CharPutDbl(0, 0, FrameChar[6], FontW);  break;
                         }
                     }
                     break;
                 case 4:
                     {
-                        CharSide += (CharBL.Contains(CharGet(-FontW, FontH)) ? 1 : 0);
-                        CharSide += (CharTL.Contains(CharGet(-FontW, -FontH)) ? 2 : 0);
-                        CharSide += (CharBR.Contains(CharGet(FontW, FontH)) ? 4 : 0);
+                        CharSide += (CharBL.Contains(CharGet(-FontW_, FontH)) ? 1 : 0);
+                        CharSide += (CharTL.Contains(CharGet(-FontW_, -FontH)) ? 2 : 0);
+                        CharSide += (CharBR.Contains(CharGet(FontW_, FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[12]); break;
-                            case 1: CharPut(0, 0, FrameChar[12]); break;
-                            case 2: CharPut(0, 0, FrameChar[21]); break;
-                            case 3: CharPut(0, 0, FrameChar[18]); break;
-                            case 4: CharPut(0, 0, FrameChar[19]); break;
-                            case 5: CharPut(0, 0, FrameChar[16]); break;
-                            case 6: CharPut(0, 0, FrameChar[20]); break;
-                            case 7: CharPut(0, 0, FrameChar[17]); break;
+                            case 0: CharPutDbl(0, 0, FrameChar[12], FontW); break;
+                            case 1: CharPutDbl(0, 0, FrameChar[12], FontW); break;
+                            case 2: CharPutDbl(0, 0, FrameChar[21], FontW); break;
+                            case 3: CharPutDbl(0, 0, FrameChar[18], FontW); break;
+                            case 4: CharPutDbl(0, 0, FrameChar[19], FontW); break;
+                            case 5: CharPutDbl(0, 0, FrameChar[16], FontW); break;
+                            case 6: CharPutDbl(0, 0, FrameChar[20], FontW); break;
+                            case 7: CharPutDbl(0, 0, FrameChar[17], FontW); break;
                         }
                     }
                     break;
                 case 5:
                     {
-                        CharSide += (CharTR.Contains(CharGet(FontW, -FontH)) ? 1 : 0);
-                        CharSide += (CharBR.Contains(CharGet(FontW, FontH)) ? 2 : 0);
-                        CharSide += (CharTL.Contains(CharGet(-FontW, -FontH)) ? 4 : 0);
+                        CharSide += (CharTR.Contains(CharGet(FontW_, -FontH)) ? 1 : 0);
+                        CharSide += (CharBR.Contains(CharGet(FontW_, FontH)) ? 2 : 0);
+                        CharSide += (CharTL.Contains(CharGet(-FontW_, -FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[12]); break;
-                            case 1: CharPut(0, 0, FrameChar[12]); break;
-                            case 2: CharPut(0, 0, FrameChar[13]); break;
-                            case 3: CharPut(0, 0, FrameChar[16]); break;
-                            case 4: CharPut(0, 0, FrameChar[15]); break;
-                            case 5: CharPut(0, 0, FrameChar[18]); break;
-                            case 6: CharPut(0, 0, FrameChar[14]); break;
-                            case 7: CharPut(0, 0, FrameChar[17]); break;
+                            case 0: CharPutDbl(0, 0, FrameChar[12], FontW); break;
+                            case 1: CharPutDbl(0, 0, FrameChar[12], FontW); break;
+                            case 2: CharPutDbl(0, 0, FrameChar[13], FontW); break;
+                            case 3: CharPutDbl(0, 0, FrameChar[16], FontW); break;
+                            case 4: CharPutDbl(0, 0, FrameChar[15], FontW); break;
+                            case 5: CharPutDbl(0, 0, FrameChar[18], FontW); break;
+                            case 6: CharPutDbl(0, 0, FrameChar[14], FontW); break;
+                            case 7: CharPutDbl(0, 0, FrameChar[17], FontW); break;
                         }
                     }
                     break;
                 case 6:
                     {
-                        CharSide += (CharTL.Contains(CharGet(FontW, FontH)) ? 1 : 0);
-                        CharSide += (CharTR.Contains(CharGet(-FontW, FontH)) ? 2 : 0);
-                        CharSide += (CharBL.Contains(CharGet(FontW, -FontH)) ? 4 : 0);
+                        CharSide += (CharTL.Contains(CharGet(FontW_, FontH)) ? 1 : 0);
+                        CharSide += (CharTR.Contains(CharGet(-FontW_, FontH)) ? 2 : 0);
+                        CharSide += (CharBL.Contains(CharGet(FontW_, -FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[11]); break;
-                            case 1: CharPut(0, 0, FrameChar[11]); break;
-                            case 2: CharPut(0, 0, FrameChar[15]); break;
-                            case 3: CharPut(0, 0, FrameChar[14]); break;
-                            case 4: CharPut(0, 0, FrameChar[21]); break;
-                            case 5: CharPut(0, 0, FrameChar[20]); break;
-                            case 6: CharPut(0, 0, FrameChar[18]); break;
-                            case 7: CharPut(0, 0, FrameChar[17]); break;
+                            case 0: CharPutDbl(0, 0, FrameChar[11], FontW); break;
+                            case 1: CharPutDbl(0, 0, FrameChar[11], FontW); break;
+                            case 2: CharPutDbl(0, 0, FrameChar[15], FontW); break;
+                            case 3: CharPutDbl(0, 0, FrameChar[14], FontW); break;
+                            case 4: CharPutDbl(0, 0, FrameChar[21], FontW); break;
+                            case 5: CharPutDbl(0, 0, FrameChar[20], FontW); break;
+                            case 6: CharPutDbl(0, 0, FrameChar[18], FontW); break;
+                            case 7: CharPutDbl(0, 0, FrameChar[17], FontW); break;
                         }
                     }
                     break;
                 case 7:
                     {
-                        CharSide += (CharTL.Contains(CharGet(-FontW, -FontH)) ? 1 : 0);
-                        CharSide += (CharTR.Contains(CharGet(FontW, -FontH)) ? 2 : 0);
-                        CharSide += (CharBL.Contains(CharGet(-FontW, FontH)) ? 4 : 0);
+                        CharSide += (CharTL.Contains(CharGet(-FontW_, -FontH)) ? 1 : 0);
+                        CharSide += (CharTR.Contains(CharGet(FontW_, -FontH)) ? 2 : 0);
+                        CharSide += (CharBL.Contains(CharGet(-FontW_, FontH)) ? 4 : 0);
                         switch (CharSide)
                         {
-                            case 0: CharPut(0, 0, FrameChar[11]); break;
-                            case 1: CharPut(0, 0, FrameChar[11]); break;
-                            case 2: CharPut(0, 0, FrameChar[19]); break;
-                            case 3: CharPut(0, 0, FrameChar[20]); break;
-                            case 4: CharPut(0, 0, FrameChar[13]); break;
-                            case 5: CharPut(0, 0, FrameChar[14]); break;
-                            case 6: CharPut(0, 0, FrameChar[16]); break;
-                            case 7: CharPut(0, 0, FrameChar[17]); break;
+                            case 0: CharPutDbl(0, 0, FrameChar[11], FontW); break;
+                            case 1: CharPutDbl(0, 0, FrameChar[11], FontW); break;
+                            case 2: CharPutDbl(0, 0, FrameChar[19], FontW); break;
+                            case 3: CharPutDbl(0, 0, FrameChar[20], FontW); break;
+                            case 4: CharPutDbl(0, 0, FrameChar[13], FontW); break;
+                            case 5: CharPutDbl(0, 0, FrameChar[14], FontW); break;
+                            case 6: CharPutDbl(0, 0, FrameChar[16], FontW); break;
+                            case 7: CharPutDbl(0, 0, FrameChar[17], FontW); break;
                         }
                     }
                     break;
@@ -1524,7 +1584,28 @@ namespace TextPaint
                 }
             }
         }
-        
+
+        public void CharPutDbl(int X, int Y, int C, int Offset)
+        {
+            AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
+            Item.BlankChar();
+            Item.Item_Char = C;
+            Item.Item_ColorB = DrawColoBI;
+            Item.Item_ColorF = DrawColoFI;
+            Core_.CharPut(Core_.CursorX + X, Core_.CursorY + Y, Item, false);
+
+            int C_ = Core_.Screen_.CharDouble(C);
+            if (C_ != 0)
+            {
+                AnsiLineOccupyItem Item_ = new AnsiLineOccupyItem();
+                Item_.BlankChar();
+                Item_.Item_Char = C_;
+                Item_.Item_ColorB = DrawColoBI;
+                Item_.Item_ColorF = DrawColoFI;
+                Core_.CharPut(Core_.CursorX + X + Offset, Core_.CursorY + Y, Item_, false);
+            }
+        }
+
         public void CharPut(int X, int Y, int C)
         {
             AnsiLineOccupyItem Item = new AnsiLineOccupyItem();
@@ -1539,7 +1620,42 @@ namespace TextPaint
         {
             return Core_.CharGet(Core_.CursorX + X, Core_.CursorY + Y, true, false);
         }
-        
+
+        public bool DoubleDrawMode()
+        {
+            if (Frame1I == 0)
+            {
+                if (DrawCharIdbl != 0)
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (DiamondType == 0)
+                {
+                    for (int i = 0; i <= 10; i++)
+                    {
+                        if (Core_.Screen_.CharDouble(FrameChar[i]) != 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+                else
+                {
+                    for (int i = 11; i <= 21; i++)
+                    {
+                        if (Core_.Screen_.CharDouble(FrameChar[i]) != 0)
+                        {
+                            return true;
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
         public void RectangleDraw(int X, int Y, int W__, int H__, int T, int FontW, int FontH)
         {
             int W = W__ * FontW;
@@ -1554,54 +1670,124 @@ namespace TextPaint
                 RectangleDraw(X, Y + H, W__, 0 - H__, T, FontW, FontH);
                 return;
             }
-            
+
+            bool DoubleCharMode = DoubleDrawMode();
+            if (DoubleCharMode)
+            {
+                if ((W % (FontW << 1)) == 0)
+                {
+                    W -= FontW;
+                }
+            }
+            if (W <= 0)
+            {
+                return;
+            }
+
             if (T == 1)
             {
                 if (Frame1I == 0)
                 {
-                    for (int i = 0; i <= W; i += FontW)
+                    if (DoubleCharMode)
                     {
-                        CharPut(X + i, Y + 0, DrawCharI);
-                        CharPut(X + i, Y + H, DrawCharI);
+                        for (int i = 0; i < W; i += (FontW << 1))
+                        {
+                            CharPut(X + i, Y + 0, DrawCharI);
+                            CharPut(X + i + FontW, Y + 0, DrawCharIdbl);
+                            CharPut(X + i, Y + H, DrawCharI);
+                            CharPut(X + i + FontW, Y + H, DrawCharIdbl);
+                        }
+                        for (int i = 0; i <= H; i += FontH)
+                        {
+                            CharPut(X + 0, Y + i, DrawCharI);
+                            CharPut(X + FontW, Y + i, DrawCharIdbl);
+                            CharPut(X + W - FontW, Y + i, DrawCharI);
+                            CharPut(X + W - 0, Y + i, DrawCharIdbl);
+                        }
                     }
-                    for (int i = 0; i <= H; i += FontH)
+                    else
                     {
-                        CharPut(X + 0, Y + i, DrawCharI);
-                        CharPut(X + W, Y + i, DrawCharI);
+                        for (int i = 0; i <= W; i += FontW)
+                        {
+                            CharPut(X + i, Y + 0, DrawCharI);
+                            CharPut(X + i, Y + H, DrawCharI);
+                        }
+                        for (int i = 0; i <= H; i += FontH)
+                        {
+                            CharPut(X + 0, Y + i, DrawCharI);
+                            CharPut(X + W, Y + i, DrawCharI);
+                        }
                     }
                 }
                 else
                 {
-                    for (int i = FontW; i < W; i += FontW)
+                    if (DoubleCharMode)
                     {
-                        FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH);
-                        FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH);
+                        for (int i = (FontW << 1); i < (W - FontW); i += (FontW << 1))
+                        {
+                            FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH, true);
+                            FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH, true);
+                        }
+                        for (int i = FontH; i < H; i += FontH)
+                        {
+                            FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + i, true, true, false, false, FontW, FontH, true);
+                        }
+                        if ((W != 1) && (H != 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + 0, false, true, true, false, FontW, FontH, true);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + H, true, false, true, false, FontW, FontH, true);
+                        }
+                        if ((W == 1) && (H != 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH, true);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH, true);
+                        }
+                        if ((W != 1) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + 0, false, false, true, false, FontW, FontH, true);
+                        }
+                        if ((W == 1) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH, true);
+                        }
                     }
-                    for (int i = FontH; i < H; i += FontH)
+                    else
                     {
-                        FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH);
-                        FrameCharPut1(X + W, Y + i, true, true, false, false, FontW, FontH);
-                    }
-                    if ((W != 0) && (H != 0))
-                    {
-                        FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + 0, false, true, true, false, FontW, FontH);
-                        FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + H, true, false, true, false, FontW, FontH);
-                    }
-                    if ((W == 0) && (H != 0))
-                    {
-                        FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH);
-                        FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH);
-                    }
-                    if ((W != 0) && (H == 0))
-                    {
-                        FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + 0, false, false, true, false, FontW, FontH);
-                    }
-                    if ((W == 0) && (H == 0))
-                    {
-                        FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH);
+                        for (int i = FontW; i < W; i += FontW)
+                        {
+                            FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH, false);
+                            FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH, false);
+                        }
+                        for (int i = FontH; i < H; i += FontH)
+                        {
+                            FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + i, true, true, false, false, FontW, FontH, false);
+                        }
+                        if ((W != 0) && (H != 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + 0, false, true, true, false, FontW, FontH, false);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + H, true, false, true, false, FontW, FontH, false);
+                        }
+                        if ((W == 0) && (H != 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH, false);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH, false);
+                        }
+                        if ((W != 0) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + 0, false, false, true, false, FontW, FontH, false);
+                        }
+                        if ((W == 0) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH, false);
+                        }
                     }
                 }
             }
@@ -1609,63 +1795,131 @@ namespace TextPaint
             {
                 if (Frame1I == 0)
                 {
-                    for (int i = 0; i <= H; i += FontH)
+                    if (DoubleCharMode)
                     {
-                        for (int ii = 0; ii <= W; ii += FontW)
+                        for (int i = 0; i <= H; i += FontH)
                         {
-                            CharPut(X + ii, Y + i, DrawCharI);
+                            for (int ii = 0; ii <= W; ii += (FontW << 1))
+                            {
+                                CharPut(X + ii, Y + i, DrawCharI);
+                                CharPut(X + ii + FontW, Y + i, DrawCharIdbl);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        for (int i = 0; i <= H; i += FontH)
+                        {
+                            for (int ii = 0; ii <= W; ii += FontW)
+                            {
+                                CharPut(X + ii, Y + i, DrawCharI);
+                            }
                         }
                     }
                 }
                 else
                 {
-                    if ((W != 0) && (H != 0))
+                    if (DoubleCharMode)
                     {
-                        for (int i = FontW; i < W; i += FontW)
+                        if ((W != 0) && (H != 0))
                         {
-                            FrameCharPut1(X + i, Y + 0, false, true, true, true, FontW, FontH);
-                            FrameCharPut1(X + i, Y + H, true, false, true, true, FontW, FontH);
-                        }
-                        for (int i = FontH; i < H; i += FontH)
-                        {
-                            FrameCharPut1(X + 0, Y + i, true, true, false, true, FontW, FontH);
-                            FrameCharPut1(X + W, Y + i, true, true, true, false, FontW, FontH);
-                        }
-                        for (int i_Y = FontH; i_Y < H; i_Y += FontH)
-                        {
-                            for (int i_X = FontW; i_X < W; i_X += FontW)
+                            for (int i = (FontW << 1); i < W; i += (FontW << 1))
                             {
-                                FrameCharPut1(X + i_X, Y + i_Y, true, true, true, true, FontW, FontH);
+                                FrameCharPut1(X + i, Y + 0, false, true, true, true, FontW, FontH, true);
+                                FrameCharPut1(X + i, Y + H, true, false, true, true, FontW, FontH, true);
                             }
+                            for (int i = FontH; i < H; i += FontH)
+                            {
+                                FrameCharPut1(X + 0, Y + i, true, true, false, true, FontW, FontH, true);
+                                FrameCharPut1(X + W - FontW, Y + i, true, true, true, false, FontW, FontH, true);
+                            }
+                            for (int i_Y = FontH; i_Y < H; i_Y += FontH)
+                            {
+                                for (int i_X = (FontW << 1); i_X < W; i_X += (FontW << 1))
+                                {
+                                    FrameCharPut1(X + i_X, Y + i_Y, true, true, true, true, FontW, FontH, true);
+                                }
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + 0, false, true, true, false, FontW, FontH, true);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W - FontW, Y + H, true, false, true, false, FontW, FontH, true);
                         }
-                        FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + 0, false, true, true, false, FontW, FontH);
-                        FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + H, true, false, true, false, FontW, FontH);
-                    }
-                    if ((W == 0) && (H != 0))
-                    {
-                        for (int i = FontH; i < H; i += FontH)
+                        if ((W == 1) && (H != 0))
                         {
-                            FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH);
-                            FrameCharPut1(X + W, Y + i, true, true, false, false, FontW, FontH);
+                            for (int i = FontH; i < H; i += FontH)
+                            {
+                                FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH, true);
+                                FrameCharPut1(X + W - FontW, Y + i, true, true, false, false, FontW, FontH, true);
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH, true);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH, true);
                         }
-                        FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH);
-                        FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH);
-                    }
-                    if ((W != 0) && (H == 0))
-                    {
-                        for (int i = FontW; i < W; i += FontW)
+                        if ((W != 1) && (H == 0))
                         {
-                            FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH);
-                            FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH);
+                            for (int i = (FontW << 1); i < W; i += (FontW << 1))
+                            {
+                                FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH, true);
+                                FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH, true);
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH, true);
+                            FrameCharPut1(X + W, Y + 0, false, false, true, false, FontW, FontH, true);
                         }
-                        FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH);
-                        FrameCharPut1(X + W, Y + 0, false, false, true, false, FontW, FontH);
+                        if ((W == 1) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH, true);
+                        }
                     }
-                    if ((W == 0) && (H == 0))
+                    else
                     {
-                        FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH);
+                        if ((W != 0) && (H != 0))
+                        {
+                            for (int i = FontW; i < W; i += FontW)
+                            {
+                                FrameCharPut1(X + i, Y + 0, false, true, true, true, FontW, FontH, false);
+                                FrameCharPut1(X + i, Y + H, true, false, true, true, FontW, FontH, false);
+                            }
+                            for (int i = FontH; i < H; i += FontH)
+                            {
+                                FrameCharPut1(X + 0, Y + i, true, true, false, true, FontW, FontH, false);
+                                FrameCharPut1(X + W, Y + i, true, true, true, false, FontW, FontH, false);
+                            }
+                            for (int i_Y = FontH; i_Y < H; i_Y += FontH)
+                            {
+                                for (int i_X = FontW; i_X < W; i_X += FontW)
+                                {
+                                    FrameCharPut1(X + i_X, Y + i_Y, true, true, true, true, FontW, FontH, false);
+                                }
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + 0, false, true, true, false, FontW, FontH, false);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + H, true, false, true, false, FontW, FontH, false);
+                        }
+                        if ((W == 0) && (H != 0))
+                        {
+                            for (int i = FontH; i < H; i += FontH)
+                            {
+                                FrameCharPut1(X + 0, Y + i, true, true, false, false, FontW, FontH, false);
+                                FrameCharPut1(X + W, Y + i, true, true, false, false, FontW, FontH, false);
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, true, false, false, FontW, FontH, false);
+                            FrameCharPut1(X + 0, Y + H, true, false, false, false, FontW, FontH, false);
+                        }
+                        if ((W != 0) && (H == 0))
+                        {
+                            for (int i = FontW; i < W; i += FontW)
+                            {
+                                FrameCharPut1(X + i, Y + 0, false, false, true, true, FontW, FontH, false);
+                                FrameCharPut1(X + i, Y + H, false, false, true, true, FontW, FontH, false);
+                            }
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, true, FontW, FontH, false);
+                            FrameCharPut1(X + W, Y + 0, false, false, true, false, FontW, FontH, false);
+                        }
+                        if ((W == 0) && (H == 0))
+                        {
+                            FrameCharPut1(X + 0, Y + 0, false, false, false, false, FontW, FontH, false);
+                        }
                     }
                 }
             }
@@ -1689,7 +1943,7 @@ namespace TextPaint
                 DiamondDraw(X - H_, Y + H, W__, 0 - H__, T, TT, FontW, FontH);
                 return;
             }
-            
+
             if (TT < 0)
             {
                 switch (DiamondType)
@@ -1706,115 +1960,65 @@ namespace TextPaint
                 }
             }
 
+            bool DoubleCharMode = DoubleDrawMode();
+
             if (T == 1)
             {
                 if (Frame2I == 0)
                 {
-                    if (TT == 3)
+                    if (DoubleCharMode)
                     {
-                        int ii = 0;
-                        for (int i = 0; i <= W; i += FontW)
+                        if ((TT == 1) || (TT == 3))
                         {
-                            CharPut(X + i + FontW, Y + ii - FontH, DrawCharI);
-                            CharPut(X + i - H_, Y + ii + H, DrawCharI);
-                            ii += FontH;
-                        }
-                        ii = 0;
-                        for (int i = 0; i <= H; i += FontH)
-                        {
-                            CharPut(X - ii, Y + i - FontH, DrawCharI);
-                            CharPut(X + W - ii + FontW, Y + i + W_, DrawCharI);
-                            ii += FontW;
+                            int TX = 0;
+                            int TY = 0;
+                            if (TT == 3)
+                            {
+                                TY = FontH;
+                            }
+                            int ii = 0;
+                            for (int i = 0; i <= W; i += FontW)
+                            {
+                                CharPut(X + i + TX, Y + ii - TY, DrawCharI);
+                                CharPut(X + i + TX + FontW, Y + ii - TY, DrawCharIdbl);
+                                CharPut(X + i - H_, Y + ii + H, DrawCharI);
+                                CharPut(X + i - H_ + FontW, Y + ii + H, DrawCharIdbl);
+                                ii += FontH;
+                            }
+                            ii = 0;
+                            for (int i = 0; i <= H; i += FontH)
+                            {
+                                CharPut(X - ii, Y + i - TY, DrawCharI);
+                                CharPut(X - ii + FontW, Y + i - TY, DrawCharIdbl);
+                                CharPut(X + W - ii + TX, Y + i + W_, DrawCharI);
+                                CharPut(X + W - ii + TX + FontW, Y + i + W_, DrawCharIdbl);
+                                ii += FontW;
+                            }
                         }
                     }
                     else
                     {
-                        int TX = 0;
-                        int TY = 0;
-                        if (TT == 1)
+                        if (TT == 3)
                         {
-                            TX = FontW;
-                        }
-                        if (TT == 2)
-                        {
-                            TY = FontH;
-                        }
-                        int ii = 0;
-                        for (int i = 0; i <= W; i += FontW)
-                        {
-                            CharPut(X + i + TX, Y + ii, DrawCharI);
-                            CharPut(X + i - H_, Y + ii + H + TY, DrawCharI);
-                            ii += FontH;
-                        }
-                        ii = 0;
-                        for (int i = 0; i <= H; i += FontH)
-                        {
-                            CharPut(X - ii, Y + i, DrawCharI);
-                            CharPut(X + W - ii + TX, Y + i + W_ + TY, DrawCharI);
-                            ii += FontW;
-                        }
-                    }
-                }
-                else
-                {
-                    if (TT == 3)
-                    {
-                        int ii = 0;
-                        for (int i = 0; i <= W; i += FontW)
-                        {
-                            FrameCharPut2(X + i + FontW, Y + ii - FontH, false, false, true, true, FontW, FontH);
-                            FrameCharPut2(X + i - H_, Y + ii + H, false, false, true, true, FontW, FontH);
-                            ii += FontH;
-                        }
-                        ii = 0;
-                        for (int i = 0; i <= H; i += FontH)
-                        {
-                            FrameCharPut2(X - ii, Y + i - FontH, true, true, false, false, FontW, FontH);
-                            FrameCharPut2(X + W - ii + FontW, Y + i + W_, true, true, false, false, FontW, FontH);
-                            ii += FontW;
-                        }
-                    }
-                    else
-                    {
-                        int TX = 0;
-                        int TY = 0;
-                        bool StdCfg = true;
-
-                        if (TT == 0)
-                        {
-                            if ((W == 0) && (H == 0))
+                            int ii = 0;
+                            for (int i = 0; i <= W; i += FontW)
                             {
-                                FrameCharPut2(X, Y, false, false, false, false, FontW, FontH);
-                                StdCfg = false;
+                                CharPut(X + i + FontW, Y + ii - FontH, DrawCharI);
+                                CharPut(X + i - H_, Y + ii + H, DrawCharI);
+                                ii += FontH;
                             }
-                            else
+                            ii = 0;
+                            for (int i = 0; i <= H; i += FontH)
                             {
-                                if ((W > 0) && (H == 0))
-                                {
-                                    int ii = 0;
-                                    for (int i = 0; i <= W; i += FontW)
-                                    {
-                                        FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH);
-                                        ii += FontH;
-                                    }
-                                    StdCfg = false;
-                                }
-                                if ((W == 0) && (H > 0))
-                                {
-                                    int ii = 0;
-                                    for (int i = 0; i <= H; i += FontH)
-                                    {
-                                        FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH);
-                                        ii += FontW;
-                                    }
-                                    StdCfg = false;
-                                }
+                                CharPut(X - ii, Y + i - FontH, DrawCharI);
+                                CharPut(X + W - ii + FontW, Y + i + W_, DrawCharI);
+                                ii += FontW;
                             }
                         }
-
-                        if (StdCfg)
+                        else
                         {
-
+                            int TX = 0;
+                            int TY = 0;
                             if (TT == 1)
                             {
                                 TX = FontW;
@@ -1823,52 +2027,282 @@ namespace TextPaint
                             {
                                 TY = FontH;
                             }
-
-                            int ii = FontH;
-                            for (int i = FontW; i < W; i += FontW)
+                            int ii = 0;
+                            for (int i = 0; i <= W; i += FontW)
                             {
-                                FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH);
-                                FrameCharPut2(X + i - H_, Y + ii + H + TY, false, false, true, true, FontW, FontH);
+                                CharPut(X + i + TX, Y + ii, DrawCharI);
+                                CharPut(X + i - H_, Y + ii + H + TY, DrawCharI);
                                 ii += FontH;
                             }
-                            if (TT == 1)
+                            ii = 0;
+                            for (int i = 0; i <= H; i += FontH)
                             {
-                                FrameCharPut2(X + TX, Y, false, false, true, true, FontW, FontH);
-                                FrameCharPut2(X + W - H_, Y + W_ + H + TY, false, false, true, true, FontW, FontH);
-                            }
-                            if (TT == 2)
-                            {
-                                FrameCharPut2(X - H_, Y + H + TY, false, false, true, true, FontW, FontH);
-                                FrameCharPut2(X + W + TX, Y + W_, false, false, true, true, FontW, FontH);
-                            }
-
-                            ii = FontW;
-                            for (int i = FontH; i < H; i += FontH)
-                            {
-                                FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH);
-                                FrameCharPut2(X + W - ii + TX, Y + i + W_ + TY, true, true, false, false, FontW, FontH);
+                                CharPut(X - ii, Y + i, DrawCharI);
+                                CharPut(X + W - ii + TX, Y + i + W_ + TY, DrawCharI);
                                 ii += FontW;
                             }
+                        }
+                    }
+                }
+                else
+                {
+                    if (DoubleCharMode)
+                    {
+                        if ((TT == 1) || (TT == 3))
+                        {
+                            int TX = 0;
+                            int TY = 0;
+                            bool StdCfg = true;
+
                             if (TT == 1)
                             {
-                                FrameCharPut2(X, Y, true, true, false, false, FontW, FontH);
-                                FrameCharPut2(X + W - H_ + TX, Y + H + W_ + TY, true, true, false, false, FontW, FontH);
-                            }
-                            if (TT == 2)
-                            {
-                                FrameCharPut2(X + W + TX, Y + W_ + TY, true, true, false, false, FontW, FontH);
-                                FrameCharPut2(X - H_, Y + H, true, true, false, false, FontW, FontH);
+                                if ((W == 0) && (H == 0))
+                                {
+                                    FrameCharPut2(X, Y, false, false, false, false, FontW, FontH, true);
+                                    StdCfg = false;
+                                }
+                                else
+                                {
+                                    if ((W > 0) && (H == 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= W; i += FontW)
+                                        {
+                                            FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, true);
+                                            ii += FontH;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                    if ((W == 0) && (H > 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= H; i += FontH)
+                                        {
+                                            FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, true);
+                                            ii += FontW;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                }
                             }
 
-                            if (TT != 1)
+                            if (StdCfg)
                             {
-                                FrameCharPut2(X, Y, false, true, false, true, FontW, FontH);
-                                FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH);
+                                if (TT == 3)
+                                {
+                                    TY = FontH;
+                                }
+
+                                int ii = FontH;
+                                for (int i = FontW; i < W; i += FontW)
+                                {
+                                    FrameCharPut2(X + i + TX, Y + ii - TY, false, false, true, true, FontW, FontH, true);
+                                    FrameCharPut2(X + i - H_, Y + ii + H, false, false, true, true, FontW, FontH, true);
+                                    ii += FontH;
+                                }
+                                if (TT == 3)
+                                {
+                                    FrameCharPut2(X - H_, Y + H, false, false, true, true, FontW, FontH, true);
+                                    FrameCharPut2(X + W + TX, Y + W_ - TY, false, false, true, true, FontW, FontH, true);
+                                }
+
+                                ii = FontW;
+                                for (int i = FontH; i < H; i += FontH)
+                                {
+                                    FrameCharPut2(X - ii, Y + i - TY, true, true, false, false, FontW, FontH, true);
+                                    FrameCharPut2(X + W - ii + TX, Y + i + W_, true, true, false, false, FontW, FontH, true);
+                                    ii += FontW;
+                                }
+                                if (TT == 3)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_, true, true, false, false, FontW, FontH, true);
+                                    FrameCharPut2(X - H_, Y + H - TY, true, true, false, false, FontW, FontH, true);
+                                }
+
+                                FrameCharPut2(X, Y - TY, false, true, false, true, FontW, FontH, true);
+                                FrameCharPut2(X + W - H_, Y + W_ + H, true, false, true, false, FontW, FontH, true);
+                                if (TT == 1)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH, true);
+                                    FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH, true);
+                                }
                             }
-                            if (TT != 2)
+                        }
+                    }
+                    else
+                    {
+                        if (TT == 3)
+                        {
+                            int ii = 0;
+                            for (int i = 0; i <= W; i += FontW)
                             {
-                                FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH);
-                                FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH);
+                                FrameCharPut2(X + i + FontW, Y + ii - FontH, false, false, true, true, FontW, FontH, false);
+                                FrameCharPut2(X + i - H_, Y + ii + H, false, false, true, true, FontW, FontH, false);
+                                ii += FontH;
+                            }
+                            ii = 0;
+                            for (int i = 0; i <= H; i += FontH)
+                            {
+                                FrameCharPut2(X - ii, Y + i - FontH, true, true, false, false, FontW, FontH, false);
+                                FrameCharPut2(X + W - ii + FontW, Y + i + W_, true, true, false, false, FontW, FontH, false);
+                                ii += FontW;
+                            }
+                        }
+                        else
+                        {
+                            int TX = 0;
+                            int TY = 0;
+                            bool StdCfg = true;
+
+                            if (TT == 0)
+                            {
+                                if (StdCfg)
+                                {
+
+                                    if (TT == 1)
+                                    {
+                                        TX = FontW;
+                                    }
+                                    if (TT == 2)
+                                    {
+                                        TY = FontH;
+                                    }
+
+                                    int ii = FontH;
+                                    for (int i = FontW; i < W; i += FontW)
+                                    {
+                                        FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, false);
+                                        FrameCharPut2(X + i - H_, Y + ii + H + TY, false, false, true, true, FontW, FontH, false);
+                                        ii += FontH;
+                                    }
+                                    if (TT == 1)
+                                    {
+                                        FrameCharPut2(X + TX, Y, false, false, true, true, FontW, FontH, false);
+                                        FrameCharPut2(X + W - H_, Y + W_ + H + TY, false, false, true, true, FontW, FontH, false);
+                                    }
+                                    if (TT == 2)
+                                    {
+                                        FrameCharPut2(X - H_, Y + H + TY, false, false, true, true, FontW, FontH, false);
+                                        FrameCharPut2(X + W + TX, Y + W_, false, false, true, true, FontW, FontH, false);
+                                    }
+
+                                    ii = FontW;
+                                    for (int i = FontH; i < H; i += FontH)
+                                    {
+                                        FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, false);
+                                        FrameCharPut2(X + W - ii + TX, Y + i + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                        ii += FontW;
+                                    }
+                                    if (TT == 1)
+                                    {
+                                        FrameCharPut2(X, Y, true, true, false, false, FontW, FontH, false);
+                                        FrameCharPut2(X + W - H_ + TX, Y + H + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                    }
+                                    if (TT == 2)
+                                    {
+                                        FrameCharPut2(X + W + TX, Y + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                        FrameCharPut2(X - H_, Y + H, true, true, false, false, FontW, FontH, false);
+                                    }
+
+                                    if (TT != 1)
+                                    {
+                                        FrameCharPut2(X, Y, false, true, false, true, FontW, FontH, false);
+                                        FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH, false);
+                                    }
+                                    if (TT != 2)
+                                    {
+                                        FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH, false);
+                                        FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH, false);
+                                    }
+                                }
+                                if ((W == 0) && (H == 0))
+                                {
+                                    FrameCharPut2(X, Y, false, false, false, false, FontW, FontH, false);
+                                    StdCfg = false;
+                                }
+                                else
+                                {
+                                    if ((W > 0) && (H == 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= W; i += FontW)
+                                        {
+                                            FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, false);
+                                            ii += FontH;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                    if ((W == 0) && (H > 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= H; i += FontH)
+                                        {
+                                            FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, false);
+                                            ii += FontW;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                }
+                            }
+
+                            if (StdCfg)
+                            {
+
+                                if (TT == 1)
+                                {
+                                    TX = FontW;
+                                }
+                                if (TT == 2)
+                                {
+                                    TY = FontH;
+                                }
+
+                                int ii = FontH;
+                                for (int i = FontW; i < W; i += FontW)
+                                {
+                                    FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + i - H_, Y + ii + H + TY, false, false, true, true, FontW, FontH, false);
+                                    ii += FontH;
+                                }
+                                if (TT == 1)
+                                {
+                                    FrameCharPut2(X + TX, Y, false, false, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_, Y + W_ + H + TY, false, false, true, true, FontW, FontH, false);
+                                }
+                                if (TT == 2)
+                                {
+                                    FrameCharPut2(X - H_, Y + H + TY, false, false, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W + TX, Y + W_, false, false, true, true, FontW, FontH, false);
+                                }
+
+                                ii = FontW;
+                                for (int i = FontH; i < H; i += FontH)
+                                {
+                                    FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, false);
+                                    FrameCharPut2(X + W - ii + TX, Y + i + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                    ii += FontW;
+                                }
+                                if (TT == 1)
+                                {
+                                    FrameCharPut2(X, Y, true, true, false, false, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_ + TX, Y + H + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                }
+                                if (TT == 2)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_ + TY, true, true, false, false, FontW, FontH, false);
+                                    FrameCharPut2(X - H_, Y + H, true, true, false, false, FontW, FontH, false);
+                                }
+
+                                if (TT != 1)
+                                {
+                                    FrameCharPut2(X, Y, false, true, false, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH, false);
+                                }
+                                if (TT != 2)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH, false);
+                                    FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH, false);
+                                }
                             }
                         }
                     }
@@ -1879,58 +2313,8 @@ namespace TextPaint
                 int i_X_, i_Y_;
                 if (Frame2I == 0)
                 {
-                    if (TT == 3)
+                    if (DoubleCharMode)
                     {
-                        i_Y_ = 0 - FontW;
-                        for (int i_Y = 0 - FontH; i_Y <= H; i_Y += FontH)
-                        {
-                            i_X_ = 0;
-                            for (int i_X = 0; i_X <= W; i_X += FontW)
-                            {
-                                CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y, DrawCharI);
-                                i_X_ += FontH;
-                            }
-                            i_Y_ += FontW;
-                        }
-                        i_Y_ = 0 - FontW;
-                        for (int i_Y = 0 - FontH; i_Y < H; i_Y += FontH)
-                        {
-                            i_X_ = 0 - FontH;
-                            for (int i_X = 0 - FontW; i_X <= W; i_X += FontW)
-                            {
-                                CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, DrawCharI);
-                                i_X_ += FontH;
-                            }
-                            i_Y_ += FontW;
-                        }
-                    }
-                    else
-                    {
-                        i_Y_ = 0;
-                        for (int i_Y = 0; i_Y <= H; i_Y += FontH)
-                        {
-                            i_X_ = 0;
-                            for (int i_X = 0; i_X <= W; i_X += FontW)
-                            {
-                                CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y, DrawCharI);
-                                i_X_ += FontH;
-                            }
-                            i_Y_ += FontW;
-                        }
-                        if (TT == 0)
-                        {
-                            i_Y_ = FontW;
-                            for (int i_Y = FontH; i_Y <= H; i_Y += FontH)
-                            {
-                                i_X_ = 0;
-                                for (int i_X = 0; i_X < W; i_X += FontW)
-                                {
-                                    CharPut(X + i_X - i_Y_ + FontW, Y + i_X_ + i_Y, DrawCharI);
-                                    i_X_ += FontH;
-                                }
-                                i_Y_ += FontW;
-                            }
-                        }
                         if (TT == 1)
                         {
                             i_Y_ = 0;
@@ -1939,19 +2323,34 @@ namespace TextPaint
                                 i_X_ = 0;
                                 for (int i_X = 0; i_X <= W; i_X += FontW)
                                 {
-                                    CharPut(X + i_X - i_Y_ + FontW, Y + i_X_ + i_Y, DrawCharI);
+                                    CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y, DrawCharI);
+                                    CharPut(X + i_X - i_Y_ + FontW, Y + i_X_ + i_Y, DrawCharIdbl);
                                     i_X_ += FontH;
                                 }
                                 i_Y_ += FontW;
                             }
                         }
-                        if (TT == 2)
+                    }
+                    else
+                    {
+                        if (TT == 3)
                         {
-                            i_Y_ = 0;
-                            for (int i_Y = 0; i_Y <= H; i_Y += FontH)
+                            i_Y_ = 0 - FontW;
+                            for (int i_Y = 0 - FontH; i_Y <= H; i_Y += FontH)
                             {
                                 i_X_ = 0;
                                 for (int i_X = 0; i_X <= W; i_X += FontW)
+                                {
+                                    CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y, DrawCharI);
+                                    i_X_ += FontH;
+                                }
+                                i_Y_ += FontW;
+                            }
+                            i_Y_ = 0 - FontW;
+                            for (int i_Y = 0 - FontH; i_Y < H; i_Y += FontH)
+                            {
+                                i_X_ = 0 - FontH;
+                                for (int i_X = 0 - FontW; i_X <= W; i_X += FontW)
                                 {
                                     CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, DrawCharI);
                                     i_X_ += FontH;
@@ -1959,63 +2358,78 @@ namespace TextPaint
                                 i_Y_ += FontW;
                             }
                         }
+                        else
+                        {
+                            i_Y_ = 0;
+                            for (int i_Y = 0; i_Y <= H; i_Y += FontH)
+                            {
+                                i_X_ = 0;
+                                for (int i_X = 0; i_X <= W; i_X += FontW)
+                                {
+                                    CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y, DrawCharI);
+                                    i_X_ += FontH;
+                                }
+                                i_Y_ += FontW;
+                            }
+                            if (TT == 0)
+                            {
+                                i_Y_ = FontW;
+                                for (int i_Y = FontH; i_Y <= H; i_Y += FontH)
+                                {
+                                    i_X_ = 0;
+                                    for (int i_X = 0; i_X < W; i_X += FontW)
+                                    {
+                                        CharPut(X + i_X - i_Y_ + FontW, Y + i_X_ + i_Y, DrawCharI);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+                            }
+                            if (TT == 1)
+                            {
+                                i_Y_ = 0;
+                                for (int i_Y = 0; i_Y <= H; i_Y += FontH)
+                                {
+                                    i_X_ = 0;
+                                    for (int i_X = 0; i_X <= W; i_X += FontW)
+                                    {
+                                        CharPut(X + i_X - i_Y_ + FontW, Y + i_X_ + i_Y, DrawCharI);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+                            }
+                            if (TT == 2)
+                            {
+                                i_Y_ = 0;
+                                for (int i_Y = 0; i_Y <= H; i_Y += FontH)
+                                {
+                                    i_X_ = 0;
+                                    for (int i_X = 0; i_X <= W; i_X += FontW)
+                                    {
+                                        CharPut(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, DrawCharI);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+                            }
+                        }
                     }
                 }
                 else
                 {
-                    if (TT == 3)
+                    if (DoubleCharMode)
                     {
-                        i_Y_ = 0;
-                        for (int i_Y = 0; i_Y < H; i_Y += FontH)
+                        if (TT == 1)
                         {
-                            i_X_ = 0;
-                            for (int i_X = 0; i_X <= W; i_X += FontW)
-                            {
-                                FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y, true, true, true, true, FontW, FontH);
-                                i_X_ += FontH;
-                            }
-                            i_Y_ += FontW;
-                        }
-                        i_Y_ = 0 - FontW;
-                        for (int i_Y = 0 - FontH; i_Y < H; i_Y += FontH)
-                        {
-                            i_X_ = 0;
-                            for (int i_X = 0; i_X < W; i_X += FontW)
-                            {
-                                FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, true, true, true, true, FontW, FontH);
-                                i_X_ += FontH;
-                            }
-                            i_Y_ += FontW;
-                        }
+                            int TX = 0;
+                            int TY = 0;
+                            bool StdCfg = true;
 
-                        i_X_ = 0;
-                        for (int i_X = 0; i_X <= W; i_X += FontW)
-                        {
-                            FrameCharPut2(X + i_X + FontW, Y + i_X_ - FontH, false, true, true, true, FontW, FontH);
-                            FrameCharPut2(X + i_X - H_, Y + i_X_ + H, true, false, true, true, FontW, FontH);
-                            i_X_ += FontH;
-                        }
-
-                        i_Y_ = 0;
-                        for (int i_Y = 0; i_Y <= H; i_Y += FontH)
-                        {
-                            FrameCharPut2(X - i_Y_, Y + i_Y - FontH, true, true, false, true, FontW, FontH);
-                            FrameCharPut2(X + W - i_Y_ + FontW, Y + i_Y + W_, true, true, true, false, FontW, FontH);
-                            i_Y_ += FontW;
-                        }
-                    }
-                    else
-                    {
-                        int TX = 0;
-                        int TY = 0;
-                        bool StdCfg = true;
-
-                        if (TT == 0)
-                        {
                             if ((W == 0) && (H == 0))
                             {
                                 StdCfg = false;
-                                FrameCharPut2(X, Y, false, false, false, false, FontW, FontH);
+                                FrameCharPut2(X, Y, false, false, false, false, FontW, FontH, true);
                             }
                             else
                             {
@@ -2024,7 +2438,7 @@ namespace TextPaint
                                     int ii = 0;
                                     for (int i = 0; i <= W; i += FontW)
                                     {
-                                        FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH);
+                                        FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, true);
                                         ii += FontH;
                                     }
                                     StdCfg = false;
@@ -2034,93 +2448,211 @@ namespace TextPaint
                                     int ii = 0;
                                     for (int i = 0; i <= H; i += FontH)
                                     {
-                                        FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH);
+                                        FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, true);
                                         ii += FontW;
                                     }
                                     StdCfg = false;
                                 }
                             }
-                        }
 
-                        if (StdCfg)
-                        {
-                            if (TT == 1)
+                            if (StdCfg)
                             {
-                                TX = FontW;
-                            }
-                            if (TT == 2)
-                            {
-                                TY = FontH;
-                            }
-
-                            i_Y_ = (FontW - TX);
-                            for (int i_Y = (FontH - (TX > 0 ? FontH : 0)); i_Y < (H + TY); i_Y += FontH)
-                            {
-                                i_X_ = FontH;
-                                for (int i_X = FontW; i_X < (W + TX + TY); i_X += FontW)
+                                i_Y_ = (FontW - TX);
+                                for (int i_Y = FontH; i_Y < (H + TY); i_Y += FontH)
                                 {
-                                    FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y, true, true, true, true, FontW, FontH);
+                                    i_X_ = FontH;
+                                    for (int i_X = FontW; i_X < (W + TX + TY); i_X += FontW)
+                                    {
+                                        FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y, true, true, true, true, FontW, FontH, true);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+
+                                i_X_ = FontH;
+                                for (int i_X = FontW; i_X < W; i_X += FontW)
+                                {
+                                    FrameCharPut2(X + i_X + TX, Y + i_X_, false, true, true, true, FontW, FontH, true);
+                                    FrameCharPut2(X + i_X - H_, Y + i_X_ + H + TY, true, false, true, true, FontW, FontH, true);
                                     i_X_ += FontH;
                                 }
-                                i_Y_ += FontW;
+
+                                i_Y_ = FontW;
+                                for (int i_Y = FontH; i_Y < H; i_Y += FontH)
+                                {
+                                    FrameCharPut2(X - i_Y_, Y + i_Y, true, true, false, true, FontW, FontH, true);
+                                    FrameCharPut2(X + W - i_Y_ + TX, Y + i_Y + W_ + TY, true, true, true, false, FontW, FontH, true);
+                                    i_Y_ += FontW;
+                                }
+
+                                FrameCharPut2(X, Y, false, true, false, true, FontW, FontH, true);
+                                FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH, true);
+                                FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH, true);
+                                FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH, true);
                             }
+                        }
+                    }
+                    else
+                    {
+                        if (TT == 3)
+                        {
                             i_Y_ = 0;
                             for (int i_Y = 0; i_Y < H; i_Y += FontH)
                             {
                                 i_X_ = 0;
+                                for (int i_X = 0; i_X <= W; i_X += FontW)
+                                {
+                                    FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y, true, true, true, true, FontW, FontH, false);
+                                    i_X_ += FontH;
+                                }
+                                i_Y_ += FontW;
+                            }
+                            i_Y_ = 0 - FontW;
+                            for (int i_Y = 0 - FontH; i_Y < H; i_Y += FontH)
+                            {
+                                i_X_ = 0;
                                 for (int i_X = 0; i_X < W; i_X += FontW)
                                 {
-                                    FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, true, true, true, true, FontW, FontH);
+                                    FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, true, true, true, true, FontW, FontH, false);
                                     i_X_ += FontH;
                                 }
                                 i_Y_ += FontW;
                             }
 
-                            i_X_ = FontH;
-                            for (int i_X = FontW; i_X < W; i_X += FontW)
+                            i_X_ = 0;
+                            for (int i_X = 0; i_X <= W; i_X += FontW)
                             {
-                                FrameCharPut2(X + i_X + TX, Y + i_X_, false, true, true, true, FontW, FontH);
-                                FrameCharPut2(X + i_X - H_, Y + i_X_ + H + TY, true, false, true, true, FontW, FontH);
+                                FrameCharPut2(X + i_X + FontW, Y + i_X_ - FontH, false, true, true, true, FontW, FontH, false);
+                                FrameCharPut2(X + i_X - H_, Y + i_X_ + H, true, false, true, true, FontW, FontH, false);
                                 i_X_ += FontH;
                             }
-                            if (TT == 1)
-                            {
-                                FrameCharPut2(X + TX, Y, false, true, true, true, FontW, FontH);
-                                FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, true, FontW, FontH);
-                            }
-                            if (TT == 2)
-                            {
-                                FrameCharPut2(X - H_, Y + H + TY, true, false, true, true, FontW, FontH);
-                                FrameCharPut2(X + W + TX, Y + W_, false, true, true, true, FontW, FontH);
-                            }
 
-                            i_Y_ = FontW;
-                            for (int i_Y = FontH; i_Y < H; i_Y += FontH)
+                            i_Y_ = 0;
+                            for (int i_Y = 0; i_Y <= H; i_Y += FontH)
                             {
-                                FrameCharPut2(X - i_Y_, Y + i_Y, true, true, false, true, FontW, FontH);
-                                FrameCharPut2(X + W - i_Y_ + TX, Y + i_Y + W_ + TY, true, true, true, false, FontW, FontH);
+                                FrameCharPut2(X - i_Y_, Y + i_Y - FontH, true, true, false, true, FontW, FontH, false);
+                                FrameCharPut2(X + W - i_Y_ + FontW, Y + i_Y + W_, true, true, true, false, FontW, FontH, false);
                                 i_Y_ += FontW;
                             }
-                            if (TT == 1)
+                        }
+                        else
+                        {
+                            int TX = 0;
+                            int TY = 0;
+                            bool StdCfg = true;
+
+                            if (TT == 0)
                             {
-                                FrameCharPut2(X, Y, true, true, false, true, FontW, FontH);
-                                FrameCharPut2(X + W - H_ + TX, Y + H + W_ + TY, true, true, true, false, FontW, FontH);
-                            }
-                            if (TT == 2)
-                            {
-                                FrameCharPut2(X + W + TX, Y + W_ + TY, true, true, true, false, FontW, FontH);
-                                FrameCharPut2(X - H_, Y + H, true, true, false, true, FontW, FontH);
+                                if ((W == 0) && (H == 0))
+                                {
+                                    StdCfg = false;
+                                    FrameCharPut2(X, Y, false, false, false, false, FontW, FontH, false);
+                                }
+                                else
+                                {
+                                    if ((W > 0) && (H == 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= W; i += FontW)
+                                        {
+                                            FrameCharPut2(X + i + TX, Y + ii, false, false, true, true, FontW, FontH, false);
+                                            ii += FontH;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                    if ((W == 0) && (H > 0))
+                                    {
+                                        int ii = 0;
+                                        for (int i = 0; i <= H; i += FontH)
+                                        {
+                                            FrameCharPut2(X - ii, Y + i, true, true, false, false, FontW, FontH, false);
+                                            ii += FontW;
+                                        }
+                                        StdCfg = false;
+                                    }
+                                }
                             }
 
-                            if (TT != 1)
+                            if (StdCfg)
                             {
-                                FrameCharPut2(X, Y, false, true, false, true, FontW, FontH);
-                                FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH);
-                            }
-                            if (TT != 2)
-                            {
-                                FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH);
-                                FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH);
+                                if (TT == 1)
+                                {
+                                    TX = FontW;
+                                }
+                                if (TT == 2)
+                                {
+                                    TY = FontH;
+                                }
+
+                                i_Y_ = (FontW - TX);
+                                for (int i_Y = (FontH - (TX > 0 ? FontH : 0)); i_Y < (H + TY); i_Y += FontH)
+                                {
+                                    i_X_ = FontH;
+                                    for (int i_X = FontW; i_X < (W + TX + TY); i_X += FontW)
+                                    {
+                                        FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y, true, true, true, true, FontW, FontH, false);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+                                i_Y_ = 0;
+                                for (int i_Y = 0; i_Y < H; i_Y += FontH)
+                                {
+                                    i_X_ = 0;
+                                    for (int i_X = 0; i_X < W; i_X += FontW)
+                                    {
+                                        FrameCharPut2(X + i_X - i_Y_, Y + i_X_ + i_Y + FontH, true, true, true, true, FontW, FontH, false);
+                                        i_X_ += FontH;
+                                    }
+                                    i_Y_ += FontW;
+                                }
+
+                                i_X_ = FontH;
+                                for (int i_X = FontW; i_X < W; i_X += FontW)
+                                {
+                                    FrameCharPut2(X + i_X + TX, Y + i_X_, false, true, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + i_X - H_, Y + i_X_ + H + TY, true, false, true, true, FontW, FontH, false);
+                                    i_X_ += FontH;
+                                }
+                                if (TT == 1)
+                                {
+                                    FrameCharPut2(X + TX, Y, false, true, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, true, FontW, FontH, false);
+                                }
+                                if (TT == 2)
+                                {
+                                    FrameCharPut2(X - H_, Y + H + TY, true, false, true, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W + TX, Y + W_, false, true, true, true, FontW, FontH, false);
+                                }
+
+                                i_Y_ = FontW;
+                                for (int i_Y = FontH; i_Y < H; i_Y += FontH)
+                                {
+                                    FrameCharPut2(X - i_Y_, Y + i_Y, true, true, false, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - i_Y_ + TX, Y + i_Y + W_ + TY, true, true, true, false, FontW, FontH, false);
+                                    i_Y_ += FontW;
+                                }
+                                if (TT == 1)
+                                {
+                                    FrameCharPut2(X, Y, true, true, false, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_ + TX, Y + H + W_ + TY, true, true, true, false, FontW, FontH, false);
+                                }
+                                if (TT == 2)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_ + TY, true, true, true, false, FontW, FontH, false);
+                                    FrameCharPut2(X - H_, Y + H, true, true, false, true, FontW, FontH, false);
+                                }
+
+                                if (TT != 1)
+                                {
+                                    FrameCharPut2(X, Y, false, true, false, true, FontW, FontH, false);
+                                    FrameCharPut2(X + W - H_, Y + W_ + H + TY, true, false, true, false, FontW, FontH, false);
+                                }
+                                if (TT != 2)
+                                {
+                                    FrameCharPut2(X + W + TX, Y + W_, false, true, true, false, FontW, FontH, false);
+                                    FrameCharPut2(X - H_, Y + H, true, false, false, true, FontW, FontH, false);
+                                }
                             }
                         }
                     }

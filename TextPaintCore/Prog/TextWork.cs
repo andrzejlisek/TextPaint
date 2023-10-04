@@ -217,7 +217,7 @@ namespace TextPaint
             {
                 return Encoding.Default;
             }
-            string FName = Core.PrepareFileName(Name);
+            string FName = CoreStatic.PrepareFileName(Name);
             if (System.IO.File.Exists(FName))
             {
                 OneByteEncoding OneByteEncoding_ = new OneByteEncoding();

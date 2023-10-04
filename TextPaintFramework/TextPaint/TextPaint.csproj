@@ -71,23 +71,22 @@
     <Compile Include="InfoScreen.cs" />
     <Compile Include="PixelPaint.cs" />
     <Compile Include="TextWork.cs" />
-    <Compile Include="Core_File.cs" />
-    <Compile Include="Core_ANSI.cs" />
-    <Compile Include="Telnet.cs" />
-    <Compile Include="Telnet_Server.cs" />
-    <Compile Include="Telnet_Client.cs" />
-    <Compile Include="Core_Render.cs" />
+    <Compile Include="CoreFile.cs" />
+    <Compile Include="CoreAnsi.cs" />
+    <Compile Include="TelnetServer.cs" />
+    <Compile Include="TelnetClient.cs" />
+    <Compile Include="CoreRender.cs" />
     <Compile Include="OneByteEncoding.cs" />
     <Compile Include="CharSequence.cs" />
     <Compile Include="XBIN.cs" />
-    <Compile Include="Core_ANSI_Parse.cs" />
-    <Compile Include="Core_ANSI_Scroll.cs" />
-    <Compile Include="Core_ANSI_FontSize.cs" />
+    <Compile Include="CoreAnsi_Parse.cs" />
+    <Compile Include="CoreAnsi_Scroll.cs" />
+    <Compile Include="CoreAnsi_FontSize.cs" />
     <Compile Include="AnsiFile.cs" />
     <Compile Include="LowLevelBitmap.cs" />
     <Compile Include="Window_PictureBoxEx.cs" />
     <Compile Include="Window_PictureBoxPanel.cs" />
-    <Compile Include="Core_FontSize.cs" />
+    <Compile Include="CoreStatic.cs" />
     <Compile Include="PixelPaintState.cs" />
     <Compile Include="UniConn.cs" />
     <Compile Include="UniConnTelnet.cs" />
@@ -106,6 +105,13 @@
     <Compile Include="AnsiLineOccupyEx.cs" />
     <Compile Include="AnsiLineOccupyItem.cs" />
     <Compile Include="ClipboardBase.cs" />
+    <Compile Include="ScreenFont.cs" />
+    <Compile Include="ToolEncoding.cs" />
+    <Compile Include="Tool.cs" />
+    <Compile Include="ToolFontHex.cs" />
+    <Compile Include="ToolFontDisp.cs" />
+    <Compile Include="ToolFontFilter.cs" />
+    <Compile Include="ToolFontParse.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />

@@ -21,8 +21,8 @@ namespace TextPaint
         public bool SteadyCursor = false;
 
         int ScreenBorder = 2;
-        int[] WinCursorPosX = new int[256];
-        int[] WinCursorPosY = new int[256];
+        int[] WinCursorPosX = new int[65536];
+        int[] WinCursorPosY = new int[65536];
 
         LowLevelBitmap[] BitmapX_;
         LowLevelBitmap Glyph_;
@@ -34,8 +34,6 @@ namespace TextPaint
         int InternalW;
         int InternalH;
         bool WinIsBitmapFont = false;
-        bool[,] WinBitmapGlyph;
-        Dictionary<int, int> WinBitmapPage;
         bool ColorBlending = false;
         List<int> ColorBlendingChar = new List<int>();
         List<int> ColorBlendingReplacement = new List<int>();
@@ -223,6 +221,8 @@ namespace TextPaint
 
 
             FormCtrlR_X = new float[MaxFontSizeDraw + 1];
+            FormCtrlR_X_Dbl1 = new float[MaxFontSizeDraw + 1];
+            FormCtrlR_X_Dbl2 = new float[MaxFontSizeDraw + 1];
             FormCtrlR_Y = new float[MaxFontSizeDraw + 1];
             FormCtrlR_W = new float[MaxFontSizeDraw + 1];
             FormCtrlR_H = new float[MaxFontSizeDraw + 1];
@@ -231,6 +231,8 @@ namespace TextPaint
             {
                 FormCtrlR_Trans[i] = GetRectSize(i);
                 FormCtrlR_X[i] = GetRectPos(i) * CellW;
+                FormCtrlR_X_Dbl1[i] = GetRectPos(i) * CellW - ((CellW / 2) * GetRectSize(i));
+                FormCtrlR_X_Dbl2[i] = GetRectPos(i) * CellW + ((CellW - (CellW / 2)) * GetRectSize(i));
                 FormCtrlR_Y[i] = GetRectPos(i) * CellH;
                 FormCtrlR_W[i] = GetRectSize(i) * CellW;
                 FormCtrlR_H[i] = GetRectSize(i) * CellH;
@@ -348,71 +350,62 @@ namespace TextPaint
             if (File.Exists(Core.FullPath(WinFontName)))
             {
                 WinIsBitmapFont = true;
-                LowLevelBitmap FontTempBmp = new LowLevelBitmap(Core.FullPath(WinFontName));
-                int CellW_ = (int)Math.Floor((FontTempBmp.Width - 16.0) / 256.0);
-                List<int> WinBitmapPage_ = new List<int>();
-                int Idx = 0;
-                int Val0 = -1;
-                int ValPlane = 0;
-                for (int i = 0; i < FontTempBmp.Height; i++)
+                ScreenFont_ = new ScreenFont(WinFontName, CellW, CellH, (DuospaceMode == 2));
+                CellW_F = ScreenFont_.CellW_F;
+                CellH_F = ScreenFont_.CellH_F;
+                CellW = ScreenFont_.CellW;
+                CellH = ScreenFont_.CellH;
+                if (File.Exists(DuospaceFontName))
                 {
-                    int Val = 0;
-                    if (FontTempBmp.GetPixelBinary(0, i)) { Val += 32768; }
-                    if (FontTempBmp.GetPixelBinary(1, i)) { Val += 16384; }
-                    if (FontTempBmp.GetPixelBinary(2, i)) { Val += 8192; }
-                    if (FontTempBmp.GetPixelBinary(3, i)) { Val += 4096; }
-                    if (FontTempBmp.GetPixelBinary(4, i)) { Val += 2048; }
-                    if (FontTempBmp.GetPixelBinary(5, i)) { Val += 1024; }
-                    if (FontTempBmp.GetPixelBinary(6, i)) { Val += 512; }
-                    if (FontTempBmp.GetPixelBinary(7, i)) { Val += 256; }
-                    if (FontTempBmp.GetPixelBinary(8, i)) { Val += 128; }
-                    if (FontTempBmp.GetPixelBinary(9, i)) { Val += 64; }
-                    if (FontTempBmp.GetPixelBinary(10, i)) { Val += 32; }
-                    if (FontTempBmp.GetPixelBinary(11, i)) { Val += 16; }
-                    if (FontTempBmp.GetPixelBinary(12, i)) { Val += 8; }
-                    if (FontTempBmp.GetPixelBinary(13, i)) { Val += 4; }
-                    if (FontTempBmp.GetPixelBinary(14, i)) { Val += 2; }
-                    if (FontTempBmp.GetPixelBinary(15, i)) { Val += 1; }
-                    if (Val0 != Val)
+                    if (DuospaceMode == 1)
                     {
-                        WinBitmapPage_.Add(ValPlane + Val);
-                        Idx++;
-                        Val0 = Val;
-                    }
-                }
-                int CellH_ = (int)Math.Floor(FontTempBmp.Height * 1.0 / Idx);
-                WinBitmapPage = new Dictionary<int, int>();
-                CellW_F = (int)Math.Round(((double)CellW) / ((double)CellW_));
-                CellH_F = (int)Math.Round(((double)CellH) / ((double)CellH_));
-                if (CellW_F < 1) { CellW_F = 1; }
-                if (CellH_F < 1) { CellH_F = 1; }
-                CellW = CellW_ * CellW_F;
-                CellH = CellH_ * CellH_F;
-                WinBitmapGlyph = new bool[Idx * CellH, 256 * CellW];
-                for (int i = 0; i < Idx; i++)
-                {
-                    WinBitmapPage.Add(WinBitmapPage_[i], i);
-                    for (int ii = 0; ii < 256; ii++)
-                    {
-                        for (int Y_ = 0; Y_ < CellH_; Y_++)
+                        ScreenFont ScreenFontDbl = new ScreenFont(DuospaceFontName, CellW * 2, CellH, false);
+                        if ((ScreenFontDbl.CellH == ScreenFont_.CellH) && (ScreenFontDbl.CellW == (ScreenFont_.CellW << 1)))
                         {
-                            for (int X_ = 0; X_ < CellW_; X_++)
-                            {
-                                bool PxlState = (FontTempBmp.GetPixelBinary(CellW_ * ii + 16 + X_, CellH_ * i + Y_));
-                                for (int Y_F = 0; Y_F < CellH_F; Y_F++)
-                                {
-                                    for (int X_F = 0; X_F < CellW_F; X_F++)
-                                    {
-                                        WinBitmapGlyph[CellH * i + Y_ * CellH_F + Y_F, CellW * ii + X_ * CellW_F + X_F] = PxlState;
-                                    }
-                                }
-                            }
+                            ScreenFont_.MergeFont(ScreenFontDbl, true, CharDoubleTable);
+                        }
+                    }
+                    if (DuospaceMode == 2)
+                    {
+                        ScreenFont ScreenFontDbl = new ScreenFont(DuospaceFontName, CellW, CellH, false);
+                        if ((ScreenFontDbl.CellH == ScreenFont_.CellH) && (ScreenFontDbl.CellW == ScreenFont_.CellW))
+                        {
+                            ScreenFont_.MergeFont(ScreenFontDbl, false, CharDoubleTable);
                         }
                     }
                 }
+                Core__.Semigraphics_.CreateFontList(ScreenFont_);
+                LoadDuospaceList();
             }
             else
             {
+                LoadDuospaceList();
+                int[] PlaneSearch = new int[] { 8, 9, 10, 11, 12, 13, 7, 6, 5, 4 };
+                int PlaneSearchI = 0;
+                int[] PlaneReplacement = new int[17];
+                for (int i = 0; i < PlaneReplacement.Length; i++)
+                {
+                    PlaneReplacement[i] = -1;
+                }
+                for (int i = 0; i < 32; i++)
+                {
+                    CharDoubleTable[i] = 0;
+                }
+                for (int i = 32; i < 0x110000; i++)
+                {
+                    if (CharDoubleTable[i] != 0)
+                    {
+                        int PlaneNo = i >> 16;
+                        if (PlaneReplacement[PlaneNo] < 0)
+                        {
+                            PlaneReplacement[PlaneNo] = PlaneSearch[PlaneSearchI];
+                            PlaneSearchI++;
+                        }
+                        CharDoubleTable[i] = (PlaneReplacement[PlaneNo] << 16) + (i & 65535);
+                    }
+                }
+                CharDoubleTableInvRefresh();
+
                 WinIsBitmapFont = false;
                 Glyph_ = new LowLevelBitmap(CellW, CellH, 0);
                 Glyph_.SetTextFont(WinFontName, WinFontSize, WinCharRender);
@@ -425,12 +418,11 @@ namespace TextPaint
             }
             CursorDispOffset = CellH - CursorThick;
 
-
             Core_ = Core__;
             Core_.Screen_ = this;
         }
 
-        public ScreenWindow(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen)
+        public ScreenWindow(Core Core__, int WinFixed_, ConfigFile CF, int ConsoleW, int ConsoleH, bool ColorBlending_, List<string> ColorBlendingConfig_, bool DummyScreen) : base()
         {
             LoadConfig(CF);
             ScreenWindowPrepare(Core__, WinFixed_, CF, ConsoleW, ConsoleH, ColorBlending_, ColorBlendingConfig_, DummyScreen);
@@ -472,6 +464,7 @@ namespace TextPaint
         string WinFontName;
         int WinFontSize;
         int WinCharRender;
+        ScreenFont ScreenFont_;
 
         int[,] FormCtrlB;
         int[,] FormCtrlF;
@@ -485,6 +478,8 @@ namespace TextPaint
         int[] LineOffsetAttr;
         public bool[] LineOffsetBlank;
         float[] FormCtrlR_X;
+        float[] FormCtrlR_X_Dbl1;
+        float[] FormCtrlR_X_Dbl2;
         float[] FormCtrlR_Y;
         float[] FormCtrlR_W;
         float[] FormCtrlR_H;
@@ -603,7 +598,7 @@ namespace TextPaint
                 {
                     bool Prefix = (i == 0);
                     bool Postfix = (i == LastLine);
-                    S.Append(TextWork.IntToStr(AnsiFile_.Process(S_, i, Prefix, Postfix, WinW)));
+                    S.Append(TextWork.IntToStr(AnsiFile_.Process(S_, i, Prefix, Postfix, WinW, CharDoubleTable, CharDoubleTableInv)));
                 }
             }
             else
@@ -655,73 +650,35 @@ namespace TextPaint
         {
         }
 
-        public override void AppResize(int NewW, int NewH)
+        Random RX = new Random();
+
+        int ScreenWidth = 0;
+        int ScreenHeight = 0;
+        int ScreenLeft = 0;
+        int ScreenTop = 0;
+        int ScreenFormW = 1;
+        int ScreenFormH = 1;
+
+        protected void WindowResizeRepaint()
         {
-            if (WinFixed > 0)
+            if (Monitor.TryEnter(GraphMutex))
             {
-                WinW = NewW;
-                WinH = NewH;
-                WindowResizeForce = true;
-                Core_.CoreEvent("Resize", '\0', false, false, false);
-            }
-        }
+                ScreenWidth = 0;
+                ScreenHeight = 0;
+                ScreenLeft = 0;
+                ScreenTop = 0;
 
-        public override bool WindowResize()
-        {
-            if ((InternalW == FormGetWidth()) && (InternalH == FormGetHeight()))
-            {
-                if (!WindowResizeForce)
-                {
-                    return false;
-                }
-            }
-
-            if (Monitor.TryEnter(GraphMutex, 200))
-            {
-                if ((WinFixed > 0) && (WinW > 0) && (WinH > 0))
-                {
-                }
-                else
-                {
-                    WinW = FormGetWidth() / CellW;
-                    WinH = FormGetHeight() / CellH;
-                }
-
-                if (WinCursorPosX.Length <= WinW)
-                {
-                    WinCursorPosX = new int[WinW + 1];
-                }
-                if (WinCursorPosY.Length <= WinH)
-                {
-                    WinCursorPosY = new int[WinH + 1];
-                }
-
-                BitmapX_[0] = new LowLevelBitmap((WinW * CellW) + ScreenBorder + ScreenBorder, (WinH * CellH) + ScreenBorder + ScreenBorder, 255);
-                BitmapX_[1] = new LowLevelBitmap((WinW * CellW) + ScreenBorder + ScreenBorder, (WinH * CellH) + ScreenBorder + ScreenBorder, 255);
-
-                FormCtrlB = new int[WinW, WinH];
-                FormCtrlF = new int[WinW, WinH];
-                FormCtrlA = new int[WinW, WinH];
-                FormCtrlC = new int[WinW, WinH];
-                FormCtrlFontW = new int[WinW, WinH];
-                FormCtrlFontH = new int[WinW, WinH];
-                LineOffset = new int[WinH];
-                LineOffsetBlank = new bool[WinH];
-                LineOffsetBack = new int[WinH];
-                LineOffsetFore = new int[WinH];
-                LineOffsetAttr = new int[WinH];
-                SetTextRectangles();
-
-                int ScreenWidth = 0;
-                int ScreenHeight = 0;
-                int ScreenLeft = 0;
-                int ScreenTop = 0;
-
-                int FormW = FormGetWidth();
-                int FormH = FormGetHeight();
-                int DispCursorSize = (CursorThick * FormH) / BitmapX_[0].Height;
+                ScreenFormW = FormGetWidth();
+                ScreenFormH = FormGetHeight();
+                int DispCursorSize = (CursorThick * ScreenFormH) / BitmapX_[0].Height;
+                int ScreenX0 = 0;
+                int ScreenY0 = 0;
+                int ScreenX1 = 0;
+                int ScreenY1 = 0;
                 if (WinFixed < 2)
                 {
+                    ScreenX0 = FormCtrlGetParam(2);
+                    ScreenY0 = FormCtrlGetParam(3);
                     for (int i = 0; i <= WinW; i++)
                     {
                         WinCursorPosX[i] = i * CellW;
@@ -732,15 +689,17 @@ namespace TextPaint
                     }
                     ScreenWidth = BitmapX_[0].Width;
                     ScreenHeight = BitmapX_[0].Height;
-                    ScreenLeft = (FormW - BitmapX_[0].Width) / 2;
-                    ScreenTop = (FormH - BitmapX_[0].Height) / 2;
+                    ScreenLeft = (ScreenFormW - BitmapX_[0].Width) / 2;
+                    ScreenTop = (ScreenFormH - BitmapX_[0].Height) / 2;
+                    ScreenX1 = ScreenWidth;
+                    ScreenY1 = ScreenHeight;
                 }
                 else
                 {
                     for (int i = 0; i <= WinW; i++)
                     {
-                        WinCursorPosX[i] = (((i * CellW + CellW) * FormW) / BitmapX_[0].Width);
-                        while ((((WinCursorPosX[i]) * BitmapX_[0].Width) / FormW) >= (i * CellW))
+                        WinCursorPosX[i] = (((i * CellW + CellW) * ScreenFormW) / BitmapX_[0].Width);
+                        while ((((WinCursorPosX[i]) * BitmapX_[0].Width) / ScreenFormW) >= (i * CellW))
                         {
                             WinCursorPosX[i]--;
                         }
@@ -748,19 +707,21 @@ namespace TextPaint
                     }
                     for (int i = 0; i <= WinH; i++)
                     {
-                        WinCursorPosY[i] = (((i * CellH + CellH + CellH) * FormH) / BitmapX_[0].Height);
-                        while ((((WinCursorPosY[i]) * BitmapX_[0].Height) / FormH) >= (i * CellH + CellH))
+                        WinCursorPosY[i] = (((i * CellH + CellH + CellH) * ScreenFormH) / BitmapX_[0].Height);
+                        while ((((WinCursorPosY[i]) * BitmapX_[0].Height) / ScreenFormH) >= (i * CellH + CellH))
                         {
                             WinCursorPosY[i]--;
                         }
                         WinCursorPosY[i]++;
                         WinCursorPosY[i] -= DispCursorSize;
                     }
-                    ScreenWidth = FormW;
-                    ScreenHeight = FormH;
+                    ScreenWidth = ScreenFormW;
+                    ScreenHeight = ScreenFormH;
                     ScreenLeft = 0;
                     ScreenTop = 0;
                 }
+                BitmapX_[0].Clone();
+                BitmapX_[1].Clone();
                 FormCtrlSetBitmap(BitmapX_[0], BitmapX_[1]);
                 FormCtrlSetParam(0, ScreenLeft);
                 FormCtrlSetParam(1, ScreenTop);
@@ -777,7 +738,7 @@ namespace TextPaint
                 }
                 else
                 {
-                    ScreenWidth = (CellW * FormW) / BitmapX_[0].Width;
+                    ScreenWidth = (CellW * ScreenFormW) / BitmapX_[0].Width;
                     ScreenHeight = DispCursorSize;
                 }
                 FormCtrlSetParam(4, ScreenLeft);
@@ -785,35 +746,73 @@ namespace TextPaint
                 FormCtrlSetParam(6, ScreenWidth);
                 FormCtrlSetParam(7, ScreenHeight);
 
-                for (int Y = 0; Y < WinH; Y++)
-                {
-                    for (int X = 0; X < WinW; X++)
-                    {
-                        FormCtrlB[X, Y] = Core_.TextNormalBack;
-                        FormCtrlF[X, Y] = Core_.TextNormalFore;
-                        FormCtrlA[X, Y] = 0;
-                        FormCtrlC[X, Y] = -1;
-                        FormCtrlFontW[X, Y] = 0;
-                        FormCtrlFontH[X, Y] = 0;
-                    }
-                    LineOffset[Y] = 0;
-                }
                 CursorB = -1;
                 CursorF = -1;
                 CursorNeedRepaint = true;
 
-                InternalW = FormGetWidth();
-                InternalH = FormGetHeight();
-
                 WindowResizeForce = false;
+
+                MouseMove(MouseMoveXLast + ((ScreenX1 - ScreenX0) / 2), MouseMoveYLast + ((ScreenY1 - ScreenY0) / 2));
+
                 Monitor.Exit(GraphMutex);
-                return true;
             }
-            else
+        }
+
+        public override bool AppResize(int NewW, int NewH, bool Force)
+        {
+            // Window resize from application is possible only when window size is fixed
+            if ((WinFixed > 0) || Force)
             {
-                WindowResizeForce = true;
-                return false;
+                if ((WinW != NewW) || (WinH != NewH) || Force)
+                {
+                    Monitor.Enter(GraphMutex);
+
+                    MouseCursorDrawPrepare(false);
+
+                    WinW = NewW;
+                    WinH = NewH;
+
+                    BitmapX_[0] = new LowLevelBitmap((WinW * CellW) + ScreenBorder + ScreenBorder, (WinH * CellH) + ScreenBorder + ScreenBorder, 255);
+                    BitmapX_[1] = new LowLevelBitmap((WinW * CellW) + ScreenBorder + ScreenBorder, (WinH * CellH) + ScreenBorder + ScreenBorder, 255);
+
+                    FormCtrlB = new int[WinW, WinH];
+                    FormCtrlF = new int[WinW, WinH];
+                    FormCtrlA = new int[WinW, WinH];
+                    FormCtrlC = new int[WinW, WinH];
+                    FormCtrlFontW = new int[WinW, WinH];
+                    FormCtrlFontH = new int[WinW, WinH];
+                    LineOffset = new int[WinH];
+                    LineOffsetBlank = new bool[WinH];
+                    LineOffsetBack = new int[WinH];
+                    LineOffsetFore = new int[WinH];
+                    LineOffsetAttr = new int[WinH];
+                    SetTextRectangles();
+
+                    for (int Y = 0; Y < WinH; Y++)
+                    {
+                        for (int X = 0; X < WinW; X++)
+                        {
+                            FormCtrlB[X, Y] = -1;
+                            FormCtrlF[X, Y] = -1;
+                            FormCtrlA[X, Y] = 0;
+                            FormCtrlC[X, Y] = '!';
+                            FormCtrlFontW[X, Y] = 0;
+                            FormCtrlFontH[X, Y] = 0;
+                            PutChar_Work(X, Y, 32, Core_.TextNormalBack, Core_.TextNormalFore, 0, 0, 0);
+                        }
+                        LineOffset[Y] = 0;
+                    }
+                    CursorB = -1;
+                    CursorF = -1;
+
+                    WindowResizeForce = true;
+
+                    Monitor.Exit(GraphMutex);
+
+                }
             }
+
+            return true;
         }
 
 
@@ -901,10 +900,31 @@ namespace TextPaint
             Monitor.Exit(GraphMutex);
         }
 
+        protected override void MouseCursorDraw(int X, int Y)
+        {
+            int C = FormCtrlC[X, Y];
+            int ColorBack = FormCtrlB[X, Y];
+            int ColorFore = FormCtrlF[X, Y];
+            int ColorAttr = FormCtrlA[X, Y];
+            int FontW = FormCtrlFontW[X, Y];
+            int FontH = FormCtrlFontH[X, Y];
+            ColorBack = MouseCalcColor(MouseX, MouseY, ColorBack);
+            ColorFore = MouseCalcColor(MouseX, MouseY, ColorFore);
+            PutChar_Work(X, Y, C, ColorBack, ColorFore, FontW, FontH, ColorAttr);
+        }
+
         protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH, int FontAttr)
         {
             Monitor.Enter(GraphMutex);
+            if ((X == MouseX) && (Y == MouseY))
+            {
+                MouseCursorDrawPrepare(false);
+            }
             PutChar_Work(X, Y, C, ColorBack, ColorFore, FontW, FontH, FontAttr);
+            if ((X == MouseX) && (Y == MouseY))
+            {
+                MouseCursorDrawPrepare(true);
+            }
             Monitor.Exit(GraphMutex);
         }
 
@@ -912,7 +932,15 @@ namespace TextPaint
         {
             int C = FormCtrlC[X, Y];
             FormCtrlC[X, Y] = C + 1;
+            if ((X == MouseX) && (Y == MouseY))
+            {
+                MouseCursorDrawPrepare(false);
+            }
             PutChar_Work(X, Y, C, FormCtrlB[X, Y], FormCtrlF[X, Y], FormCtrlFontW[X, Y], FormCtrlFontH[X, Y], FormCtrlA[X, Y]);
+            if ((X == MouseX) && (Y == MouseY))
+            {
+                MouseCursorDrawPrepare(true);
+            }
         }
 
         private int CalcFontBIU(int FontAttr)
@@ -1092,9 +1120,9 @@ namespace TextPaint
                     C__ = C__ & 255;
                     C__ = C__ * CellW;
                     int CPI = 0;
-                    if (WinBitmapPage.ContainsKey(CP_))
+                    if (ScreenFont_.WinBitmapPage.ContainsKey(CP_))
                     {
-                        CPI = WinBitmapPage[CP_] * CellH;
+                        CPI = ScreenFont_.WinBitmapPage[CP_] * CellH;
                     }
                     else
                     {
@@ -1139,7 +1167,7 @@ namespace TextPaint
                                 int PxlX = ((X_ + FontOffW) / FontDivW);
                                 if (PxlX >= CellW_F)
                                 {
-                                    if ((WinBitmapGlyph[CPI + PxlY, C__ + PxlX]) || (WinBitmapGlyph[CPI + PxlY, C__ + PxlX - CellW_F]))
+                                    if ((ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX]) || (ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX - CellW_F]))
                                     {
                                         TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                     }
@@ -1150,7 +1178,7 @@ namespace TextPaint
                                 }
                                 else
                                 {
-                                    if ((WinBitmapGlyph[CPI + PxlY, C__ + PxlX]))
+                                    if ((ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX]))
                                     {
                                         TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                     }
@@ -1166,7 +1194,7 @@ namespace TextPaint
                             for (int X_ = 0; X_ < CellW; X_++)
                             {
                                 int PxlX = ((X_ + FontOffW) / FontDivW);
-                                if (WinBitmapGlyph[CPI + PxlY, C__ + PxlX])
+                                if (ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX])
                                 {
                                     TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                 }
@@ -1192,7 +1220,7 @@ namespace TextPaint
                                     int PxlX = ((X_ + FontOffW) / FontDivW);
                                     if (PxlX < (CellW - CellH_F))
                                     {
-                                        if ((WinBitmapGlyph[CPI + PxlY, C__ + PxlX + CellH_F]) || (WinBitmapGlyph[CPI + PxlY, C__ + PxlX]))
+                                        if ((ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX + CellH_F]) || (ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX]))
                                         {
                                             TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                         }
@@ -1203,7 +1231,7 @@ namespace TextPaint
                                     }
                                     else
                                     {
-                                        if (WinBitmapGlyph[CPI + PxlY, C__ + PxlX])
+                                        if (ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX])
                                         {
                                             TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                         }
@@ -1221,7 +1249,7 @@ namespace TextPaint
                                     int PxlX = ((X_ + FontOffW) / FontDivW);
                                     if (PxlX < (CellW - CellH_F))
                                     {
-                                        if (WinBitmapGlyph[CPI + PxlY, C__ + PxlX + CellH_F])
+                                        if (ScreenFont_.WinBitmapGlyph[CPI + PxlY, C__ + PxlX + CellH_F])
                                         {
                                             TempGlyph.SetPixel(X_, Y_, DrawFore_R, DrawFore_G, DrawFore_B);
                                         }
@@ -1274,7 +1302,27 @@ namespace TextPaint
                     Glyph_.DrawRectangle(0, 0, CellW, CellH, DrawBack_R, DrawBack_G, DrawBack_B);
                     if (((C >= 0x20) && (C < 0xD800)) || (C > 0xDFFF))
                     {
-                        Glyph_.DrawText(FormCtrlR_X[FontW], FormCtrlR_Y[FontH], FormCtrlR_W[FontW], FormCtrlR_H[FontH], FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH], char.ConvertFromUtf32(C), DrawFore_R, DrawFore_G, DrawFore_B, IsFontB, IsFontI, IsFontU, IsFontS);
+                        bool IsSingle = true;
+                        if ((CharDoubleTable[C] != 0))
+                        {
+                            if (CharDoubleTable[C] != BlankDoubleChar)
+                            {
+                                Glyph_.DrawText(FormCtrlR_X_Dbl1[FontW], FormCtrlR_Y[FontH], FormCtrlR_W[FontW], FormCtrlR_H[FontH], FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH], char.ConvertFromUtf32(C), DrawFore_R, DrawFore_G, DrawFore_B, IsFontB, IsFontI, IsFontU, IsFontS);
+                            }
+                            IsSingle = false;
+                        }
+                        if ((CharDoubleTableInv[C] != 0))
+                        {
+                            if (CharDoubleTableInv[C] != BlankDoubleChar)
+                            {
+                                Glyph_.DrawText(FormCtrlR_X_Dbl2[FontW], FormCtrlR_Y[FontH], FormCtrlR_W[FontW], FormCtrlR_H[FontH], FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH], char.ConvertFromUtf32(CharDoubleTableInv[C]), DrawFore_R, DrawFore_G, DrawFore_B, IsFontB, IsFontI, IsFontU, IsFontS);
+                            }
+                            IsSingle = false;
+                        }
+                        if (IsSingle)
+                        {
+                            Glyph_.DrawText(FormCtrlR_X[FontW], FormCtrlR_Y[FontH], FormCtrlR_W[FontW], FormCtrlR_H[FontH], FormCtrlR_Trans[FontW], FormCtrlR_Trans[FontH], char.ConvertFromUtf32(C), DrawFore_R, DrawFore_G, DrawFore_B, IsFontB, IsFontI, IsFontU, IsFontS);
+                        }
                     }
                     TempGlyph = Glyph_.Clone();
                 }
@@ -1306,6 +1354,7 @@ namespace TextPaint
                 H--;
             }
             Monitor.Enter(GraphMutex);
+            MouseCursorDrawPrepare(false);
             BitmapX_[0].DrawImage(BitmapX_[0], (SrcX * CellW) + ScreenBorder, (SrcY * CellH) + ScreenBorder, (DstX * CellW) + ScreenBorder, (DstY * CellH) + ScreenBorder, W * CellW, H * CellH);
             BitmapX_[1].DrawImage(BitmapX_[1], (SrcX * CellW) + ScreenBorder, (SrcY * CellH) + ScreenBorder, (DstX * CellW) + ScreenBorder, (DstY * CellH) + ScreenBorder, W * CellW, H * CellH);
             int X_D, Y_D, X_S, Y_S;
@@ -1398,6 +1447,7 @@ namespace TextPaint
                     CharRepaint(X, DstY + H - 1);
                 }
             }
+            MouseCursorDrawPrepare(true);
             Monitor.Exit(GraphMutex);
         }
 
@@ -1535,10 +1585,125 @@ namespace TextPaint
                 }
                 Monitor.Exit(GraphMutex);
             }
+            if ((InternalW != FormGetWidth()) || (InternalH != FormGetHeight()))
+            {
+                InternalW = FormGetWidth();
+                InternalH = FormGetHeight();
+                if (WinFixed == 0)
+                {
+                    int TempW = InternalW / CellW;
+                    int TempH = InternalH / CellH;
+                    if ((WinW != TempW) || (WinH != TempH))
+                    {
+                        Core_.CoreEvent("ResizeW", (char)TempW, false, false, false);
+                        Core_.CoreEvent("ResizeH", (char)TempH, false, false, false);
+                        Core_.CoreEvent("Resize", '\0', false, false, false);
+                    }
+                }
+                else
+                {
+                    Core_.CoreEvent("ResizeW", (char)WinW, false, false, false);
+                    Core_.CoreEvent("ResizeH", (char)WinH, false, false, false);
+                    Core_.CoreEvent("Resize", '\0', false, false, false);
+                }
+                WindowResizeForce = true;
+            }
             if (WindowResizeForce || ForceResize)
             {
-                CoreEvent("Resize", '\0', false, false, false);
+                WindowResizeRepaint();
                 FormCtrlRefresh();
+            }
+        }
+
+        protected void FormFocusEvent(bool Evt)
+        {
+            if (Evt)
+            {
+                CoreEvent("WindowFocus1", (char)(0), false, false, false);
+            }
+            else
+            {
+                CoreEvent("WindowFocus0", (char)(0), false, false, false);
+            }
+        }
+
+        int MouseMoveXLast = -1;
+        int MouseMoveYLast = -1;
+
+        protected void MouseMove(int X, int Y)
+        {
+            MouseMoveXLast = X;
+            MouseMoveYLast = Y;
+            if (WinFixed < 2)
+            {
+                if ((X >= 0) && (Y >= 0))
+                {
+                    X = X - (ScreenBorder);
+                    Y = Y - (ScreenBorder);
+                    if (X >= 0) X = X / CellW;
+                    if (Y >= 0) Y = Y / CellH;
+                }
+            }
+            else
+            {
+                if ((X >= 0) && (Y >= 0))
+                {
+                    X = X * WinW / (ScreenFormW);
+                    Y = Y * WinH / (ScreenFormH);
+                }
+            }
+            if ((X < 0) || (X >= WinW)) { X = -1; Y = -1; }
+            if ((Y < 0) || (Y >= WinH)) { X = -1; Y = -1; }
+
+
+            if (Monitor.TryEnter(GraphMutex))
+            {
+                if ((MouseX != X) || (MouseY != Y))
+                {
+                    MouseCursorDrawPrepare(false);
+                    MouseX = X;
+                    MouseY = Y;
+                    MouseCursorDrawPrepare(true);
+                    if (MouseIsActive)
+                    {
+                        if (MouseIsActiveX)
+                        {
+                            Core_.CoreEvent("MouseX", ((X < 0) ? (char)MouseZero : (char)X), false, false, false);
+                            Core_.CoreEvent("MouseY", ((Y < 0) ? (char)MouseZero : (char)Y), false, false, false);
+                            Core_.CoreEvent("MouseMove", '\0', false, false, false);
+                        }
+                    }
+                }
+                Monitor.Exit(GraphMutex);
+            }
+        }
+
+        int MouseBtnX = -1;
+        int MouseBtnY = -1;
+
+        protected void MouseDown(int Btn)
+        {
+            MouseBtnX = MouseX;
+            MouseBtnY = MouseY;
+            if (MouseIsActiveX)
+            {
+                Core_.CoreEvent("MouseBtn", (char)Btn, false, false, false);
+            }
+        }
+
+        protected void MouseUp(int Btn)
+        {
+            if (MouseIsActiveX)
+            {
+                Core_.CoreEvent("MouseBtn", (char)(Btn + 10), false, false, false);
+            }
+            else
+            {
+                Core_.CoreEvent("MouseCopyX1", (char)(MouseBtnX), false, false, false);
+                Core_.CoreEvent("MouseCopyY1", (char)(MouseBtnY), false, false, false);
+                Core_.CoreEvent("MouseCopyX2", (char)(MouseX), false, false, false);
+                Core_.CoreEvent("MouseCopyY2", (char)(MouseY), false, false, false);
+                Core_.CoreEvent("MouseCopy", (char)0, false, false, false);
             }
         }
     }

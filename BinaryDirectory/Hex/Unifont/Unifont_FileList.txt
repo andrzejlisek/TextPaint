@@ -1,0 +1,60 @@
+:0:0:0:255:255:255
+
+*/Absolute/Path/For/Hex/Unifont/
+
+@First
+
+# Japan version - uncomment the following lines for chreate the Japan version
+#plane00/izmg16-plane00.hex
+#plane02/izmg16-plane02.hex
+
+# Unusable character sets are commented
+
+# Plane 0
+plane00/copyleft.hex
+plane00/hangul-syllables.hex
+#plane00/omit.hex
+plane00/plane00-nonprinting.hex
+#plane00/plane00-unassigned.hex
+#plane00/pua.hex
+plane00/spaces.hex
+plane00/unifont-base.hex
+plane00/wqy.hex
+
+:128:0:0:128:255:255
+
+# The PUA characters in the Plane 0
+#plane00csur/plane00csur-nonprinting.hex
+plane00csur/plane00csur-spaces.hex
+#plane00csur/plane00csur-unassigned.hex
+plane00csur/plane00csur.hex
+
+:0:0:0:255:255:255
+
+# Plane 1
+plane01/plane01.hex
+plane01/plane01-nonprinting.hex
+plane01/plane01-space.hex
+#plane01/plane01-noscript.hex
+#plane01/plane01-unassigned.hex
+
+# Plane 2
+plane02/zh-plane02.hex
+
+# Plane 3
+plane03/zh-plane03.hex
+
+# Plane E
+plane0E/plane0E.hex
+plane0E/plane0E-nonprinting.hex
+#plane0E/plane0E-unassigned.hex
+
+# Plane F
+#plane0Fcsur/plane0Fcsur-nonprinting.hex
+plane0Fcsur/plane0Fcsur.hex
+
+:0:0:128:255:255:128
+
+# Additional 1FB93h character
+Unifont_correct.hex
+

@@ -1,0 +1,13 @@
+:0:0:0:255:255:255
+
+*/Absolute/Path/For/Hex/Xterm/
+
+# Several Xterm fonts in various sizes, use one at a time
+Xterm06x13-default.hex
+#Xterm01x02-unreadable.hex
+#Xterm05x08-tiny.hex
+#Xterm07x14-small.hex
+#Xterm08x13-medium.hex
+#Xterm09x18-large.hex
+#Xterm10x20-huge.hex
+

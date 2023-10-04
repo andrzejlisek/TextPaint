@@ -40,7 +40,7 @@ namespace TextPaint
                 int FileW = 65536;
                 int FileH = 65536;
 
-                Core.SaveFileDirectory(DstFile + ".xxx");
+                CoreStatic.SaveFileDirectory(DstFile + ".xxx");
 
                 bool DataCompression = false;
                 if (IsXBIN)
@@ -98,24 +98,24 @@ namespace TextPaint
                         {
                             for (int ii = 0; ii < FileFont; ii++)
                             {
-                                FontBmp.SetPixel(i * 8 + 0, ii, ((FileFontArray[P] & 0x80) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 1, ii, ((FileFontArray[P] & 0x40) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 2, ii, ((FileFontArray[P] & 0x20) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 3, ii, ((FileFontArray[P] & 0x10) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 4, ii, ((FileFontArray[P] & 0x08) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 5, ii, ((FileFontArray[P] & 0x04) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 6, ii, ((FileFontArray[P] & 0x02) > 0) ? (byte)255 : (byte)0);
-                                FontBmp.SetPixel(i * 8 + 7, ii, ((FileFontArray[P] & 0x01) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 0, ii, ((FileFontArray[P] & 0x80) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 1, ii, ((FileFontArray[P] & 0x40) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 2, ii, ((FileFontArray[P] & 0x20) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 3, ii, ((FileFontArray[P] & 0x10) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 4, ii, ((FileFontArray[P] & 0x08) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 5, ii, ((FileFontArray[P] & 0x04) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 6, ii, ((FileFontArray[P] & 0x02) > 0) ? (byte)255 : (byte)0);
+                                FontBmp.SetPixelGray(i * 8 + 7, ii, ((FileFontArray[P] & 0x01) > 0) ? (byte)255 : (byte)0);
                                 if (TwoFonts)
                                 {
-                                    FontBmp.SetPixel(i * 8 + 0, ii + FileFont, ((FileFontArray[P + 256] & 0x80) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 1, ii + FileFont, ((FileFontArray[P + 256] & 0x40) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 2, ii + FileFont, ((FileFontArray[P + 256] & 0x20) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 3, ii + FileFont, ((FileFontArray[P + 256] & 0x10) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 4, ii + FileFont, ((FileFontArray[P + 256] & 0x08) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 5, ii + FileFont, ((FileFontArray[P + 256] & 0x04) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 6, ii + FileFont, ((FileFontArray[P + 256] & 0x02) > 0) ? (byte)255 : (byte)0);
-                                    FontBmp.SetPixel(i * 8 + 7, ii + FileFont, ((FileFontArray[P + 256] & 0x01) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 0, ii + FileFont, ((FileFontArray[P + 256] & 0x80) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 1, ii + FileFont, ((FileFontArray[P + 256] & 0x40) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 2, ii + FileFont, ((FileFontArray[P + 256] & 0x20) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 3, ii + FileFont, ((FileFontArray[P + 256] & 0x10) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 4, ii + FileFont, ((FileFontArray[P + 256] & 0x08) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 5, ii + FileFont, ((FileFontArray[P + 256] & 0x04) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 6, ii + FileFont, ((FileFontArray[P + 256] & 0x02) > 0) ? (byte)255 : (byte)0);
+                                    FontBmp.SetPixelGray(i * 8 + 7, ii + FileFont, ((FileFontArray[P + 256] & 0x01) > 0) ? (byte)255 : (byte)0);
                                 }
                                 P++;
                             }
@@ -141,38 +141,38 @@ namespace TextPaint
                         {
                             for (int ii = 0; ii < FileFont; ii++)
                             {
-                                FontBmp1.SetPixel(0, P, ((FontPage[i] & 0x8000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(1, P, ((FontPage[i] & 0x4000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(2, P, ((FontPage[i] & 0x2000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(3, P, ((FontPage[i] & 0x1000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(4, P, ((FontPage[i] & 0x0800) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(5, P, ((FontPage[i] & 0x0400) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(6, P, ((FontPage[i] & 0x0200) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(7, P, ((FontPage[i] & 0x0100) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(8, P, ((FontPage[i] & 0x0080) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(9, P, ((FontPage[i] & 0x0040) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(10, P, ((FontPage[i] & 0x0020) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(11, P, ((FontPage[i] & 0x0010) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(12, P, ((FontPage[i] & 0x0008) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(13, P, ((FontPage[i] & 0x0004) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(14, P, ((FontPage[i] & 0x0002) > 0) ? (byte)255 : (byte)0);
-                                FontBmp1.SetPixel(15, P, ((FontPage[i] & 0x0001) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(0, P, ((FontPage[i] & 0x8000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(1, P, ((FontPage[i] & 0x4000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(2, P, ((FontPage[i] & 0x2000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(3, P, ((FontPage[i] & 0x1000) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(4, P, ((FontPage[i] & 0x0800) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(5, P, ((FontPage[i] & 0x0400) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(6, P, ((FontPage[i] & 0x0200) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(7, P, ((FontPage[i] & 0x0100) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(8, P, ((FontPage[i] & 0x0080) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(9, P, ((FontPage[i] & 0x0040) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(10, P, ((FontPage[i] & 0x0020) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(11, P, ((FontPage[i] & 0x0010) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(12, P, ((FontPage[i] & 0x0008) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(13, P, ((FontPage[i] & 0x0004) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(14, P, ((FontPage[i] & 0x0002) > 0) ? (byte)255 : (byte)0);
-                                FontBmp2.SetPixel(15, P, ((FontPage[i] & 0x0001) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(0, P, ((FontPage[i] & 0x8000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(1, P, ((FontPage[i] & 0x4000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(2, P, ((FontPage[i] & 0x2000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(3, P, ((FontPage[i] & 0x1000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(4, P, ((FontPage[i] & 0x0800) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(5, P, ((FontPage[i] & 0x0400) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(6, P, ((FontPage[i] & 0x0200) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(7, P, ((FontPage[i] & 0x0100) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(8, P, ((FontPage[i] & 0x0080) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(9, P, ((FontPage[i] & 0x0040) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(10, P, ((FontPage[i] & 0x0020) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(11, P, ((FontPage[i] & 0x0010) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(12, P, ((FontPage[i] & 0x0008) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(13, P, ((FontPage[i] & 0x0004) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(14, P, ((FontPage[i] & 0x0002) > 0) ? (byte)255 : (byte)0);
+                                FontBmp1.SetPixelGray(15, P, ((FontPage[i] & 0x0001) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(0, P, ((FontPage[i] & 0x8000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(1, P, ((FontPage[i] & 0x4000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(2, P, ((FontPage[i] & 0x2000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(3, P, ((FontPage[i] & 0x1000) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(4, P, ((FontPage[i] & 0x0800) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(5, P, ((FontPage[i] & 0x0400) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(6, P, ((FontPage[i] & 0x0200) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(7, P, ((FontPage[i] & 0x0100) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(8, P, ((FontPage[i] & 0x0080) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(9, P, ((FontPage[i] & 0x0040) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(10, P, ((FontPage[i] & 0x0020) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(11, P, ((FontPage[i] & 0x0010) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(12, P, ((FontPage[i] & 0x0008) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(13, P, ((FontPage[i] & 0x0004) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(14, P, ((FontPage[i] & 0x0002) > 0) ? (byte)255 : (byte)0);
+                                FontBmp2.SetPixelGray(15, P, ((FontPage[i] & 0x0001) > 0) ? (byte)255 : (byte)0);
                                 P++;
                             }
                         }

@@ -1,0 +1,18 @@
+:0:0:0:255:255:255
+
+*/Absolute/Path/For/Hex/Unscii/
+
+@Last
+
+# Several versions of 8x8 font
+unscii-8.hex
+#unscii-8-alt.hex
+#unscii-8-fantasy.hex
+#unscii-8-mcr.hex
+#unscii-8-thin.hex
+
+:128:0:128:128:255:128
+
+# Correction of errors in hex file, is the same for all font versions
+Unscii_correct_08.hex
+

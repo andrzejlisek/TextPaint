@@ -36,13 +36,16 @@ public partial class MainWindow : Window
 
     void DbClick(object sender, RoutedEventArgs e)
     {
-        if (WindowState == WindowState.FullScreen)
+        if (!MouseIsActiveX)
         {
-            WindowState = WindowState.Normal;
-        }
-        else
-        {
-            WindowState = WindowState.FullScreen;
+            if (WindowState == WindowState.FullScreen)
+            {
+                WindowState = WindowState.Normal;
+            }
+            else
+            {
+                WindowState = WindowState.FullScreen;
+            }
         }
     }
 
@@ -67,6 +70,8 @@ public partial class MainWindow : Window
     protected bool KeyShift_ = false;
     protected bool KeyCtrl_ = false;
     protected bool KeyAlt_ = false;
+
+    public bool MouseIsActiveX = false;
 
     void WinKey1(object sender, KeyEventArgs e)
     {

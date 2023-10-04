@@ -1,0 +1,5 @@
+These are the files for generating Hangul syllables drawn
+by Paul Hardy in 2013.  They have since been replaced with
+new glyphs drawn in 2023 by Minseo Lee.
+
+To build output files in this directory, type "make".

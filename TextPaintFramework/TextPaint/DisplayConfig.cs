@@ -28,19 +28,25 @@ namespace TextPaint
             string[] MenuInfo = new string[InfoH];
             MenuInfo[0] = " Screen size: " + WinW + "x" + WinH + (Core_.Screen_.WinAuto ? " auto" : "");
             MenuInfo[1] = "";
-            MenuInfo[2] = " K. Process mode: " + (Core_.ANSIDOS ? "DOS" : "VTx");
-            MenuInfo[3] = " L. 8-bit controls: " + (Core_.ANSI8bit ? "Yes" : "No");
-            MenuInfo[4] = " U. Backspace: " + (Core_.ANSIPrintBackspace ? "Character" : "Movement");
-            MenuInfo[5] = " I. Tab: " + (Core_.ANSIPrintTab ? "Character" : "Movement");
+            MenuInfo[2] = " K. Process mode: ";
+            switch (Core_.CoreAnsi_.ANSIDOS)
+            {
+                case 0: MenuInfo[2] = MenuInfo[2] + "VTx/ISO"; break;
+                case 1: MenuInfo[2] = MenuInfo[2] + "DOS"; break;
+                case 2: MenuInfo[2] = MenuInfo[2] + "VTx/DEC"; break;
+            }
+            MenuInfo[3] = " L. 8-bit controls: " + (Core_.CoreAnsi_.ANSI8bit ? "Yes" : "No");
+            MenuInfo[4] = " U. Backspace: " + (Core_.CoreAnsi_.ANSIPrintBackspace ? "Character" : "Movement");
+            MenuInfo[5] = " I. Tab: " + (Core_.CoreAnsi_.ANSIPrintTab ? "Character" : "Movement");
             MenuInfo[6] = " O. CR: ";
-            switch (Core_.ANSI_CR)
+            switch (Core_.CoreAnsi_.ANSI_CR)
             {
                 case 0: MenuInfo[6] = MenuInfo[6] + "CR"; break;
                 case 1: MenuInfo[6] = MenuInfo[6] + "CR+LF"; break;
                 case 2: MenuInfo[6] = MenuInfo[6] + "Ignore"; break;
             }
             MenuInfo[7] = " P. LF: ";
-            switch (Core_.ANSI_LF)
+            switch (Core_.CoreAnsi_.ANSI_LF)
             {
                 case 0: MenuInfo[7] = MenuInfo[7] + "LF"; break;
                 case 1: MenuInfo[7] = MenuInfo[7] + "CR+LF"; break;
@@ -159,32 +165,33 @@ namespace TextPaint
 
                             case 'k':
                             case 'K':
-                                Core_.ANSIDOS = !Core_.ANSIDOS;
+                                Core_.CoreAnsi_.ANSIDOS = ((Core_.CoreAnsi_.ANSIDOS + 1) % 3);
+                                Core_.CoreAnsi_.ANSIDOS_ = (Core_.CoreAnsi_.ANSIDOS == 1);
                                 AnsiReload = true;
                                 break;
                             case 'l':
                             case 'L':
-                                Core_.ANSI8bit = !Core_.ANSI8bit;
+                                Core_.CoreAnsi_.ANSI8bit = !Core_.CoreAnsi_.ANSI8bit;
                                 AnsiReload = true;
                                 break;
                             case 'u':
                             case 'U':
-                                Core_.ANSIPrintBackspace = !Core_.ANSIPrintBackspace;
+                                Core_.CoreAnsi_.ANSIPrintBackspace = !Core_.CoreAnsi_.ANSIPrintBackspace;
                                 AnsiReload = true;
                                 break;
                             case 'i':
                             case 'I':
-                                Core_.ANSIPrintTab = !Core_.ANSIPrintTab;
+                                Core_.CoreAnsi_.ANSIPrintTab = !Core_.CoreAnsi_.ANSIPrintTab;
                                 AnsiReload = true;
                                 break;
                             case 'o':
                             case 'O':
-                                Core_.ANSI_CR = ((Core_.ANSI_CR + 1) % 3);
+                                Core_.CoreAnsi_.ANSI_CR = ((Core_.CoreAnsi_.ANSI_CR + 1) % 3);
                                 AnsiReload = true;
                                 break;
                             case 'p':
                             case 'P':
-                                Core_.ANSI_LF = ((Core_.ANSI_LF + 1) % 3);
+                                Core_.CoreAnsi_.ANSI_LF = ((Core_.CoreAnsi_.ANSI_LF + 1) % 3);
                                 AnsiReload = true;
                                 break;
 

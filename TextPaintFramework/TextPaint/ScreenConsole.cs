@@ -35,6 +35,7 @@ namespace TextPaint
         bool LastFormatS = false;
         bool LastFormatX = false;
 
+        Timer ConsoleTimer;
 
         void SetBackColor(int N)
         {
@@ -60,9 +61,11 @@ namespace TextPaint
             }
         }
 
-        public ScreenConsole(Core Core__, int WinFixed_, ConfigFile CF, int DefBack, int DefFore)
+        public ScreenConsole(Core Core__, int WinFixed_, ConfigFile CF, int DefBack, int DefFore) : base()
         {
             LoadConfig(CF);
+
+            LoadDuospaceList();
 
             UseTerminalColorCodes = CF.ParamGetB("ConUseEscapeCodes");
 
@@ -123,6 +126,21 @@ namespace TextPaint
 
             DefaultBack = DefBack;
             DefaultFore = DefFore;
+        }
+
+        void ConsoleTimerEvent(object o)
+        {
+            int TempW = Console.WindowWidth;
+            int TempH = Console.WindowHeight;
+            if ((TempW > 0) && (TempH > 0))
+            {
+                if ((WinW != TempW) || (WinH != TempH))
+                {
+                    Core_.CoreEvent("ResizeW", (char)TempW, false, false, false);
+                    Core_.CoreEvent("ResizeH", (char)TempH, false, false, false);
+                    Core_.CoreEvent("Resize", '\0', false, false, false);
+                }
+            }
         }
 
         protected override void PutChar_(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH, int ColorAttr)
@@ -380,46 +398,46 @@ namespace TextPaint
         //ConsoleColor ToolBack = ConsoleColor.White;
         //ConsoleColor ToolFore = ConsoleColor.Black;
 
-        public override bool WindowResize()
+        public override bool AppResize(int NewW, int NewH, bool Force)
         {
-            Monitor.Enter(GraphMutex);
-            if ((WinW != Console.WindowWidth) || (WinH != Console.WindowHeight))
+            if (Force)
             {
-                WinW = Console.WindowWidth;
-                WinH = Console.WindowHeight;
-                
-                MemoPrepare();
-
-                /*if ((Console.BufferHeight > WinW) || (Console.BufferHeight > WinH))
+                Monitor.Enter(GraphMutex);
+                if ((WinW != NewW) || (WinH != NewH) || Force)
                 {
-                    Console.BackgroundColor = ConsoleColor.Black;
-                    Console.ForegroundColor = ConsoleColor.Black;
+                    WinW = NewW;
+                    WinH = NewH;
+                    SetBackColor(DefaultBack);
+                    SetForeColor(DefaultFore);
+                    LastColorBack = DefaultBack;
+                    LastColorFore = DefaultFore;
                     Console.Clear();
-                    Console.BackgroundColor = ToolBack;
-                    Console.ForegroundColor = ToolFore;
-                    Console.SetCursorPosition(WinW - 1, WinH - 1);
-                    Console.Write(" ");
+                    MemoPrepare();
                 }
-                else
-                {
-                    Console.BackgroundColor = ToolBack;
-                    Console.ForegroundColor = ToolFore;
-                    Console.Clear();
-                }*/
-                SetBackColor(DefaultBack);
-                SetForeColor(DefaultFore);
-                LastColorBack = DefaultBack;
-                LastColorFore = DefaultFore;
-                Console.Clear();
-
                 Monitor.Exit(GraphMutex);
                 return true;
             }
-            else
+            return false;
+        }
+
+        public void DetectSize()
+        {
+            Console.Clear();
+            WinW = -1;
+            WinH = -1;
+            while (WinH < Console.CursorTop)
             {
-                Monitor.Exit(GraphMutex);
-                return false;
+                WinH = Console.CursorTop;
+                Console.WriteLine();
             }
+            while (WinW < Console.CursorLeft)
+            {
+                WinW = Console.CursorLeft;
+                Console.Write(" ");
+            }
+            Console.Clear();
+            WinW++; 
+            WinH++;
         }
 
         public override void StartApp()
@@ -433,12 +451,9 @@ namespace TextPaint
                 Console.OutputEncoding = TextWork.EncodingFromName(ConOEnc);
             }
 
-            WinW = -1;
-            WinH = -1;
             AppWorking = true;
-            Core_.WindowResize();
-            Core_.ScreenRefresh(true);
             Core_.StartUp();
+            ConsoleTimer = new Timer(ConsoleTimerEvent, null, 0, 500);
             while (AppWorking)
             {
                 ConsoleKeyInfo CKI = Console.ReadKey(true);
@@ -478,7 +493,14 @@ namespace TextPaint
             }
             CursorX = X;
             CursorY = Y;
-            Console.SetCursorPosition(X, Y);
+            try
+            {
+                Console.SetCursorPosition(X, Y);
+            }
+            catch
+            {
+                Console.SetCursorPosition(0, 0);
+            }
             Monitor.Exit(GraphMutex);
         }
     }

@@ -56,15 +56,61 @@ namespace TextPaint
                 Form_.ResizeBegin += Form__ResizeBegin;
                 Form_.ResizeEnd += Form__ResizeEnd;
                 Form_.Controls.Add(ConsoleScreen_);
-
-                Core_.WindowResize();
-                Core_.ScreenRefresh(true);
+                ConsoleScreen_.MouseMove += ConsoleScreen__MouseMove;
+                ConsoleScreen_.MouseDown += ConsoleScreen__MouseDown;
+                ConsoleScreen_.MouseUp += ConsoleScreen__MouseUp;
+                ConsoleScreen_.MouseLeave += ConsoleScreen__MouseOut;
+                Form_.MouseWheel += ConsoleScreen__MouseWheel;
+                Form_.GotFocus += ConsoleScreen__GotFocus;
+                Form_.LostFocus += ConsoleScreen__LostFocus;
             }
             else
             {
                 AppWorking = true;
             }
         }
+
+        void ConsoleScreen__GotFocus(object sender, EventArgs e)
+        {
+            FormFocusEvent(true);
+        }
+
+        void ConsoleScreen__LostFocus(object sender, EventArgs e)
+        {
+            FormFocusEvent(false);
+        }
+
+
+        void ConsoleScreen__MouseMove(object sender, MouseEventArgs e)
+        {
+            MouseMove(e.X, e.Y);
+        }
+
+        void ConsoleScreen__MouseOut(object sender, EventArgs e)
+        {
+            MouseMove(-1, -1);
+        }
+
+        void ConsoleScreen__MouseDown(object sender, MouseEventArgs e)
+        {
+            if (((e.Button & MouseButtons.Left) > 0)) { MouseDown(1); }
+            if (((e.Button & MouseButtons.Middle) > 0)) { MouseDown(2); }
+            if (((e.Button & MouseButtons.Right) > 0)) { MouseDown(3); }
+        }
+
+        void ConsoleScreen__MouseUp(object sender, MouseEventArgs e)
+        {
+            if (((e.Button & MouseButtons.Left) > 0)) { MouseUp(1); }
+            if (((e.Button & MouseButtons.Middle) > 0)) { MouseUp(2); }
+            if (((e.Button & MouseButtons.Right) > 0)) { MouseUp(3); }
+        }
+
+        void ConsoleScreen__MouseWheel(object sender, MouseEventArgs e)
+        {
+            if (e.Delta > 0) { MouseDown(4); }
+            if (e.Delta < 0) { MouseDown(5); }
+        }
+
 
         void Form__ResizeBegin(object sender, EventArgs e)
         {
@@ -83,7 +129,7 @@ namespace TextPaint
 
             WindowResizeForce = true;
             DispTimer = new Timer();
-            DispTimer.Interval = 100;
+            DispTimer.Interval = 50;
             DispTimer.Tick += CursorTimer_Tick;
             DispTimer.Enabled = true;
 
@@ -97,45 +143,93 @@ namespace TextPaint
         Timer DispTimer;
         int DuringResize = 0;
         bool DuringResizeEnd = false;
+        int MouseXDisp = -1;
+        int MouseYDisp = -1;
+        bool MouseIsActiveDisp = false;
+        bool TimerTick2 = false;
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
-            ConsoleBitmap_Counter++;
-            if (ConsoleBitmap_Counter >= 5)
+            TimerTick2 = !TimerTick2;
+
+            bool NeedRefresh = false;
+
+            if (TimerTick2)
             {
-                ConsoleBitmap_Counter = 0;
-                ConsoleBitmap_Disp = 1 - ConsoleBitmap_Disp;
+                ConsoleBitmap_Counter++;
+                if (ConsoleBitmap_Counter >= 5)
+                {
+                    ConsoleBitmap_Counter = 0;
+                    ConsoleBitmap_Disp = 1 - ConsoleBitmap_Disp;
+                    NeedRefresh = true;
+                    if (WinPicturePanel)
+                    {
+                        ConsoleScreen_Panel.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
+                    }
+                    else
+                    {
+                        ConsoleScreen_PictureBox.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
+                    }
+                }
+            }
+            if (MouseIsActiveDisp != MouseIsActiveX)
+            {
+                if (MouseIsActiveX)
+                {
+                    Form_.Cursor = Cursors.Cross;
+                    Cursor.Hide();
+                }
+                else
+                {
+                    Form_.Cursor = Cursors.Default;
+                    Cursor.Show();
+                }
+                MouseIsActiveDisp = MouseIsActiveX;
+                NeedRefresh = true;
+            }
+            if (MouseIsActiveX)
+            {
+                if ((MouseXDisp != MouseX) || (MouseYDisp != MouseY))
+                {
+                    MouseXDisp = MouseX;
+                    MouseYDisp = MouseY;
+                    NeedRefresh = true;
+                }
+            }
+            if (NeedRefresh)
+            {
                 if (WinPicturePanel)
                 {
-                    ConsoleScreen_Panel.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
                     ConsoleScreen_Panel.Refresh();
                 }
                 else
                 {
-                    ConsoleScreen_PictureBox.Image_ = ConsoleBitmap_[ConsoleBitmap_Disp];
                     ConsoleScreen_PictureBox.Refresh();
                 }
             }
-            if (DuringResize > 0)
+            if (TimerTick2)
             {
-                DuringResize--;
-                if (DuringResizeEnd || (DuringResize == 1))
+                if (DuringResize > 0)
                 {
-                    XWidth = Form_.ClientSize.Width;
-                    XHeight = Form_.ClientSize.Height;
-                    CursorTimerEvent(true);
-                    DuringResizeEnd = false;
-                    DuringResize = 0;
+                    DuringResize--;
+                    if (DuringResizeEnd || (DuringResize == 1))
+                    {
+                        XWidth = Form_.ClientSize.Width;
+                        XHeight = Form_.ClientSize.Height;
+                        CursorTimerEvent(true);
+                        DuringResizeEnd = false;
+                        DuringResize = 0;
+                    }
+                    return;
                 }
-                return;
-            }
-            if ((XWidth != Form_.ClientSize.Width) || (XHeight != Form_.ClientSize.Height))
-            {
-                DuringResize = 6;
-            }
-            else
-            {
-                CursorTimerEvent(false);
+                if ((XWidth != Form_.ClientSize.Width) || (XHeight != Form_.ClientSize.Height))
+                {
+                    DuringResize = 6;
+                }
+                else
+                {
+                    CursorTimerEvent(false);
+                }
             }
         }
 
@@ -309,6 +403,8 @@ namespace TextPaint
 
         protected override void FormClose()
         {
+            Form_.GotFocus -= ConsoleScreen__GotFocus;
+            Form_.LostFocus -= ConsoleScreen__LostFocus;
             Form_.Close();
         }
 
@@ -393,15 +489,18 @@ namespace TextPaint
 
         void Ctrl_DoubleClick(object sender, EventArgs e)
         {
-            Form_.WindowState = FormWindowState.Normal;
-            if (Form_.FormBorderStyle == FormBorderStyle.None)
+            if (!MouseIsActiveX)
             {
-                Form_.FormBorderStyle = FormBorderStyle.Sizable;
-            }
-            else
-            {
-                Form_.FormBorderStyle = FormBorderStyle.None;
-                Form_.WindowState = FormWindowState.Maximized;
+                Form_.WindowState = FormWindowState.Normal;
+                if (Form_.FormBorderStyle == FormBorderStyle.None)
+                {
+                    Form_.FormBorderStyle = FormBorderStyle.Sizable;
+                }
+                else
+                {
+                    Form_.FormBorderStyle = FormBorderStyle.None;
+                    Form_.WindowState = FormWindowState.Maximized;
+                }
             }
         }
     }

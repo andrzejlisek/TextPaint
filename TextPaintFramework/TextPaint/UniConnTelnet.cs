@@ -111,59 +111,66 @@ namespace TextPaint
 
         public override int IsConnected()
         {
-            Monitor.Enter(TCPCMon);
-            if (IsConnOpening)
-            {
-                Monitor.Exit(TCPCMon);
-                return 2;
-            }
-            if (NSX == null)
-            {
-                Monitor.Exit(TCPCMon);
-                return 0;
-            }
-            if (TCPC == null)
-            {
-                Monitor.Exit(TCPCMon);
-                return 0;
-            }
-            if (TCPC.Client == null)
-            {
-                Monitor.Exit(TCPCMon);
-                return 0;
-            }
             try
             {
-                IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
-
-                TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
-
-                foreach (TcpConnectionInformation c in tcpConnections)
+                Monitor.Enter(TCPCMon);
+                if (IsConnOpening)
                 {
-                    TcpState stateOfConnection = c.State;
+                    Monitor.Exit(TCPCMon);
+                    return 2;
+                }
+                if (NSX == null)
+                {
+                    Monitor.Exit(TCPCMon);
+                    return 0;
+                }
+                if (TCPC == null)
+                {
+                    Monitor.Exit(TCPCMon);
+                    return 0;
+                }
+                if (TCPC.Client == null)
+                {
+                    Monitor.Exit(TCPCMon);
+                    return 0;
+                }
+                try
+                {
+                    IPGlobalProperties ipProperties = IPGlobalProperties.GetIPGlobalProperties();
 
-                    if (c.LocalEndPoint.Equals(TCPC.Client.LocalEndPoint) && c.RemoteEndPoint.Equals(TCPC.Client.RemoteEndPoint))
+                    TcpConnectionInformation[] tcpConnections = ipProperties.GetActiveTcpConnections();
+
+                    foreach (TcpConnectionInformation c in tcpConnections)
                     {
-                        if (stateOfConnection == TcpState.Established)
+                        TcpState stateOfConnection = c.State;
+
+                        if (c.LocalEndPoint.Equals(TCPC.Client.LocalEndPoint) && c.RemoteEndPoint.Equals(TCPC.Client.RemoteEndPoint))
                         {
-                            Monitor.Exit(TCPCMon);
-                            return 1;
-                        }
-                        else
-                        {
-                            TCPC = null;
-                            Monitor.Exit(TCPCMon);
-                            return 0;
+                            if (stateOfConnection == TcpState.Established)
+                            {
+                                Monitor.Exit(TCPCMon);
+                                return 1;
+                            }
+                            else
+                            {
+                                TCPC = null;
+                                Monitor.Exit(TCPCMon);
+                                return 0;
+                            }
                         }
                     }
                 }
-            }
-            catch (ObjectDisposedException e)
-            {
-                TCPC = null;
-            }
+                catch (ObjectDisposedException e)
+                {
+                    TCPC = null;
+                }
 
-            Monitor.Exit(TCPCMon);
+                Monitor.Exit(TCPCMon);
+            }
+            catch
+            {
+
+            }
             return 0;
         }
 

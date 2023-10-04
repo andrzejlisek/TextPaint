@@ -8,6 +8,8 @@
  */
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace TextPaint
@@ -17,12 +19,17 @@ namespace TextPaint
     /// </summary>
     public class Screen
     {
+        public const int BlankDoubleChar = (0x10FFFF + 1);
+        public const int BlankDoubleCharVis = 32;
+
         protected object GraphMutex = new object();
 
         public bool MultiThread = false;
 
         public const int TerminalCellW = 8;
         public const int TerminalCellH = 16;
+        public const int TerminalCellW2 = 4;
+        public const int TerminalCellH2 = 8;
 
         protected Core Core_;
         public bool AppWorking;
@@ -41,6 +48,9 @@ namespace TextPaint
         protected int[,] ScrChrFontW;
         protected int[,] ScrChrFontH;
 
+        protected int DuospaceMode = 0;
+        protected string DuospaceFontName = "";
+        protected string DuospaceDoubleChars = "";
         public void LoadConfig(ConfigFile CF)
         {
             ANSIColors = CF.ParamGetB("ANSIColors", true);
@@ -55,6 +65,57 @@ namespace TextPaint
             FontModeStrike = ((CF.ParamGetI("DisplayAttrib", 15) & 1) > 0) ? 1 : 0;
 
             FontModeBlink = CF.ParamGetI("DisplayBlink", 1);
+
+            DuospaceMode = CF.ParamGetI("DuospaceMode", 0);
+            DuospaceFontName = CF.ParamGetS("DuospaceFontName", "");
+            DuospaceDoubleChars = CF.ParamGetS("DuospaceDoubleChars", "");
+        }
+
+        protected void LoadDuospaceList()
+        {
+            if ((DuospaceDoubleChars != "") && (DuospaceMode == 1))
+            {
+                try
+                {
+                    FileStream FS = new FileStream(DuospaceDoubleChars, FileMode.Open, FileAccess.Read);
+                    StreamReader FS_ = new StreamReader(FS);
+                    string Buf = FS_.ReadLine();
+                    while (Buf != null)
+                    {
+                        if (Buf.Length >= 2)
+                        {
+                            int Code1 = 0;
+                            int Code2 = 0;
+                            string[] BufX = Buf.Split('.');
+                            if (BufX.Length == 1)
+                            {
+                                Code1 = TextWork.CodeChar(BufX[0]);
+                                Code2 = TextWork.CodeChar(BufX[0]);
+                            }
+                            if (BufX.Length == 3)
+                            {
+                                Code1 = TextWork.CodeChar(BufX[0]);
+                                Code2 = TextWork.CodeChar(BufX[2]);
+                            }
+                            for (int i = Code1; i <= Code2; i++)
+                            {
+                                if (CharDoubleTable[i] == 0)
+                                {
+                                    CharDoubleTable[i] = BlankDoubleChar;
+                                }
+                            }
+                        }
+                        Buf = FS_.ReadLine();
+                    }
+                    FS_.Close();
+                    FS.Close();
+                }
+                catch
+                {
+
+                }
+            }
+            CharDoubleTableInvRefresh();
         }
 
         public virtual void SetLineOffset(int Y, int Offset, bool Blank, int ColorBack, int ColorFore, int FontAttr)
@@ -67,9 +128,9 @@ namespace TextPaint
 
         }
 
-        public virtual void AppResize(int NewW, int NewH)
+        public virtual bool AppResize(int NewW, int NewH, bool Force)
         {
-            Core_.CoreEvent("Resize", '\0', false, false, false);
+            return Force;
         }
 
         public int BellMethod = 0;
@@ -125,6 +186,52 @@ namespace TextPaint
 
         }
 
+        public int[] CharDoubleTable;
+        public int[] CharDoubleTableInv;
+
+        protected void CharDoubleTableInvRefresh()
+        {
+            for (int i = 0; i < CharDoubleTableInv.Length; i++)
+            {
+                CharDoubleTableInv[i] = 0;
+            }
+            CharDoubleTableInv[BlankDoubleChar] = BlankDoubleChar;
+            for (int i = 0; i < CharDoubleTable.Length; i++)
+            {
+                if ((CharDoubleTable[i] >= 0) && (CharDoubleTable[i] != BlankDoubleChar))
+                {
+                    CharDoubleTableInv[CharDoubleTable[i]] = i;
+                }
+            }
+        }
+
+        public Screen()
+        {
+            CharDoubleTable = new int[18 * 65536];
+            CharDoubleTableInv = new int[18 * 65536];
+            for (int i = 0; i < CharDoubleTable.Length; i++)
+            {
+                CharDoubleTable[i] = 0;
+                CharDoubleTableInv[i] = 0;
+            }
+        }
+
+        public int CharDoubleInv(int C)
+        {
+            if (C != BlankDoubleChar)
+            {
+                return CharDoubleTableInv[C];
+            }
+            else
+            {
+                return BlankDoubleCharVis;
+            }
+        }
+
+        public int CharDouble(int C)
+        {
+            return CharDoubleTable[C];
+        }
 
         // 0 - Bes mrugania
         // 1 - styl DOS
@@ -324,7 +431,12 @@ namespace TextPaint
 
         public void PutChar(int X, int Y, int C, int ColorBack, int ColorFore)
         {
-            if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH))
+            PutChar(X, Y, C, ColorBack, ColorFore, 0, 0);
+        }
+
+        public void PutChar(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH)
+        {
+            if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH) && (C != BlankDoubleChar))
             {
                 if (ColorBack < 0)
                 {
@@ -334,7 +446,7 @@ namespace TextPaint
                 {
                     ColorFore = Core_.TextNormalFore;
                 }
-                PutChar_(X, Y, C, ColorBack, ColorFore, 0, 0, 0);
+                PutChar_(X, Y, C, ColorBack, ColorFore, FontW, FontH, 0);
                 if (UseMemo > 0)
                 {
                     if (C == 0)
@@ -345,8 +457,8 @@ namespace TextPaint
                     ScrChrB[X, Y] = ColorBack;
                     ScrChrF[X, Y] = ColorFore;
                     ScrChrA[X, Y] = 0;
-                    ScrChrFontW[X, Y] = 0;
-                    ScrChrFontH[X, Y] = 0;
+                    ScrChrFontW[X, Y] = FontW;
+                    ScrChrFontH[X, Y] = FontH;
                     return;
                 }
             }
@@ -354,10 +466,9 @@ namespace TextPaint
 
         public void PutChar(int X, int Y, int C, int ColorBack, int ColorFore, int FontW, int FontH, int ColorAttr)
         {
-            if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH))
+            if ((X >= 0) && (Y >= 0) && (X < WinW) && (Y < WinH) && (C != BlankDoubleChar))
             {
                 CalcColor(ColorBack, ColorFore, ColorAttr);
-
                 PutChar_(X, Y, C, CalcColor_Back, CalcColor_Fore, FontW, FontH, ColorAttr);
                 if (UseMemo > 0)
                 {
@@ -391,7 +502,7 @@ namespace TextPaint
                 SetLineOffset(Y, 0, false, ColorB, ColorF, 0);
                 for (int X = 0; X < WinW; X++)
                 {
-                    PutChar_(X, Y, 32, CalcColor_Back, CalcColor_Fore, 0, 0, 0);
+                    PutChar_(X, Y, 32, MouseCalcColor(X, Y, CalcColor_Back), MouseCalcColor(X, Y, CalcColor_Fore), 0, 0, 0);
                 }
             }
         }
@@ -399,11 +510,6 @@ namespace TextPaint
         public virtual void Move(int SrcX, int SrcY, int DstX, int DstY, int W, int H)
         {
             
-        }
-        
-        public virtual bool WindowResize()
-        {
-            return true;
         }
         
         public virtual void StartApp()
@@ -418,15 +524,29 @@ namespace TextPaint
 
         public void SetStatusText(List<int> StatusText, int ColorBack, int ColorFore)
         {
+            int CharDbl = 0;
             for (int i = 0; i < WinW; i++)
             {
-                if (i < StatusText.Count)
+                if (CharDbl != 0)
                 {
-                    PutChar(i, WinH - 1, StatusText[i], ColorBack, ColorFore);
+                    if (CharDbl > 0)
+                    {
+                        PutChar(i, WinH - 1, CharDbl, ColorBack, ColorFore);
+                    }
+                    CharDbl = 0;
                 }
                 else
                 {
-                    PutChar(i, WinH - 1, ' ', ColorBack, ColorFore);
+                    if (i < StatusText.Count)
+                    {
+                        PutChar(i, WinH - 1, StatusText[i], ColorBack, ColorFore);
+                        CharDbl = CharDouble(StatusText[i]);
+                    }
+                    else
+                    {
+                        PutChar(i, WinH - 1, ' ', ColorBack, ColorFore);
+                        CharDbl = 0;
+                    }
                 }
             }
         }
@@ -530,6 +650,122 @@ namespace TextPaint
                 }
             }
             return Name;
+        }
+
+        protected void MouseCursorDrawPrepare(bool Show)
+        {
+            if (Show)
+            {
+                if (MouseIsActiveX && (MouseX >= 0) && (MouseY >= 0) && (MouseX < WinW) && (MouseY < WinH))
+                {
+                    MouseCursorDraw(MouseX, MouseY);
+                    MouseXScr = MouseX;
+                    MouseYScr = MouseY;
+                }
+            }
+            else
+            {
+                if ((MouseXScr >= 0) && (MouseYScr >= 0) && (MouseXScr < WinW) && (MouseYScr < WinH))
+                {
+                    MouseCursorDraw(MouseXScr, MouseYScr);
+                    MouseXScr = -1;
+                    MouseYScr = -1;
+                }
+            }
+        }
+
+        int MouseXScr = -1;
+        int MouseYScr = -1;
+        public int MouseX = -1;
+        public int MouseY = -1;
+        public bool MouseIsActive = false;
+        public bool MouseIsActiveX = false;
+
+        private Dictionary<int, bool> MouseParam = new Dictionary<int, bool>();
+
+        public int MouseZero = 65535;
+
+        public void MouseReset()
+        {
+            Monitor.Enter(MouseParam);
+            MouseParam.Clear();
+            Monitor.Exit(MouseParam);
+        }
+
+        public void MouseSet(int Param, bool Val)
+        {
+            Monitor.Enter(MouseParam);
+            if (!MouseParam.ContainsKey(Param))
+            {
+                MouseParam.Add(Param, Val);
+            }
+            else
+            {
+                MouseParam[Param] = Val;
+            }
+            MouseActive(MouseIsActive);
+            Monitor.Exit(MouseParam);
+        }
+
+        public bool MouseGet(int Param)
+        {
+            Monitor.Enter(MouseParam);
+            bool X = false;
+            if (MouseParam.ContainsKey(Param))
+            {
+                X = MouseParam[Param];
+            }
+            Monitor.Exit(MouseParam);
+            return X;
+        }
+
+        public void MouseActive(bool X)
+        {
+            MouseIsActive = X;
+            bool XX = MouseIsActive;
+            if (XX)
+            {
+                bool ParX = false;
+                if (MouseGet(9)) { ParX = true; }
+                if (MouseGet(1000)) { ParX = true; }
+                if (MouseGet(1001)) { ParX = true; }
+                if (MouseGet(1002)) { ParX = true; }
+                if (MouseGet(1003)) { ParX = true; }
+                if (!ParX)
+                {
+                    XX = false;
+                }
+            }
+            if (MouseIsActiveX != XX)
+            {
+                MouseCursorDrawPrepare(false);
+                MouseIsActiveX = XX;
+                MouseCursorDrawPrepare(true);
+            }
+        }
+
+        protected int MouseCalcColor(int X, int Y, int ColorX)
+        {
+            if ((MouseX == X) && (MouseY == Y))
+            {
+                if (ColorX < 8)
+                {
+                    return 7 - ColorX;
+                }
+                else
+                {
+                    return 23 - ColorX;
+                }
+            }
+            else
+            {
+                return ColorX;
+            }
+        }
+
+        protected virtual void MouseCursorDraw(int X, int Y)
+        {
+
         }
     }
 }

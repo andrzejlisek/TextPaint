@@ -40,8 +40,6 @@ namespace TextPaint
                 XHeight = ConsoleH * CellH;
                 Program.ScreenWindowGUI_ = this;
                 FormAllowClose = false;
-                Core_.WindowResize();
-                Core_.ScreenRefresh(true);
             }
             else
             {
@@ -65,7 +63,7 @@ namespace TextPaint
 
             WindowResizeForce = true;
             DispTimer = new Avalonia.Threading.DispatcherTimer();
-            DispTimer.Interval = new System.TimeSpan(0, 0, 0, 0, 100);
+            DispTimer.Interval = new System.TimeSpan(0, 0, 0, 0, 50);
             DispTimer.Tick += CursorTimer_Tick;
             DispTimer.IsEnabled = true;
 
@@ -73,6 +71,72 @@ namespace TextPaint
             ConsoleScreen.AddHandler(DragDrop.DragEnterEvent, DragFileEnter);
             ConsoleScreen.AddHandler(DragDrop.DragOverEvent, DragFileEnter);
             ConsoleScreen.AddHandler(DragDrop.DropEvent, DragFileExit);
+
+            ConsoleScreen.PointerMoved += OnMouseMove;
+            ConsoleScreen.PointerWheelChanged += OnMouseWheel;
+            ConsoleScreen.PointerLeave += OnMouseMove0;
+            ConsoleScreen.PointerPressed += OnMouseDown;
+            ConsoleScreen.PointerReleased += OnMouseUp;
+
+            ConsoleKeyCapture.GotFocus += OnFocus1;
+            ConsoleKeyCapture.LostFocus += OnFocus0;
+        }
+
+        protected void OnFocus1(object sender, GotFocusEventArgs e)
+        {
+            FormFocusEvent(true);
+        }
+
+        protected void OnFocus0(object sender, Avalonia.Interactivity.RoutedEventArgs e)
+        {
+            FormFocusEvent(false);
+        }
+
+        protected void OnMouseDown(object sender, PointerPressedEventArgs e)
+        {
+            switch (e.MouseButton)
+            {
+                case MouseButton.Left:
+                    MouseDown(1);
+                    break;
+                case MouseButton.Middle:
+                    MouseDown(2);
+                    break;
+                case MouseButton.Right:
+                    MouseDown(3);
+                    break;
+            }
+        }
+        protected void OnMouseUp(object sender, PointerReleasedEventArgs e)
+        {
+            switch (e.MouseButton)
+            {
+                case MouseButton.Left:
+                    MouseUp(1);
+                    break;
+                case MouseButton.Middle:
+                    MouseUp(2);
+                    break;
+                case MouseButton.Right:
+                    MouseUp(3);
+                    break;
+            }
+        }
+
+        protected void OnMouseMove0(object sender, PointerEventArgs e)
+        {
+            MouseMove(-1, -1);
+        }
+
+        protected void OnMouseMove(object sender, PointerEventArgs e)
+        {
+            MouseMove((int)(e.GetPosition(ConsoleScreen).X), (int)(e.GetPosition(ConsoleScreen).Y));
+        }
+
+        protected void OnMouseWheel(object sender, PointerWheelEventArgs e)
+        {
+            if (e.Delta.Y > 0) { MouseDown(4); }
+            if (e.Delta.Y < 0) { MouseDown(5); }
         }
 
         public override void FormCtrlSetBitmap(LowLevelBitmap Bmp0, LowLevelBitmap Bmp1)
@@ -86,8 +150,15 @@ namespace TextPaint
             FormCtrlRefresh();
         }
 
+        int MouseXDisp = -1;
+        int MouseYDisp = -1;
+        bool MouseIsActiveDisp = false;
+        bool TimerTick2 = false;
+
         void CursorTimer_Tick(object sender, EventArgs e)
         {
+            TimerTick2 = !TimerTick2;
+
             while (FormCtrlSetParamQueueV.Count > 0)
             {
                 FormCtrlSetParam(FormCtrlSetParamQueueP[0], FormCtrlSetParamQueueV[0]);
@@ -95,27 +166,61 @@ namespace TextPaint
                 FormCtrlSetParamQueueV.RemoveAt(0);
             }
 
-            ScreenBmpCounter++;
-            if (ScreenBmpCounter >= 5)
+            bool NeedRefresh = false;
+
+            if (TimerTick2)
             {
-                ScreenBmpCounter = 0;
-                ScreenBmpDisp = 1 - ScreenBmpDisp;
+                ScreenBmpCounter++;
+                if (ScreenBmpCounter >= 5)
+                {
+                    ScreenBmpCounter = 0;
+                    ScreenBmpDisp = 1 - ScreenBmpDisp;
+                    NeedRefresh = true;
+                }
+            }
+            Form_.MouseIsActiveX = MouseIsActiveX;
+            if (MouseIsActiveDisp != MouseIsActiveX)
+            {
+                if (MouseIsActiveX)
+                {
+                    Form_.Cursor = new Cursor(StandardCursorType.None);
+                }
+                else
+                {
+                    Form_.Cursor = Cursor.Default;
+                }
+                MouseIsActiveDisp = MouseIsActiveX;
+                NeedRefresh = true;
+            }
+            if (MouseIsActiveX)
+            {
+                if ((MouseXDisp != MouseX) || (MouseYDisp != MouseY))
+                {
+                    MouseXDisp = MouseX;
+                    MouseYDisp = MouseY;
+                    NeedRefresh = true;
+                }
+            }
+            if (NeedRefresh)
+            {
                 FormCtrlRefresh();
             }
-
-            if (!ConsoleKeyCapture.IsFocused)
+            if (TimerTick2)
             {
-                ConsoleKeyCapture.Focus();
-            }
-            if ((XWidth != Form_.GetWidth()) || (XHeight != Form_.GetHeight()))
-            {
-                XWidth = Form_.GetWidth();
-                XHeight = Form_.GetHeight();
-                CursorTimerEvent(true);
-            }
-            else
-            {
-                CursorTimerEvent(false);
+                if ((!ConsoleKeyCapture.IsFocused) && (Form_.IsFocused))
+                {
+                    ConsoleKeyCapture.Focus();
+                }
+                if ((XWidth != Form_.GetWidth()) || (XHeight != Form_.GetHeight()))
+                {
+                    XWidth = Form_.GetWidth();
+                    XHeight = Form_.GetHeight();
+                    CursorTimerEvent(true);
+                }
+                else
+                {
+                    CursorTimerEvent(false);
+                }
             }
         }
 
@@ -305,6 +410,8 @@ namespace TextPaint
 
         protected override void FormClose()
         {
+            ConsoleKeyCapture.GotFocus -= OnFocus1;
+            ConsoleKeyCapture.LostFocus -= OnFocus0;
             Form_.Close();
         }
 

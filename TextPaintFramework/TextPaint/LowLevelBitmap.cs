@@ -201,7 +201,7 @@ namespace TextPaint
                     T = "|     " + T + "     |";
                     RectExp = BmpG.MeasureString(T, WinFont[15], 1000).Width;
                 }
-                BmpG.DrawString(T, WinFont[(FontB ? 1 : 0) + (FontI ? 2 : 0) + (FontU ? 4 : 0) + (FontU ? 8 : 0)], new SolidBrush(Color.FromArgb(R, G, B)), new RectangleF(X - RectExp, Y, W + RectExp + RectExp, H), WinStrFormat);
+                BmpG.DrawString(T, WinFont[(FontB ? 1 : 0) + (FontI ? 2 : 0) + (FontU ? 4 : 0) + (FontS ? 8 : 0)], new SolidBrush(Color.FromArgb(R, G, B)), new RectangleF(X - RectExp, Y, W + RectExp + RectExp, H), WinStrFormat);
 
                 BitmapData Bmp_ = ToBitmapBmp.LockBits(new Rectangle(0, 0, Width, Height), ImageLockMode.ReadWrite, ColorDataFormat);
                 System.Runtime.InteropServices.Marshal.Copy(Bmp_.Scan0, Data, 0, DataLength);

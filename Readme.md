@@ -614,6 +614,10 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
     * **GenericMonospace**
   * **Font name** \- Use selected font, like **Arial**, **Courier**\.
 * **WinFontSize** \- Font size in window\. This setting not affects the cell size\.
+* **WinCharRender** \- Char rendering type \(affects only when **WinFontName** does not provide bitmap file\):
+  * **0** \- Normal\.
+  * **1** \- Pixel antialias\.
+  * **2** \- Subpixel antialias\.
 * **WinW** \- Number of columns\. To display whole status bar, it should be at least **WinW=40**\.
 * **WinH** \- Number of rows\.
 * **WinFixed** \- Fided number of rows and columns regardless current window size\.
@@ -834,60 +838,17 @@ The same file read with password "z1X23C4v":
 
 ![](Readme/1_13.png "")
 
-# Bitmap fonts
+# Fonts and tools
 
-The **TextPaint** application supports the bitmap fonts in windows mode\. Such font is saved as bitmap file, which is provided as **WinFontName** parameter in **Config\.txt** file\. Using bitmap fonts instead of system font or console mode, has following advantages:
+The details about fonts and tools are described in the **Readme\_fonts\.md** file\.
 
-
-* Use any custom characters in unicode range\.
-* Such font is truely fixed\-width\.
-* Achieve old\-school look, for example like DOS or some 8\-bit computers with screen\.
-* Modifying glyphs are easy, just edit bitmap in favorite image editor\.
-* Avoid breaking and overlaying semigraphical glyphs\.
-
-Using bitmap fonts has also disadvantages:
-
-
-* The cell width and height must be integer multiply of glyph width and height\.
-* When you use large font file \(with many pages\), opening application may take a while\.
-
-## Bitmap font format
-
-The bitmap font is organized in pages, single page consists of 256 characters\. Every page has number from 0 to 255, but unicode defines 17 planes from 0 to 16, so in fact, the page number are from 0 to 4351\. Bitmap can use any color mode, but the color will be thresholded into two colors, black and white, so every pixel will be readed as black or white, depending on pixel brightness\.
-
-The bitmap width determines the font glyph and must match the formula `(W * 256) + 16)`, where **W** is the glyph width\. For example, for width 8 pixels, the bitmap must have 2064 pixels width\. The glyph height is determined by bitmap height\. The bitmap height is simply glyph height multiplied by number of pages defined in the bitmap\. The number of defined pages may vary depending on glyphs, which will be defined\.
-
-Every row consists of binary encoded page number and glyph images of this page\. The page number code occupies 16 pixels from left and is a binary code, when black means 0 and white means 1\. The code height must be the same as glyph height\. On the glyphs part, the black \(dark\) color means 0 \(background\) and the white \(bright\) color means 1 \(foreground\)\.
-
-The page order int he bitmap is not important\.
-
-## Supplied fonts
-
-The **TextPaint** supplies example bitmap fonts in **Fonts** subfolder, which can be used\. In the bitmaps, there was applied the following color convention:
-
-
-* **White on black** \- Original glyphs existing in source\.
-* **Yellow on blue** \- Painted or corrected glyphs\.
-* **Green on purple** \- Original glyphs existing in source, but the glyph placement was changed to fix errors\.
-
-Some fonts has glyph size 16x16, but these fonts has also 08x16 version\. Glyphs existing in 08x16 version are the same as in the 16x16 version\. In the 16x16 version there are more glyphs, which are not exist in 08x16 version\.
-
-The example fonts are generated based on three sources, disinguished by font file name prefix:
-
-
-* **Dos** \- [https://int10h\.org/oldschool\-pc\-fonts/fontlist/](https://int10h.org/oldschool-pc-fonts/fontlist/ "https://int10h.org/oldschool-pc-fonts/fontlist/") \- Standard EGA and VGA fonts, which looks like a standard DOS font\. There are added some additional glyphs:
-  * **Page 25** \- Border heavy variant, quadrant boxes, four triangle glyphs from **25E2h** to **25E5h**\. The glyphs **2580h**, **2581h** and **2584h** are slightly corrected in some variants\.
-  * **Page 28** \- Braille dots\.
-  * **Page 1FB** \- Semigraphical shapes from **1FB00h** to **1FBAFh**, including **1FB93h**\.
-* **Unscii** \- [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/") \- All fonts from Unscii project, without any modyfication and additional glyphs but correction of **2509h** glyph in all 8x8 versions\. This fonts contains non\-standard characters, some glyph placement \(page **25h** and **1FBh**\) are manually corrected, because some glyph positions was swapped related to unicode standard\.
-* **Unifont** \- [https://unifoundry\.com/unifont/](https://unifoundry.com/unifont/ "https://unifoundry.com/unifont/") \- Two versions of Unifont with manually added **1FB93h** glyph\. This font provides the most unicode coverage\. In both fonts, the 08x16 glyphs are exactly the same, so there exists single 08x16 Unifont variant\.
-* **Small** \- [https://opengameart\.org/content/4x4\-px\-bitmap\-font](https://opengameart.org/content/4x4-px-bitmap-font "https://opengameart.org/content/4x4-px-bitmap-font") \- Small font, which is manually extended with many semigraphical glyphs and can be used to view large ASCII/ANSI arts\. The readibility of letters and digits is poor due to small character size\.
-* **Amiga** \- [https://github\.com/rewtnull/amigafonts](https://github.com/rewtnull/amigafonts "https://github.com/rewtnull/amigafonts") \- Fonts suitable for some ASCII\-art or ANSI\-art files, which was created on Amiga computers\.
-* **VT** \- [https://www\.masswerk\.at/nowgobang/2019/dec\-crt\-typography](https://www.masswerk.at/nowgobang/2019/dec-crt-typography "https://www.masswerk.at/nowgobang/2019/dec-crt-typography") \- The font, which is used in real DEC VT220 terminal, extended with some semigraphical glyphs\.
-
-# Other supplied files
+# Supplied files
 
 In the TextPaint filder, there are included some other files than bitmap fonts, which can help to use this software, especially the editor \(**WorkMode=0**\)\.
+
+## Fonts
+
+The font files are described in the **Readme\_fonts\.md** file\.
 
 ## Encodings
 
@@ -927,15 +888,16 @@ There are samples for demonstration and test purposes in **WorkMode=0**\. Files 
   * **CipherAlphabet=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789**
   * **CipherBegin=005B**
   * **CipherEnd=005D**
+* **ColorBlend\.ans** \- Color blending demonstration\.
+* **ColorWheel\.ans** \- Demonstration of all 16 colors, uses Unicode characters\.
+* **FontSize\.ans** \- Various font sizes\.
 * **Math\.txt** \- Demonstrates the Unicode alphabets used in mathemating notation\.
 * **Unscii\.txt** \- Demonstration art for Unscii font\. There is corrected art based on [http://viznut\.fi/unscii/](http://viznut.fi/unscii/ "http://viznut.fi/unscii/")\.
-* **FontSize\.ans** \- Various font sizes\.
-* **ColorWheel\.ans** \- Demonstration of all 16 colors, uses Unicode characters\.
-* **ColorBlend\.ans** \- Color blending demonstration\.
 
 There are also samples, which are not created with **TextPaint**, but can be loaded into **TextPaint** or other terminal emulator or any ANSI file viewer:
 
 
+* **Charmap\.ans** \- All character maps supported by **TextPaint**, implemented in VTTEST terminal tester and used in other terminal emulators\.
 * **Colors16\.ans** \- Two ways to use all 16 standard colors\. If bold and blink display are disabled, but bold and blink as color are enabled, **TextPaint** shows the same result in both ways\.
 * **Colors256\.ans** \- The 256\-color palette, **TextPaint** reada 256\-color codes, but converts such colors into standard 16 colors\. The file uses both semicolon and colon commands\.
 * **RGB\_R\.ans** \- The 24\-bit RGB color demonstration, red variant\. **TextPaint** reads RGB color codes, but converts such colors into standard 16 colors\.
