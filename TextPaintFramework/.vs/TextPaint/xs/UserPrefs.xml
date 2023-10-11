@@ -1,9 +1,10 @@
 ﻿<Properties StartupConfiguration="{A6E47BC4-7308-4EF1-B842-78183FB2D465}|Default">
   <MonoDevelop.Ide.ItemProperties.TextPaint PreferredExecutionTarget="MonoDevelop.Default" />
-  <MonoDevelop.Ide.Workbench ActiveDocument="TextPaint/ToolFontHex.cs">
+  <MonoDevelop.Ide.Workbench ActiveDocument="TextPaint/Screen.cs">
     <Files>
-      <File FileName="TextPaint/ToolFontHex.cs" Line="611" Column="52" />
-      <File FileName="TextPaint/ToolFontParse.cs" Line="323" Column="1" />
+      <File FileName="TextPaint/ScreenWindowGUI.cs" Line="163" Column="27" />
+      <File FileName="TextPaint/ScreenWindow.cs" Line="23" Column="1" />
+      <File FileName="TextPaint/Screen.cs" Line="59" Column="51" />
     </Files>
     <Pads>
       <Pad Id="ProjectPad">
@@ -12,7 +13,7 @@
             <Node name="TextPaint" expanded="True">
               <Node name="References" expanded="True" />
               <Node name="Properties" expanded="True" />
-              <Node name="ToolFontHex.cs" selected="True" />
+              <Node name="Screen.cs" selected="True" />
             </Node>
           </Node>
         </State>

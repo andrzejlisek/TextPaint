@@ -63,7 +63,14 @@ namespace TextPaint
 
             WindowResizeForce = true;
             DispTimer = new Avalonia.Threading.DispatcherTimer();
-            DispTimer.Interval = new System.TimeSpan(0, 0, 0, 0, 50);
+            if (TimerFast)
+            {
+                DispTimer.Interval = new System.TimeSpan(0, 0, 0, 0, 50);
+            }
+            else
+            {
+                DispTimer.Interval = new System.TimeSpan(0, 0, 0, 0, 100);
+            }
             DispTimer.Tick += CursorTimer_Tick;
             DispTimer.IsEnabled = true;
 
@@ -153,11 +160,14 @@ namespace TextPaint
         int MouseXDisp = -1;
         int MouseYDisp = -1;
         bool MouseIsActiveDisp = false;
-        bool TimerTick2 = false;
+        bool TimerTick2 = true;
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
-            TimerTick2 = !TimerTick2;
+            if (TimerFast)
+            {
+                TimerTick2 = !TimerTick2;
+            }
 
             while (FormCtrlSetParamQueueV.Count > 0)
             {

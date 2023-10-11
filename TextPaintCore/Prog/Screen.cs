@@ -51,8 +51,13 @@ namespace TextPaint
         protected int DuospaceMode = 0;
         protected string DuospaceFontName = "";
         protected string DuospaceDoubleChars = "";
+
+        protected bool TimerFast = true;
+
         public void LoadConfig(ConfigFile CF)
         {
+            TimerFast = !CF.ParamGetB("WinTimer100", false);
+
             ANSIColors = CF.ParamGetB("ANSIColors", true);
             ANSIColorBold = CF.ParamGetB("ANSIColorBold", false);
             ANSIColorBlink = CF.ParamGetB("ANSIColorBlink", false);

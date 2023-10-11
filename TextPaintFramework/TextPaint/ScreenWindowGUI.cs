@@ -56,13 +56,6 @@ namespace TextPaint
                 Form_.ResizeBegin += Form__ResizeBegin;
                 Form_.ResizeEnd += Form__ResizeEnd;
                 Form_.Controls.Add(ConsoleScreen_);
-                ConsoleScreen_.MouseMove += ConsoleScreen__MouseMove;
-                ConsoleScreen_.MouseDown += ConsoleScreen__MouseDown;
-                ConsoleScreen_.MouseUp += ConsoleScreen__MouseUp;
-                ConsoleScreen_.MouseLeave += ConsoleScreen__MouseOut;
-                Form_.MouseWheel += ConsoleScreen__MouseWheel;
-                Form_.GotFocus += ConsoleScreen__GotFocus;
-                Form_.LostFocus += ConsoleScreen__LostFocus;
             }
             else
             {
@@ -129,7 +122,14 @@ namespace TextPaint
 
             WindowResizeForce = true;
             DispTimer = new Timer();
-            DispTimer.Interval = 50;
+            if (TimerFast)
+            {
+                DispTimer.Interval = 50;
+            }
+            else
+            {
+                DispTimer.Interval = 100;
+            }
             DispTimer.Tick += CursorTimer_Tick;
             DispTimer.Enabled = true;
 
@@ -137,6 +137,14 @@ namespace TextPaint
             ConsoleScreen_.DragEnter += DragFileEnter;
             ConsoleScreen_.DragOver += DragFileEnter;
             ConsoleScreen_.DragDrop += DragFileExit;
+
+            ConsoleScreen_.MouseMove += ConsoleScreen__MouseMove;
+            ConsoleScreen_.MouseDown += ConsoleScreen__MouseDown;
+            ConsoleScreen_.MouseUp += ConsoleScreen__MouseUp;
+            ConsoleScreen_.MouseLeave += ConsoleScreen__MouseOut;
+            Form_.MouseWheel += ConsoleScreen__MouseWheel;
+            Form_.GotFocus += ConsoleScreen__GotFocus;
+            Form_.LostFocus += ConsoleScreen__LostFocus;
         }
 
         Form Form_;
@@ -146,11 +154,14 @@ namespace TextPaint
         int MouseXDisp = -1;
         int MouseYDisp = -1;
         bool MouseIsActiveDisp = false;
-        bool TimerTick2 = false;
+        bool TimerTick2 = true;
 
         void CursorTimer_Tick(object sender, EventArgs e)
         {
-            TimerTick2 = !TimerTick2;
+            if (TimerFast)
+            {
+                TimerTick2 = !TimerTick2;
+            }
 
             bool NeedRefresh = false;
 

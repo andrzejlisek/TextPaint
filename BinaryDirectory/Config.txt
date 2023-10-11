@@ -2,6 +2,8 @@ WorkMode=0
 
 WinUse=1
 
+WinTimer100=0
+
 Bell=1
 
 ConCursorDisplay=1
@@ -12,7 +14,7 @@ ConUseEscapeCodes=0
 
 WinCellW=8
 WinCellH=16
-WinFontName=Fonts/Dos08x16.png
+WinFontName=Fonts/Dos/Dos08x16.png
 WinFontSize=10
 WinCharRender=1
 WinFixed=2

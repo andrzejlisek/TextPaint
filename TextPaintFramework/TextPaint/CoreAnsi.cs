@@ -656,6 +656,13 @@ namespace TextPaint
                         }
                     }
                 }
+                else
+                {
+                    for (int X = 0; X < AnsiMaxX; X++)
+                    {
+                        Core_.Screen_.PutChar(X, Y, ' ', -1, -1, 0, 0, 0);
+                    }
+                }
             }
         }
 

@@ -78,6 +78,7 @@ namespace TextPaint
 
         List<byte> ByteStr = new List<byte>();
 
+        object TelnetFileUseMtx = new object();
         bool TelnetFileUse = false;
         FileStream TelnetFileS = null;
         BinaryWriter TelnetFileW = null;
@@ -462,6 +463,7 @@ namespace TextPaint
                         {
                             if (EscapeKeyId(KeyName, KeyChar).Equals(EscapeKey))
                             {
+                                TelnetFileRestart();
                                 WorkStateC = WorkStateCDef.Toolbox;
                             }
                             else
@@ -1363,10 +1365,12 @@ namespace TextPaint
                 string TempStr = TerminalEncoding.GetString(ByteStr.ToArray(), 0, ToSend);
                 if (TelnetFileUse)
                 {
+                    Monitor.Enter(TelnetFileUseMtx);
                     TelnetFileW.Write(TextWork.TelnetTimerBegin);
                     TelnetFileW.Write(Encoding.UTF8.GetBytes((TelnetTimer.ElapsedMilliseconds / TelnetTimerResolution).ToString()));
                     TelnetFileW.Write(TextWork.TelnetTimerEnd);
                     TelnetFileW.Write(ByteStr.ToArray());
+                    Monitor.Exit(TelnetFileUseMtx);
                 }
                 FileCtX.AddRange(TextWork.StrToInt(TempStr));
 
@@ -1488,10 +1492,48 @@ namespace TextPaint
             OpenCloseRepaint = true;
         }
 
-        void TelnetCloseFile()
+        void TelnetFileRestart()
         {
             if (TelnetFileUse)
             {
+                Monitor.Enter(TelnetFileUseMtx);
+                try
+                {
+                    TelnetFileW.Close();
+                }
+                catch
+                {
+                }
+                try
+                {
+                    TelnetFileS.Close();
+                }
+                catch
+                {
+                }
+                try
+                {
+                    TelnetFileS = new FileStream(TelnetFileName, FileMode.Append, FileAccess.Write);
+                    try
+                    {
+                        TelnetFileW = new BinaryWriter(TelnetFileS);
+                    }
+                    catch
+                    {
+                    }
+                }
+                catch
+                {
+                }
+                Monitor.Exit(TelnetFileUseMtx);
+            }
+        }
+
+        void TelnetFileClose()
+        {
+            if (TelnetFileUse)
+            {
+                Monitor.Enter(TelnetFileUseMtx);
                 try
                 {
                     TelnetFileW.Close();
@@ -1508,6 +1550,7 @@ namespace TextPaint
                 {
 
                 }
+                Monitor.Exit(TelnetFileUseMtx);
             }
         }
 
@@ -1532,7 +1575,7 @@ namespace TextPaint
             }
             if (StopApp)
             {
-                TelnetCloseFile();
+                TelnetFileClose();
                 Screen_.CloseApp(Core_.TextNormalBack, Core_.TextNormalFore);
             }
             else
@@ -1981,6 +2024,7 @@ namespace TextPaint
             TelnetFileUse = false;
             if (!("".Equals(TelnetFileName)))
             {
+                Monitor.Enter(TelnetFileUseMtx);
                 try
                 {
                     TelnetFileS = new FileStream(TelnetFileName, FileMode.Create, FileAccess.Write);
@@ -1989,7 +2033,9 @@ namespace TextPaint
                 }
                 catch
                 {
+                    TelnetFileUse = false;
                 }
+                Monitor.Exit(TelnetFileUseMtx);
             }
 
             Stopwatch TelnetTimer = new Stopwatch();
@@ -2187,14 +2233,14 @@ namespace TextPaint
                 TelnetMouseWork = false;
                 Screen_.MouseReset();
                 Screen_.MouseActive(false);
-                TelnetCloseFile();
+                TelnetFileClose();
             }
             finally
             {
                 TelnetMouseWork = false;
                 Screen_.MouseReset();
                 Screen_.MouseActive(false);
-                TelnetCloseFile();
+                TelnetFileClose();
             }
             if (!Screen_.MouseIsActiveX)
             {

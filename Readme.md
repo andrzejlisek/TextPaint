@@ -620,6 +620,7 @@ Settings related to window, affects when **WinUse=1** or **WinUse=2** only:
   * **2** \- Subpixel antialias\.
 * **WinW** \- Number of columns\. To display whole status bar, it should be at least **WinW=40**\.
 * **WinH** \- Number of rows\.
+* **WinTimer100** \- Uses 100ms timer instead of 50ms timer in **WorkMode=1** and **WorkMode=2**\. Change from **0** to **1** when the Textpaint hangs frequently, but the XTERM mouse may be less accurate and have some inertia\.
 * **WinFixed** \- Fided number of rows and columns regardless current window size\.
 * **WinSteadyCursor** \- Steady cursor display instead of blinking\.
 * **WinColorBlending** \- Enables color blending for some block characters\. This parameter affects to this characters:
